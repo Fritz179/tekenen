@@ -1,9 +1,12 @@
+#![allow(dead_code)]
+
 use tekenen::{Platform, PlatformTrait, IntervalDecision, Event, Tekenen, colors};
 
-include!(concat!(env!("OUT_DIR"), "/hello.rs"));
+mod preloaded;
 
 fn main() {
-    println!("{}", message());
+
+    let preloaded = preloaded::load_preloaded();
 
     let mut window = Platform::new(800, 600).unwrap();
     let mut tekenen = Tekenen::new(800, 600);
@@ -33,9 +36,9 @@ fn main() {
         tekenen.line(350, 300, 400, 300, colors::WHITE);
         tekenen.line(400, 300, 450, 250, colors::WHITE);
 
-        tekenen.draw_text("Hello ff", 200, 200);
+        tekenen.draw_text("Hello there", 200, 200);
 
-        // println!("{:?}", Platform::get_remaining_time());
+        tekenen.draw_image(400, 400, &preloaded.img8);
 
         window.display_pixels(tekenen.get_pixels());
 

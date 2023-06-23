@@ -20,42 +20,6 @@ mod font {
     pub use font_default::*;
 }
 
-#[cfg(feature = "images")]
-pub mod Image {
-    use image::{io::Reader as ImageReader, GenericImageView};
-
-    pub fn prelad_image(path: &str, to: &str) {
-        let img = ImageReader::open(path).unwrap().decode().unwrap();
-
-        let mut vec = vec![];
-
-        for x in 0..img.width() {
-            for y in 0..img.height() {
-                let color = img.get_pixel(x, y);
-                vec.push(color[0]);
-                vec.push(color[1]);
-                vec.push(color[2]);
-                vec.push(color[3]);
-            }
-        };
-
-        let out_dir = std::env::var_os("OUT_DIR").unwrap();
-
-        let dest_path = std::path::Path::new(&out_dir).join("hello.rs");
-
-        std::fs::write(
-            &dest_path,
-            "pub fn message() -> &'static str {
-                \"Hello, World!\"
-            }
-            "
-        ).unwrap();
-
-        println!("cargo:rerun-if-changed={path}");
-    }
-
-}
-
 #[derive(Debug)]
 pub enum Keycode {
     Temp,

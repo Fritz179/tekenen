@@ -1,5 +1,7 @@
-use tekenen::Image;
+use preloader::*;
 
 fn main() {
-    Image::prelad_image("src/img/8.png", "img.rs")
+    preload("src/preloaded.rs", preload_object(vec![
+        ("img8", preload_image("src/img/8.png"))
+    ]));
 }

@@ -20,11 +20,19 @@ pub struct Tekenen {
 }
 
 impl Tekenen {
-    pub fn new(width: usize, height: usize) -> Tekenen {
-        Tekenen {
+    pub fn new(width: usize, height: usize) -> Self {
+        Self {
             pixels: vec![0; width * height * 4],
             width,
             height,
+        }
+    }
+
+    pub fn from_pixels(width: usize, height: usize, pixels: Pixels) -> Self {
+        Self {
+            width,
+            height,
+            pixels
         }
     }
 
@@ -50,6 +58,21 @@ impl Tekenen {
             self.pixels[index * 4 + 1] = color[1];
             self.pixels[index * 4 + 2] = color[2];
             self.pixels[index * 4 + 3] = color[3];
+        }
+    }
+
+    pub fn get_pixel(&self, x: i32, y: i32) -> Option<Pixel> {
+        if let Some(index) = self.pixel_index(x, y) {
+            
+            // TODO: return from slice?
+            Some([
+                self.pixels[index * 4 + 0],
+                self.pixels[index * 4 + 1],
+                self.pixels[index * 4 + 2],
+                self.pixels[index * 4 + 3],
+            ])
+        } else {
+            None
         }
     }
 
@@ -106,6 +129,14 @@ impl Tekenen {
         for x in 0..self.width {
             for y in 0..self.height {
                 self.set_pixel(x as i32, y as i32, color);
+            }
+        }
+    }
+
+    pub fn draw_image(&mut self, x: i32, y: i32, image: &Tekenen) {
+        for xd in 0..image.width as i32 {
+            for yd in 0..image.height as i32 {
+                self.set_pixel(x + xd, y + yd, image.get_pixel(xd, yd).unwrap())
             }
         }
     }
