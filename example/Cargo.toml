@@ -8,5 +8,5 @@ edition = "2021"
 [dependencies]
 tekenen = { path = "../tekenen" }
 
-# [features]
-# type = ["tekenen/sdl"]
+[build-dependencies]
+tekenen = { path = "../tekenen", features=["images"]}

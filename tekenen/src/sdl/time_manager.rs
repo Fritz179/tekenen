@@ -124,7 +124,7 @@ impl TimeManager {
         TIME_MANAGER.with(|manager| {
             loop {
                 let mut queue = manager.queue.borrow_mut();
-                let mut action = queue.pop_front();
+                let action = queue.pop_front();
                 
                 if let Some(action) = action {
                     drop(queue);

@@ -4,7 +4,7 @@ pub type Pixels = Vec<u8>;
 use super::font::*;
 
 #[allow(dead_code)]
-pub mod COLORS {
+pub mod colors {
     use super::Pixel;
 
     pub const WHITE: Pixel = [255, 255, 255, 255];
@@ -155,7 +155,7 @@ impl Tekenen {
 
                     for xf in 0..FONT_SCALE {
                         for yf in 0..FONT_SCALE {
-                            self.set_pixel(x + xf, y + yf, COLORS::WHITE);
+                            self.set_pixel(x + xf, y + yf, colors::WHITE);
                         }
                     }
                 }
@@ -174,7 +174,7 @@ impl Tekenen {
         const BLINKING_TIME: u64 = 500;
 
         if time % BLINKING_TIME > BLINKING_TIME / 2 {
-            self.rect(x, y, 16, 16, COLORS::WHITE)
+            self.rect(x, y, 16, 16, colors::WHITE)
         }
     }
 }
