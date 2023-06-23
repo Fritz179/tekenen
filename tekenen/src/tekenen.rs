@@ -71,6 +71,37 @@ impl Tekenen {
         }
     }
 
+    pub fn line(&mut self, mut x1: i32, mut y1: i32, mut x2: i32, mut y2: i32, color: Pixel) {
+        if x1 > x2 {
+            (x1, x2) = (x2, x1);
+            (y1, y2) = (y2, y1);
+        }
+
+        let dx = x2 - x1;
+        let dy = y2 - y1;
+
+        let ratio = dy as f32 / dx as f32;
+
+        let mut y = y1;
+        let mut acc = 0.0;
+        for x in x1..x2 {
+            self.set_pixel(x, y, color);
+            acc += ratio;
+
+            while acc > 0.5 {
+                y += 1;
+                acc -= 1.0;
+                self.set_pixel(x, y, color);
+            }
+
+            while acc < 0.5 {
+                y -= 1;
+                acc += 1.0;
+                self.set_pixel(x, y, color);
+            }
+        }
+    }
+
     pub fn background(&mut self, color: Pixel) {
         for x in 0..self.width {
             for y in 0..self.height {
@@ -103,7 +134,14 @@ impl Tekenen {
             }
 
             // get data by finding offset in charset
-            let data = FONT[char as usize - FIRST_CHAR as usize];
+            let data = FONT.get(char as usize - FIRST_CHAR as usize);
+
+            let data = if let Some(data) = data {
+                data
+            } else {
+                println!("Invalid char! {}", char);
+                &FONT['?' as usize]
+            };
 
             for (yd, line) in data.iter().enumerate() {
                 let y = y + yd as i32 * FONT_SCALE + curr_y;

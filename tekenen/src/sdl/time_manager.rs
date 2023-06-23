@@ -73,8 +73,6 @@ impl TimeManager {
 
             let next_maybe = *manager.maybe_next_interval.borrow() - Instant::now();
 
-            println!("Scheduled in: {:?}, Maybe in: {:?}", next_scheduled, next_maybe);
-
             if next_maybe.is_zero() || (next_scheduled < next_maybe && !next_scheduled.is_zero()){
                 next_scheduled
             } else {

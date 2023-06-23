@@ -17,10 +17,17 @@ fn main() {
             }
         }
 
+
         tekenen.background(COLORS::GRAY);
 
         tekenen.rect(50, 100, 100, 150, COLORS::BLACK);
         tekenen.circle(150, 100, 50, COLORS::RED);
+
+        tekenen.line(50, 100, 150, 250, COLORS::WHITE);
+
+        tekenen.line(300, 300, 350, 350, COLORS::WHITE);
+        tekenen.line(350, 300, 400, 300, COLORS::WHITE);
+        tekenen.line(400, 300, 450, 250, COLORS::WHITE);
 
         tekenen.draw_text("Hello", 200, 200);
 
