@@ -6,7 +6,7 @@ mod tekenen;
 pub use sdl::SDLPlatform as Platform;
 
 use tekenen::Pixels;
-pub use tekenen::{Tekenen, colors};
+pub use tekenen::{Tekenen, colors, ui};
 
 #[cfg(feature = "c64")]
 mod font {

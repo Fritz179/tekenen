@@ -3,6 +3,8 @@ pub type Pixels = Vec<u8>;
 
 use super::font::*;
 
+pub mod ui;
+
 #[allow(dead_code)]
 pub mod colors {
     use super::Pixel;
@@ -14,7 +16,7 @@ pub mod colors {
 }
 
 pub struct Tekenen {
-    pixels: Pixels,
+    pub pixels: Pixels,
     width: usize,
     height: usize,
 }
@@ -38,6 +40,14 @@ impl Tekenen {
 
     pub fn get_pixels(&self) -> &Pixels {
         &self.pixels
+    }
+
+    pub fn width(&self) -> usize {
+        self.width
+    }
+
+    pub fn height(&self) -> usize {
+        self.height
     }
 }
 
