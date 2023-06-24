@@ -1,5 +1,7 @@
 use super::Tekenen;
 
+pub mod widgets;
+
 #[derive(Debug, Default)]
 pub enum Unit {
     #[default]

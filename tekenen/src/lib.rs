@@ -6,7 +6,7 @@ mod tekenen;
 pub use sdl::SDLPlatform as Platform;
 
 use tekenen::Pixels;
-pub use tekenen::{Tekenen, colors, ui};
+pub use tekenen::{Tekenen, colors, ui, Pixel};
 
 #[cfg(feature = "c64")]
 mod font {
@@ -39,6 +39,18 @@ pub enum Event {
         char: Option<char>,
         keycode: Keycode,
         keymod: Keymod,
+    },
+    MouseDown {
+        x: i32,
+        y: i32,
+    },
+    MouseUp {
+        x: i32,
+        y: i32,
+    },
+    MouseMove {
+        x: i32,
+        y: i32,
     },
     Quit,
 }

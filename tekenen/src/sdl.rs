@@ -138,7 +138,16 @@ impl PlatformTrait for SDLPlatform {
                             caps: caps_mod,
                         },
                     });
-                }
+                },
+                sdl2::event::Event::MouseButtonDown { x, y, .. } => {
+                    return Some(Event::MouseDown { x, y })
+                },
+                sdl2::event::Event::MouseButtonUp { x, y, .. } => {
+                    return Some(Event::MouseUp { x, y })
+                },
+                sdl2::event::Event::MouseMotion { x, y, .. } => {
+                    return Some(Event::MouseMove { x, y })
+                },
                 _ => {
                     // println!("Unhandled event: {:?}", event);
                 }
