@@ -49,6 +49,9 @@ fn main() {
         tekenen.line(350, 300, 400, 300, colors::WHITE);
         tekenen.line(400, 300, 450, 250, colors::WHITE);
 
+        tekenen.line(100, 400, 100, 350, colors::WHITE);
+        tekenen.line(150, 400, 150, 550, colors::WHITE);
+
         tekenen.draw_text(&format!("Hello there, tick: {tick}"), 200, 200);
 
         tekenen.draw_image(400, 400, &preloaded.img8);

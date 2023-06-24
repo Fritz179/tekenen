@@ -117,7 +117,7 @@ impl Tekenen {
 
         let mut y = y1;
         let mut acc = 0.0;
-        for x in x1..x2 {
+        for x in x1..=x2 {
             self.set_pixel(x, y, color);
             acc += ratio;
 
@@ -125,12 +125,20 @@ impl Tekenen {
                 y += 1;
                 acc -= 1.0;
                 self.set_pixel(x, y, color);
+
+                if y >= y2 {
+                    break
+                }
             }
 
             while acc < 0.5 {
                 y -= 1;
                 acc += 1.0;
                 self.set_pixel(x, y, color);
+
+                if y <= y2 {
+                    break
+                }
             }
         }
     }
