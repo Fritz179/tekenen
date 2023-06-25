@@ -1,6 +1,6 @@
 use crate::{Pixel, colors, Tekenen};
 
-pub struct Scroller {
+pub struct Slider {
     pub x1: i32,
     pub x2: i32,
     pub y: i32,
@@ -15,7 +15,7 @@ pub struct Scroller {
     pub scrolling: bool,
 }
 
-impl Scroller {
+impl Slider {
     pub fn new(x1: i32, x2: i32, y: i32) -> Self {
         Self {
             x1,

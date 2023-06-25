@@ -65,7 +65,8 @@ fn main() {
 
         tekenen.draw_text(&format!("Hello there, tick: {tick}"), 200, 200);
 
-        tekenen.draw_image(400, 400, &preloaded.img8);
+        tekenen.draw_image(600, 200, &preloaded.img8);
+        tekenen.draw_scaled_image(600, 25, &preloaded.img8, 5);
 
         tekenen.ui(Container::horiziontal(vec![
             Container::new(|b, tekenen| {

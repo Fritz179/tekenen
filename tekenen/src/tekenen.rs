@@ -151,6 +151,14 @@ impl Tekenen {
         }
     }
 
+    pub fn draw_scaled_image(&mut self, x: i32, y: i32, image: &Tekenen, scale: i32) {
+        for xd in 0..image.width as i32 {
+            for yd in 0..image.height as i32 {
+                self.rect(x + xd * scale, y + yd * scale, scale, scale, image.get_pixel(xd, yd).unwrap())
+            }
+        }
+    }
+
     pub fn draw_image(&mut self, x: i32, y: i32, image: &Tekenen) {
         for xd in 0..image.width as i32 {
             for yd in 0..image.height as i32 {
