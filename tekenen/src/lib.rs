@@ -6,7 +6,7 @@
 //  - Files
 pub mod platform;
 
-// Tekenen contains all the drawing, platform independent stuff
+// Tekenen contains all the drawing, platform independent stuff.
 // - background(), rect(), draw_image()
 mod tekenen;
 pub use tekenen::{Tekenen, colors, Pixel};

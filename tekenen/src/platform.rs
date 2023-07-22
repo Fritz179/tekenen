@@ -43,6 +43,8 @@ pub enum IntervalDecision {
     Stop
 }
 
+mod time_manager;
+
 #[cfg(feature = "image")]
 pub enum ImageLoadingError {
     IOError(std::io::Error),

@@ -4,17 +4,62 @@ use tekenen::{Tekenen, colors, ui::*};
 
 use tekenen::platform::{Platform, PlatformTrait, IntervalDecision, Event};
 
-mod preloaded;
+use rust_embed::RustEmbed;
+
+#[derive(RustEmbed)]
+#[folder = "src/img/"]
+struct Asset;
+
+use image;
+use image::GenericImageView;
+
+fn load_image_asset<Asset: RustEmbed>(asset: Asset, path: &str) -> Tekenen {
+    let source = Asset::get(path).unwrap();
+    let img = image::load_from_memory(&source.data).unwrap();
+
+    let mut vec = vec![];
+
+    for y in 0..img.height() {
+        for x in 0..img.width() {
+            let color = img.get_pixel(x, y);
+            vec.push(color[0]);
+            vec.push(color[1]);
+            vec.push(color[2]);
+            vec.push(color[3]);
+        }
+    };
+
+    let width = img.width() as usize;
+    let height = img.height() as usize;
+ 
+    Tekenen::from_pixels(width, height, vec)
+}
+
+fn load_image_asset_bin<Asset: RustEmbed>(asset: Asset, path: &str) -> Tekenen {
+    let data = Asset::get(path).unwrap().data;
+    assert!(data.len() >= 8);
+
+    let (width, data) = data.split_at(4);
+    let (height, data) = data.split_at(4);
+
+    let width = u32::from_be_bytes(width.to_owned().try_into().unwrap()) as usize;
+    let height = u32::from_be_bytes(height.to_owned().try_into().unwrap()) as usize;
+
+    assert_eq!(data.len(), width * height * 4);
+
+    Tekenen::from_pixels(width, height, data.to_owned())
+}
 
 fn main() {
-    let preloaded = preloaded::load_preloaded();
-
     let mut window = Platform::new(800, 600).unwrap();
     let mut tekenen = Tekenen::new(800, 600);
 
     let mut tick = 0;
 
     let mut slider = widgets::Slider::new(300, 500, 50);
+
+    let img8 = load_image_asset(Asset, "8.png");
+    let img8 = load_image_asset_bin(Asset, "8.bin");
 
     Platform::set_interval(move || {
         while let Some(event) = window.read_events() {
@@ -69,8 +114,8 @@ fn main() {
 
         tekenen.draw_text(&format!("Hello there, tick: {tick}"), 200, 200);
 
-        tekenen.draw_image(600, 200, &preloaded.img8);
-        tekenen.draw_scaled_image(600, 25, &preloaded.img8, 5);
+        tekenen.draw_image(600, 200, &img8);
+        tekenen.draw_scaled_image(600, 25, &img8, 5);
 
         tekenen.ui(Container::horiziontal(vec![
             Container::new(|b, tekenen| {

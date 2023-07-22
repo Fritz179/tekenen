@@ -10,10 +10,7 @@ use sdl2::EventPump;
 use sdl2::keyboard;
 
 use crate::tekenen::Pixels;
-use super::{PlatformTrait, PlatformError, Event, Keycode, Keymod, IntervalDecision, ImageLoadingError};
-
-mod time_manager;
-use time_manager::{TimeManager, TimeAction};
+use super::{PlatformTrait, PlatformError, Event, Keycode, Keymod, IntervalDecision, ImageLoadingError, time_manager::{TimeAction, TimeManager}};
 
 pub struct SDLPlatform {
     canvas: Canvas<Window>,

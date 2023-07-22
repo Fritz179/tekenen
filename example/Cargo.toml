@@ -8,5 +8,8 @@ edition = "2021"
 [dependencies]
 tekenen = { path = "../tekenen",  features = ["image"] }
 
+rust-embed = "6.8.1"
+image = "0.24.6"
+
 [build-dependencies]
-preloader = { path = "../preloader" }
+image = "0.24.6"
