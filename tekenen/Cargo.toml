@@ -9,5 +9,3 @@ image = { version = "0.24.6", optional = true }
 
 [features]
 default=[]
-
-images=["image"]

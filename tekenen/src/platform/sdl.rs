@@ -9,15 +9,11 @@ use sdl2::EventPump;
 
 use sdl2::keyboard;
 
-use crate::PlatformError;
-
-use super::{PlatformTrait, Pixels, Event, Keycode, Keymod};
+use crate::tekenen::Pixels;
+use super::{PlatformTrait, PlatformError, Event, Keycode, Keymod, IntervalDecision, ImageLoadingError};
 
 mod time_manager;
 use time_manager::{TimeManager, TimeAction};
-use crate::IntervalDecision;
-
-use crate::ImageLoadingError;
 
 pub struct SDLPlatform {
     canvas: Canvas<Window>,
@@ -179,7 +175,7 @@ impl PlatformTrait for SDLPlatform {
         TimeManager::get_remaining_time()
     }
 
-    #[cfg(feature = "images")]
+    #[cfg(feature = "image")]
     fn load_image(path: &str) -> Result<Tekenen, ImageLoadingError> {
 
         println!("Loading image: {path}");
@@ -191,7 +187,7 @@ impl PlatformTrait for SDLPlatform {
         unimplemented!()
     }
 
-    #[cfg(feature = "images")]
+    #[cfg(feature = "image")]
     fn save_image(path: &str, image: Tekenen) -> std::io::Result<()> {
         unimplemented!();
         println!("Saved image: {path}");

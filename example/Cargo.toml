@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tekenen = { path = "../tekenen",  features = ["images"] }
+tekenen = { path = "../tekenen",  features = ["image"] }
 
 [build-dependencies]
 preloader = { path = "../preloader" }

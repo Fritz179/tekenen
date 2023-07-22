@@ -1,5 +1,5 @@
 use std::{time::{Instant, Duration}, cell::RefCell, collections::VecDeque};
-use crate::IntervalDecision;
+use super::IntervalDecision;
 
 pub enum TimeAction {
     Once {

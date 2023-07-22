@@ -1,6 +1,8 @@
 #![allow(dead_code)]
 
-use tekenen::{Platform, PlatformTrait, IntervalDecision, Event, Tekenen, colors, ui::*};
+use tekenen::{Tekenen, colors, ui::*};
+
+use tekenen::platform::{Platform, PlatformTrait, IntervalDecision, Event};
 
 mod preloaded;
 

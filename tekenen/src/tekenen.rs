@@ -1,9 +1,19 @@
 pub type Pixel = [u8; 4];
 pub type Pixels = Vec<u8>;
 
-use super::font::*;
+#[cfg(feature = "c64")]
+mod font {
+    mod font_c64;
+    pub use font_c64::*;
+}
 
-pub mod ui;
+#[cfg(not(feature = "c64"))]
+mod font {
+    mod font_default;
+    pub use font_default::*;
+}
+
+use font::*;
 
 #[allow(dead_code)]
 pub mod colors {
