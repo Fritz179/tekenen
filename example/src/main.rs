@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 
 use tekenen::{Tekenen, colors, ui::*};
-
 use tekenen::platform::{Platform, PlatformTrait, IntervalDecision, Event};
 
 use rust_embed::RustEmbed;
