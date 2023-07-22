@@ -60,6 +60,12 @@ pub enum IntervalDecision {
     Stop
 }
 
+#[cfg(feature = "images")]
+pub enum ImageLoadingError {
+    IOError(std::io::Error),
+    ImageError(image::ImageError)
+}
+
 pub trait PlatformTrait {
     fn new(width: u32, height: u32) -> Result<Self, PlatformError>
     where
@@ -68,6 +74,12 @@ pub trait PlatformTrait {
     fn read_events(&mut self) -> Option<Event>;
     fn set_interval(callback: impl FnMut() -> IntervalDecision + 'static, fps: u32);
     fn get_remaining_time() -> Duration;
+
+    #[cfg(feature = "images")]
+    fn load_image(path: &str) -> Result<Tekenen, ImageLoadingError>;
+
+    #[cfg(feature = "images")]
+    fn save_image(path: &str, image: Tekenen) -> std::io::Result<()>;
 }
 
 use std::{error::Error, fmt, time::Duration};

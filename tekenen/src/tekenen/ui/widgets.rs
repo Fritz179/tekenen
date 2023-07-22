@@ -33,6 +33,23 @@ impl Slider {
         }
     }
 
+    pub fn new_sized(x1: i32, x2: i32, y: i32, min: f32, max: f32, value: f32) -> Self {
+        Self {
+            x1,
+            x2,
+            x: x1 + ((x2 - x1) as f32 * (value - min) / (max - min)) as i32,
+            y,
+            min,
+            max,
+            value,
+            slider_width: 10,
+            slider_color: colors::WHITE,
+            knob_radius: 20,
+            know_color: colors::RED,
+            scrolling: false,
+        }
+    }
+
     fn update_position(&mut self, x: i32) {
         self.x = x;
         if self.x > self.x2 { self.x = self.x2 }

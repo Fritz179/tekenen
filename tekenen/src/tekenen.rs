@@ -21,6 +21,7 @@ pub struct Tekenen {
     height: usize,
 }
 
+// TODO: Load image
 impl Tekenen {
     pub fn new(width: usize, height: usize) -> Self {
         Self {

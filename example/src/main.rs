@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use tekenen::{Platform, PlatformTrait, IntervalDecision, Event, Tekenen, colors, Pixel, ui::*};
+use tekenen::{Platform, PlatformTrait, IntervalDecision, Event, Tekenen, colors, ui::*};
 
 mod preloaded;
 
@@ -12,7 +12,7 @@ fn main() {
 
     let mut tick = 0;
 
-    let mut scroller = widgets::Scroller::new(300, 500, 50);
+    let mut slider = widgets::Slider::new(300, 500, 50);
 
     Platform::set_interval(move || {
         while let Some(event) = window.read_events() {
@@ -24,17 +24,19 @@ fn main() {
                     println!("{char}")
                 },
                 Event::MouseDown { x, y } => {
-                    scroller.mouse_down(x, y);
+                    slider.mouse_down(x, y);
                 },
                 Event::MouseMove { x, y } => {
-                    scroller.mouse_move(x, y);
+                    slider.mouse_move(x, y);
                 },
                 Event::MouseUp { x, y } => {
-                    scroller.mouse_up(x, y);
+                    slider.mouse_up(x, y);
                 },
                 _ => { }
             }
         }
+
+        // Platform::load_image("test");
 
         // Tekenen is only a view on pixels?
             // - Easy to take subcanvas
@@ -83,8 +85,8 @@ fn main() {
         ]));
 
         // Draw slider
-        scroller.display(&mut tekenen);
-        tekenen.draw_text(&format!("Value: {}", scroller.value), 300, 75);
+        slider.display(&mut tekenen);
+        tekenen.draw_text(&format!("Value: {}", slider.value), 300, 75);
 
         window.display_pixels(tekenen.get_pixels());
         tick += 1;

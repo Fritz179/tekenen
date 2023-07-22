@@ -17,6 +17,8 @@ mod time_manager;
 use time_manager::{TimeManager, TimeAction};
 use crate::IntervalDecision;
 
+use crate::ImageLoadingError;
+
 pub struct SDLPlatform {
     canvas: Canvas<Window>,
     event_pump: EventPump,
@@ -24,6 +26,8 @@ pub struct SDLPlatform {
     last_update: Instant,
     active: bool,
 }
+
+use crate::Tekenen;
 
 impl PlatformTrait for SDLPlatform {
     fn new(width: u32, height: u32) -> Result<SDLPlatform, PlatformError> {
@@ -173,5 +177,23 @@ impl PlatformTrait for SDLPlatform {
 
     fn get_remaining_time() -> Duration {
         TimeManager::get_remaining_time()
+    }
+
+    #[cfg(feature = "images")]
+    fn load_image(path: &str) -> Result<Tekenen, ImageLoadingError> {
+
+        println!("Loading image: {path}");
+
+        let path = std::path::Path::new(path);
+        let img = image::io::Reader::open(path).or_else((|err| Err(ImageLoadingError::IOError(err))))?;
+        let img = img.decode().unwrap();
+
+        unimplemented!()
+    }
+
+    #[cfg(feature = "images")]
+    fn save_image(path: &str, image: Tekenen) -> std::io::Result<()> {
+        unimplemented!();
+        println!("Saved image: {path}");
     }
 }
