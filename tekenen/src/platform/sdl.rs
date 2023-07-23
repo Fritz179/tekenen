@@ -16,7 +16,7 @@ use super::ImageLoadingError;
 #[cfg(feature = "image")]
 use image::GenericImageView;
 
-#[cfg(feature = "rust_embed")]
+#[cfg(feature = "rust-embed")]
 use crate::rust_embed::DynRustEmbed;
 
 // Fritz Preloaded Image Asset
@@ -189,7 +189,7 @@ impl PlatformTrait for SDLPlatform {
         TimeManager::get_remaining_time()
     }
 
-    #[cfg(feature = "rust_embed")]
+    #[cfg(feature = "rust-embed")]
     fn set_assets<Asset: DynRustEmbed + 'static>(&mut self, asset: Asset) {
         self.embedded_assets = Some(Box::new(asset))
     }

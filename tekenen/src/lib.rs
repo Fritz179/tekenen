@@ -20,7 +20,7 @@ pub mod ui;
 
 // Rust-embed
 // - emded files in executable
-#[cfg(feature = "rust_embed")]
+#[cfg(feature = "rust-embed")]
 pub mod rust_embed {
     pub use rust_embed::*;
 
