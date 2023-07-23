@@ -46,9 +46,12 @@ pub enum IntervalDecision {
 mod time_manager;
 
 #[cfg(feature = "image")]
+#[derive(Debug)]
+#[cfg(feature = "image")]
 pub enum ImageLoadingError {
     IOError(std::io::Error),
-    ImageError(image::ImageError)
+    ImageError(image::ImageError),
+    MissingAssetError
 }
 
 pub trait PlatformTrait {
@@ -60,8 +63,11 @@ pub trait PlatformTrait {
     fn set_interval(callback: impl FnMut() -> IntervalDecision + 'static, fps: u32);
     fn get_remaining_time() -> Duration;
 
+    #[cfg(feature = "rust-embed")]
+    fn set_assets<Asset: crate::rust_embed::DynRustEmbed + 'static>(&mut self, asset: Asset);
+
     #[cfg(feature = "image")]
-    fn load_image(path: &str) -> Result<Tekenen, ImageLoadingError>;
+    fn load_image(&self, path: &str) -> Result<Tekenen, ImageLoadingError>;
 
     #[cfg(feature = "image")]
     fn save_image(path: &str, image: Tekenen) -> std::io::Result<()>;

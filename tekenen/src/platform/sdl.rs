@@ -13,6 +13,12 @@ use crate::tekenen::Pixels;
 use super::{PlatformTrait, PlatformError, Event, Keycode, Keymod, IntervalDecision, time_manager::{TimeAction, TimeManager}};
 #[cfg(feature = "image")]
 use super::ImageLoadingError;
+use image::GenericImageView;
+
+use crate::rust_embed::DynRustEmbed;
+
+// Fritz Preloaded Image Asset
+const FPIA_MAGIC: [u8; 4] = ['F' as u8, 'P' as u8, 'I' as u8, 'A' as u8];
 
 pub struct SDLPlatform {
     canvas: Canvas<Window>,
@@ -20,6 +26,7 @@ pub struct SDLPlatform {
     start: Instant,
     last_update: Instant,
     active: bool,
+    embedded_assets: Option<Box<dyn DynRustEmbed>>
 }
 
 use crate::Tekenen;
@@ -45,6 +52,7 @@ impl PlatformTrait for SDLPlatform {
             start: Instant::now(),
             last_update: Instant::now(),
             active: true,
+            embedded_assets: None,
         };
 
         Ok(io_manger)
@@ -174,21 +182,68 @@ impl PlatformTrait for SDLPlatform {
         TimeManager::get_remaining_time()
     }
 
-    #[cfg(feature = "image")]
-    fn load_image(path: &str) -> Result<Tekenen, ImageLoadingError> {
+    fn set_assets<Asset: DynRustEmbed + 'static>(&mut self, asset: Asset) {
+        self.embedded_assets = Some(Box::new(asset))
+    }
 
+    #[cfg(feature = "image")]
+    fn load_image(&self, path: &str) -> Result<Tekenen, ImageLoadingError> {
         println!("Loading image: {path}");
 
-        let path = std::path::Path::new(path);
-        let img = image::io::Reader::open(path).or_else((|err| Err(ImageLoadingError::IOError(err))))?;
-        let img = img.decode().unwrap();
+        let img = match &self.embedded_assets {
+            None => {
+                let path = std::path::Path::new(path);
+                let img = image::io::Reader::open(path).or_else(|err| Err(ImageLoadingError::IOError(err)))?;
+                img.decode().or_else(|err| Err(ImageLoadingError::ImageError(err)))?
+            },
+            Some(asset) => {
+                let source = asset.dyn_get(path).ok_or_else(|| ImageLoadingError::MissingAssetError)?;
 
-        unimplemented!()
+                
+                if source.data[0..4] == FPIA_MAGIC {
+                    let data = source.data;
+                    let (_magic, data) = data.split_at(4);
+
+                    assert!(data.len() >= 8);
+
+                    let (width, data) = data.split_at(4);
+                    let (height, data) = data.split_at(4);
+
+                    let width = u32::from_be_bytes(width.to_owned().try_into().unwrap()) as usize;
+                    let height = u32::from_be_bytes(height.to_owned().try_into().unwrap()) as usize;
+
+                    assert_eq!(data.len(), width * height * 4);
+
+                    return Ok(Tekenen::from_pixels(width, height, data.to_owned()))
+                } else {
+                    image::load_from_memory(&source.data).or_else(|err| Err(ImageLoadingError::ImageError(err)))?
+                }
+            }
+        };
+
+        let mut pixels = vec![];
+
+        for y in 0..img.height() {
+            for x in 0..img.width() {
+                let color = img.get_pixel(x, y);
+                pixels.push(color[0]);
+                pixels.push(color[1]);
+                pixels.push(color[2]);
+                pixels.push(color[3]);
+            }
+        };
+    
+        let width = img.width() as usize;
+        let height = img.height() as usize;
+     
+        Ok(Tekenen::from_pixels(width, height, pixels))
     }
 
     #[cfg(feature = "image")]
     fn save_image(path: &str, image: Tekenen) -> std::io::Result<()> {
+
         unimplemented!();
+
         println!("Saved image: {path}");
     }
 }
