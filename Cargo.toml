@@ -5,3 +5,6 @@ members = [
     "tekenen",
     "preloader",
 ]
+
+[profile.release]
+debug = true

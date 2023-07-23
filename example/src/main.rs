@@ -12,7 +12,7 @@ struct Asset;
 use image;
 use image::GenericImageView;
 
-fn load_image_asset<Asset: RustEmbed>(asset: Asset, path: &str) -> Tekenen {
+fn load_image_asset<Asset: RustEmbed>(_: Asset, path: &str) -> Tekenen {
     let source = Asset::get(path).unwrap();
     let img = image::load_from_memory(&source.data).unwrap();
 
@@ -34,7 +34,7 @@ fn load_image_asset<Asset: RustEmbed>(asset: Asset, path: &str) -> Tekenen {
     Tekenen::from_pixels(width, height, vec)
 }
 
-fn load_image_asset_bin<Asset: RustEmbed>(asset: Asset, path: &str) -> Tekenen {
+fn load_image_asset_bin<Asset: RustEmbed>(_: Asset, path: &str) -> Tekenen {
     let data = Asset::get(path).unwrap().data;
     assert!(data.len() >= 8);
 
@@ -57,8 +57,8 @@ fn main() {
 
     let mut slider = widgets::Slider::new(300, 500, 50);
 
-    let img8 = load_image_asset(Asset, "8.png");
-    let img8 = load_image_asset_bin(Asset, "8.bin");
+    let img8 = load_image_asset(Asset, "8.png"); 
+    let img8 = load_image_asset_bin(Asset, "8.bin"); 
 
     Platform::set_interval(move || {
         while let Some(event) = window.read_events() {
