@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use tekenen::{Tekenen, colors, ui::*};
 use tekenen::platform::{Platform, PlatformTrait, IntervalDecision, Event};
 
@@ -51,21 +49,6 @@ fn main() {
             }
         }
 
-        // Platform::load_image("test");
-
-        // Tekenen is only a view on pixels?
-            // - Easy to take subcanvas
-            // - Harder to keep track of owner => Weak/Strong
-
-        // Vec of Pixels or Vec of Rows of Pixels?
-            // If its a 1D Vec => Stride
-            // If its a 2D Vec => More Vectors
-            // Resizing => Stride changes?
-
-        // Every view is a different canvas?
-
-        // You just get a bounding box with x,y,w,h?
-
         tekenen.background(colors::GRAY);
 
         tekenen.rect(50, 100, 100, 150, colors::BLACK);
@@ -86,11 +69,11 @@ fn main() {
         tekenen.draw_scaled_image(600, 25, &img8_fpia, 5);
 
         tekenen.ui(Container::horiziontal(vec![
-            Container::new(|b, tekenen| {
+            Container::new(|_b, _tekenen| {
                 // tekenen.rect(b.x, b.y, b.w, b.h, colors::RED)
             }),
             Container::vertical(vec![
-                Container::new(|b, tekenen| {
+                Container::new(|_b, _tekenen| {
                     // tekenen.rect(b.x, b.y, b.w, b.h, colors::WHITE)
                 }),
                 Container::new(|b, tekenen| {
@@ -104,6 +87,7 @@ fn main() {
         tekenen.draw_text(&format!("Value: {}", slider.value), 300, 75);
 
         window.display_pixels(tekenen.get_pixels());
+
         tick += 1;
 
         IntervalDecision::Repeat

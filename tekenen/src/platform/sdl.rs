@@ -13,8 +13,10 @@ use crate::tekenen::Pixels;
 use super::{PlatformTrait, PlatformError, Event, Keycode, Keymod, IntervalDecision, time_manager::{TimeAction, TimeManager}};
 #[cfg(feature = "image")]
 use super::ImageLoadingError;
+#[cfg(feature = "image")]
 use image::GenericImageView;
 
+#[cfg(feature = "rust_embed")]
 use crate::rust_embed::DynRustEmbed;
 
 // Fritz Preloaded Image Asset
@@ -26,7 +28,11 @@ pub struct SDLPlatform {
     start: Instant,
     last_update: Instant,
     active: bool,
-    embedded_assets: Option<Box<dyn DynRustEmbed>>
+
+    #[cfg(feature = "rust-embed")]
+    embedded_assets: Option<Box<dyn DynRustEmbed>>,
+    #[cfg(not(feature = "rust-embed"))]
+    embedded_assets: Option<()>,
 }
 
 use crate::Tekenen;
@@ -52,6 +58,7 @@ impl PlatformTrait for SDLPlatform {
             start: Instant::now(),
             last_update: Instant::now(),
             active: true,
+
             embedded_assets: None,
         };
 
@@ -182,6 +189,7 @@ impl PlatformTrait for SDLPlatform {
         TimeManager::get_remaining_time()
     }
 
+    #[cfg(feature = "rust_embed")]
     fn set_assets<Asset: DynRustEmbed + 'static>(&mut self, asset: Asset) {
         self.embedded_assets = Some(Box::new(asset))
     }
@@ -244,6 +252,6 @@ impl PlatformTrait for SDLPlatform {
 
         unimplemented!();
 
-        println!("Saved image: {path}");
+        // println!("Saved image: {path}");
     }
 }

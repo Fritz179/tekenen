@@ -67,14 +67,14 @@ impl Slider {
         }
     }
 
-    pub fn mouse_up(&mut self, x: i32, y: i32) {
+    pub fn mouse_up(&mut self, x: i32, _y: i32) {
         if self.scrolling {
             self.scrolling = false;
             self.update_position(x);
         }
     }
 
-    pub fn mouse_move(&mut self, x: i32, y: i32) {
+    pub fn mouse_move(&mut self, x: i32, _y: i32) {
         if self.scrolling {
             self.update_position(x);
         }

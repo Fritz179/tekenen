@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+#![allow(unused_variables)]
 
 #[cfg(feature = "preloader")]
 pub mod preloader;
@@ -19,6 +20,7 @@ pub mod ui;
 
 // Rust-embed
 // - emded files in executable
+#[cfg(feature = "rust_embed")]
 pub mod rust_embed {
     pub use rust_embed::*;
 
