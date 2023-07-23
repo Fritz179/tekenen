@@ -1,9 +1,12 @@
 [package]
 name = "tekenen"
-version = "0.0.2"
+version = "0.0.3"
 edition = "2021"
 description = "Simple library for drawing pixels in memory."
+readme = "README.md"
 license = "MIT"
+repository = "https://github.com/Fritz179/tekenen"
+documentation = "https://docs.rs/tekenen"
 
 [dependencies]
 sdl2 = { version ="0.35", optional = true }
