@@ -1,5 +1,6 @@
 use sdl2;
 
+use std::cell::RefCell;
 use std::time::{Duration, Instant};
 
 use sdl2::rect::Rect;
@@ -22,17 +23,17 @@ use crate::rust_embed::DynRustEmbed;
 // Fritz Preloaded Image Asset
 const FPIA_MAGIC: [u8; 4] = ['F' as u8, 'P' as u8, 'I' as u8, 'A' as u8];
 
+thread_local! {
+    #[cfg(feature = "rust-embed")]
+    static EMBEDDED_ASSETS: RefCell<Option<Box<dyn DynRustEmbed>>> = RefCell::new(None);
+}
+
 pub struct SDLPlatform {
     canvas: Canvas<Window>,
     event_pump: EventPump,
     start: Instant,
     last_update: Instant,
     active: bool,
-
-    #[cfg(feature = "rust-embed")]
-    embedded_assets: Option<Box<dyn DynRustEmbed>>,
-    #[cfg(not(feature = "rust-embed"))]
-    embedded_assets: Option<()>,
 }
 
 use crate::Tekenen;
@@ -58,8 +59,6 @@ impl PlatformTrait for SDLPlatform {
             start: Instant::now(),
             last_update: Instant::now(),
             active: true,
-
-            embedded_assets: None,
         };
 
         Ok(io_manger)
@@ -190,61 +189,78 @@ impl PlatformTrait for SDLPlatform {
     }
 
     #[cfg(feature = "rust-embed")]
-    fn set_assets<Asset: DynRustEmbed + 'static>(&mut self, asset: Asset) {
-        self.embedded_assets = Some(Box::new(asset))
+    fn set_assets<Asset: DynRustEmbed + 'static>(asset: Asset) {
+        EMBEDDED_ASSETS.with(|e| {
+            *e.borrow_mut() = Some(Box::new(asset))
+        })
     }
 
     #[cfg(feature = "image")]
-    fn load_image(&self, path: &str) -> Result<Tekenen, ImageLoadingError> {
+    fn load_image(path: &str) -> Result<Tekenen, ImageLoadingError> {
         println!("Loading image: {path}");
 
-        let img = match &self.embedded_assets {
-            None => {
-                let path = std::path::Path::new(path);
-                let img = image::io::Reader::open(path).or_else(|err| Err(ImageLoadingError::IOError(err)))?;
-                img.decode().or_else(|err| Err(ImageLoadingError::ImageError(err)))?
-            },
-            Some(asset) => {
-                let source = asset.dyn_get(path).ok_or_else(|| ImageLoadingError::MissingAssetError)?;
+        fn image_to_tekenen(img: image::DynamicImage) -> Tekenen {
+            let mut pixels = vec![];
 
-                
-                if source.data[0..4] == FPIA_MAGIC {
-                    let data = source.data;
-                    let (_magic, data) = data.split_at(4);
+            for y in 0..img.height() {
+                for x in 0..img.width() {
+                    let color = img.get_pixel(x, y);
+                    pixels.push(color[0]);
+                    pixels.push(color[1]);
+                    pixels.push(color[2]);
+                    pixels.push(color[3]);
+                }
+            };
+        
+            let width = img.width() as usize;
+            let height = img.height() as usize;
+        
+            Tekenen::from_pixels(width, height, pixels)
+        }
 
-                    assert!(data.len() >= 8);
+        #[cfg(not(feature = "rust-embed"))]
+        {
+            let path = std::path::Path::new(path);
+            let img = image::io::Reader::open(path).or_else(|err| Err(ImageLoadingError::IOError(err)))?;
+            let img = img.decode().or_else(|err| Err(ImageLoadingError::ImageError(err)))?;
+            Ok(image_to_tekenen(img))
+        }
 
-                    let (width, data) = data.split_at(4);
-                    let (height, data) = data.split_at(4);
-
-                    let width = u32::from_be_bytes(width.to_owned().try_into().unwrap()) as usize;
-                    let height = u32::from_be_bytes(height.to_owned().try_into().unwrap()) as usize;
-
-                    assert_eq!(data.len(), width * height * 4);
-
-                    return Ok(Tekenen::from_pixels(width, height, data.to_owned()))
-                } else {
-                    image::load_from_memory(&source.data).or_else(|err| Err(ImageLoadingError::ImageError(err)))?
+        #[cfg(feature = "rust-embed")]
+        EMBEDDED_ASSETS.with(|e| -> Result<Tekenen, ImageLoadingError> {
+            match e.borrow().as_ref() {
+                None => {
+                    let path = std::path::Path::new(path);
+                    let img = image::io::Reader::open(path).or_else(|err| Err(ImageLoadingError::IOError(err)))?;
+                    let img = img.decode().or_else(|err| Err(ImageLoadingError::ImageError(err)))?;
+                    Ok(image_to_tekenen(img))
+                },
+                Some(asset) => {
+                    let source = asset.dyn_get(path).ok_or_else(|| ImageLoadingError::MissingAssetError)?;
+    
+                    
+                    if source.data[0..4] == FPIA_MAGIC {
+                        let data = source.data;
+                        let (_magic, data) = data.split_at(4);
+    
+                        assert!(data.len() >= 8);
+    
+                        let (width, data) = data.split_at(4);
+                        let (height, data) = data.split_at(4);
+    
+                        let width = u32::from_be_bytes(width.to_owned().try_into().unwrap()) as usize;
+                        let height = u32::from_be_bytes(height.to_owned().try_into().unwrap()) as usize;
+    
+                        assert_eq!(data.len(), width * height * 4);
+    
+                        return Ok(Tekenen::from_pixels(width, height, data.to_owned()))
+                    } else {
+                        let img = image::load_from_memory(&source.data).or_else(|err| Err(ImageLoadingError::ImageError(err)))?;
+                        Ok(image_to_tekenen(img))
+                    }
                 }
             }
-        };
-
-        let mut pixels = vec![];
-
-        for y in 0..img.height() {
-            for x in 0..img.width() {
-                let color = img.get_pixel(x, y);
-                pixels.push(color[0]);
-                pixels.push(color[1]);
-                pixels.push(color[2]);
-                pixels.push(color[3]);
-            }
-        };
-    
-        let width = img.width() as usize;
-        let height = img.height() as usize;
-     
-        Ok(Tekenen::from_pixels(width, height, pixels))
+        })
     }
 
     #[cfg(feature = "image")]

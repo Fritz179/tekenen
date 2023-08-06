@@ -19,8 +19,16 @@ use font::*;
 pub mod colors {
     use super::Pixel;
 
-    pub const WHITE: Pixel = [255, 255, 255, 255];
     pub const RED: Pixel = [255, 0, 0, 255];
+    pub const GREEN: Pixel = [0, 255, 0, 255];
+    pub const BLUE: Pixel = [0, 0, 255, 255];
+
+    pub const YELLOW: Pixel = [255, 255, 0, 255];
+    pub const CYAN: Pixel = [0, 255, 255, 255];
+    pub const MAGENTA: Pixel = [255, 0, 255, 255];
+
+    pub const WHITE: Pixel = [255, 255, 255, 255];
+    pub const SILVER: Pixel = [153, 153, 153, 255];
     pub const GRAY: Pixel = [51, 51, 51, 255];
     pub const BLACK: Pixel = [0, 0, 0, 255];
 }
@@ -173,7 +181,12 @@ impl Tekenen {
     pub fn draw_image(&mut self, x: i32, y: i32, image: &Tekenen) {
         for xd in 0..image.width as i32 {
             for yd in 0..image.height as i32 {
-                self.set_pixel(x + xd, y + yd, image.get_pixel(xd, yd).unwrap())
+                let from = image.get_pixel(xd, yd).unwrap();
+
+                // TODO: Proper color mixing
+                if from[3] > 0 {
+                    self.set_pixel(x + xd, y + yd, from)
+                }
             }
         }
     }

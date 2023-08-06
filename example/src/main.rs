@@ -18,14 +18,14 @@ fn main() {
     let mut window = Platform::new(800, 600).unwrap();
     let mut tekenen = Tekenen::new(800, 600);
 
-    window.set_assets(Asset);
+    Platform::set_assets(Asset);
 
     let mut tick = 0;
 
     let mut slider = widgets::Slider::new(300, 500, 50);
 
-    let img8_png = window.load_image("8.png").unwrap(); 
-    let img8_fpia = window.load_image("8.fpia").unwrap(); 
+    let img8_png = Platform::load_image("8.png").unwrap(); 
+    let img8_fpia = Platform::load_image("8.fpia").unwrap(); 
 
     Platform::set_interval(move || {
         while let Some(event) = window.read_events() {

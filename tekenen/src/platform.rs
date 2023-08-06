@@ -64,10 +64,10 @@ pub trait PlatformTrait {
     fn get_remaining_time() -> Duration;
 
     #[cfg(feature = "rust-embed")]
-    fn set_assets<Asset: crate::rust_embed::DynRustEmbed + 'static>(&mut self, asset: Asset);
+    fn set_assets<Asset: crate::rust_embed::DynRustEmbed + 'static>(asset: Asset);
 
     #[cfg(feature = "image")]
-    fn load_image(&self, path: &str) -> Result<Tekenen, ImageLoadingError>;
+    fn load_image(path: &str) -> Result<Tekenen, ImageLoadingError>;
 
     #[cfg(feature = "image")]
     fn save_image(path: &str, image: Tekenen) -> std::io::Result<()>;
