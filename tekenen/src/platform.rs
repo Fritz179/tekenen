@@ -5,7 +5,12 @@ use crate::{Tekenen, tekenen};
 
 #[derive(Debug)]
 pub enum Keycode {
-    Temp,
+    ArrowUp,
+    ArrowLeft,
+    ArrowRight,
+    ArrowDown,
+    Enter,
+    Escape,
 }
 
 #[derive(Debug)]
@@ -20,7 +25,7 @@ pub enum Event {
     KeyDown {
         repeat: bool,
         char: Option<char>,
-        keycode: Keycode,
+        keycode: Option<Keycode>,
         keymod: Keymod,
     },
     MouseDown {
@@ -70,7 +75,7 @@ pub trait PlatformTrait {
     fn load_image(path: &str) -> Result<Tekenen, ImageLoadingError>;
 
     #[cfg(feature = "image")]
-    fn save_image(path: &str, image: Tekenen) -> std::io::Result<()>;
+    fn save_image(path: &str, image: &Tekenen) -> Result<(), image::ImageError> ;
 }
 
 use std::{error::Error, fmt, time::Duration};

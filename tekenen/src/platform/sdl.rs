@@ -129,10 +129,6 @@ impl PlatformTrait for SDLPlatform {
                         char = char::from_u32(charcode);
                     }
 
-                    if keycode == keyboard::Keycode::Return {
-                        char = Some('\n')
-                    }
-
                     if shift_mod {
                         match keycode {
                             keyboard::Keycode::Minus => char = Some('_'),
@@ -141,10 +137,24 @@ impl PlatformTrait for SDLPlatform {
                         }
                     }
 
+                    let keycode = match keycode {
+                        keyboard::Keycode::Up => Some(Keycode::ArrowUp),
+                        keyboard::Keycode::Left => Some(Keycode::ArrowLeft),
+                        keyboard::Keycode::Right => Some(Keycode::ArrowRight),
+                        keyboard::Keycode::Down => Some(Keycode::ArrowDown),
+                        keyboard::Keycode::Return => Some(Keycode::Enter),
+                        keyboard::Keycode::Escape => Some(Keycode::Escape),
+                        // code => {
+                        //     println!("{:?}", code);
+                        //     None
+                        // },
+                        _ => None
+                    };
+
                     return Some(Event::KeyDown {
                         repeat,
                         char,
-                        keycode: Keycode::Temp,
+                        keycode,
                         keymod: Keymod {
                             shift: shift_mod,
                             ctrl: ctrl_mod,
@@ -264,10 +274,17 @@ impl PlatformTrait for SDLPlatform {
     }
 
     #[cfg(feature = "image")]
-    fn save_image(path: &str, image: Tekenen) -> std::io::Result<()> {
+    fn save_image(path: &str, image: &Tekenen) -> Result<(), image::ImageError> {
 
-        unimplemented!();
+        let buffer: &[u8] = image.get_pixels();   
 
-        // println!("Saved image: {path}");
+    
+        let path = std::path::Path::new(&path);
+
+        image::save_buffer(&path, buffer, image.width() as u32, image.height() as u32, image::ColorType::Rgba8)?;
+
+        println!("Saved image: {:?}", path);
+
+        Ok(())
     }
 }
