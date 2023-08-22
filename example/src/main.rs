@@ -1,5 +1,5 @@
 use tekenen::{Tekenen, colors, ui::*};
-use tekenen::platform::{Platform, PlatformTrait, IntervalDecision, Event};
+use tekenen::platform::{Platform, PlatformTrait, IntervalDecision, Event, KeyDownEvent};
 
 use tekenen::rust_embed;
 use tekenen::rust_embed::{RustEmbed, DynRustEmbed};
@@ -33,7 +33,7 @@ fn main() {
                 Event::Quit => {
                     return IntervalDecision::Stop
                 },
-                Event::KeyDown { char: Some(char), .. } => {
+                Event::KeyDown(KeyDownEvent { char: Some(char), .. }) => {
                     println!("{char}")
                 },
                 Event::MouseDown { x, y } => {

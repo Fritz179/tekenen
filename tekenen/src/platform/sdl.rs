@@ -11,7 +11,7 @@ use sdl2::EventPump;
 use sdl2::keyboard;
 
 use crate::tekenen::Pixels;
-use super::{PlatformTrait, PlatformError, Event, Keycode, Keymod, IntervalDecision, time_manager::{TimeAction, TimeManager}};
+use super::{PlatformTrait, PlatformError, Event, KeyDownEvent, Keycode, Keymod, IntervalDecision, time_manager::{TimeAction, TimeManager}};
 #[cfg(feature = "image")]
 use super::ImageLoadingError;
 #[cfg(feature = "image")]
@@ -151,7 +151,7 @@ impl PlatformTrait for SDLPlatform {
                         _ => None
                     };
 
-                    return Some(Event::KeyDown {
+                    return Some(Event::KeyDown(KeyDownEvent{
                         repeat,
                         char,
                         keycode,
@@ -160,7 +160,7 @@ impl PlatformTrait for SDLPlatform {
                             ctrl: ctrl_mod,
                             caps: caps_mod,
                         },
-                    });
+                    }));
                 },
                 sdl2::event::Event::MouseButtonDown { x, y, .. } => {
                     return Some(Event::MouseDown { x, y })

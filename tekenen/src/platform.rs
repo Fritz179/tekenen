@@ -21,13 +21,28 @@ pub struct Keymod {
 }
 
 #[derive(Debug)]
+pub struct KeyDownEvent {
+    pub repeat: bool,
+    pub char: Option<char>,
+    pub keycode: Option<Keycode>,
+    pub keymod: Keymod,
+}
+
+impl KeyDownEvent {
+    pub fn is_arrow(&self) -> bool {
+        match self.keycode {
+            Some(Keycode::ArrowUp) => true,
+            Some(Keycode::ArrowLeft) => true,
+            Some(Keycode::ArrowDown) => true,
+            Some(Keycode::ArrowRight) => true,
+            _ => false
+        }
+    } 
+}
+
+#[derive(Debug)]
 pub enum Event {
-    KeyDown {
-        repeat: bool,
-        char: Option<char>,
-        keycode: Option<Keycode>,
-        keymod: Keymod,
-    },
+    KeyDown (KeyDownEvent),
     MouseDown {
         x: i32,
         y: i32,
