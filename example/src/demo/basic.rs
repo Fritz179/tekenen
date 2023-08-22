@@ -3,7 +3,7 @@ use tekenen::platform::{Platform, PlatformTrait, IntervalDecision, Event, KeyDow
 
 pub struct BasicDemo {
     tek: Tekenen,
-    slider: widgets::Slider,
+    // slider: slider::Slider,
     img8_png: Tekenen, 
     img8_fpia: Tekenen,
     tick: i32,
@@ -13,7 +13,7 @@ impl BasicDemo {
     pub fn new() -> Self {
         Self {
             tek: Tekenen::new(800, 600),
-            slider: widgets::Slider::new(300, 500, 50),
+            // slider: slider::Slider::new(300, 500, 50),
             img8_png: Platform::load_image("8.png").unwrap(),
             img8_fpia: Platform::load_image("8.fpia").unwrap(),
             tick: 0,
@@ -30,15 +30,15 @@ impl super::Demo for BasicDemo {
             Event::KeyDown(KeyDownEvent { char: Some(char), .. }) => {
                 println!("{char}")
             },
-            Event::MouseDown { x, y } => {
-                self.slider.mouse_down(x, y);
-            },
-            Event::MouseMove { x, y } => {
-                self.slider.mouse_move(x, y);
-            },
-            Event::MouseUp { x, y } => {
-                self.slider.mouse_up(x, y);
-            },
+            // Event::MouseDown { x, y } => {
+            //     self.slider.mouse_down(x, y);
+            // },
+            // Event::MouseMove { x, y } => {
+            //     self.slider.mouse_move(x, y);
+            // },
+            // Event::MouseUp { x, y } => {
+            //     self.slider.mouse_up(x, y);
+            // },
             _ => { }
         };
 
@@ -67,25 +67,23 @@ impl super::Demo for BasicDemo {
         tekenen.draw_image(600, 200, &self.img8_png);
         tekenen.draw_scaled_image(600, 25, &self.img8_fpia, 5);
 
-        tekenen.ui(Container::horiziontal(vec![
-            Container::new(|_b, _tekenen| {
-                // tekenen.rect(b.x, b.y, b.w, b.h, colors::RED)
-            }),
-            Container::vertical(vec![
-                Container::new(|_b, _tekenen| {
-                    // tekenen.rect(b.x, b.y, b.w, b.h, colors::WHITE)
-                }),
-                Container::new(|b, tekenen| {
-                    tekenen.rect(b.x, b.y, b.w, b.h, colors::WHITE)
-                }),
-            ])
-        ]));
+        // tekenen.ui(&mut Container::horizontal(vec![
+        //     Container::new(),
+        //     Container::vertical(vec![
+        //         Container::new(|_b, _tekenen| {
+        //             // tekenen.rect(b.x, b.y, b.w, b.h, colors::WHITE)
+        //         }),
+        //         Container::new(|b, tekenen| {
+        //             tekenen.rect(b.x, b.y, b.w, b.h, colors::WHITE)
+        //         }),
+        //     ])
+        // ]));
 
         self.tick += 1;
 
         // Draw slider
-        self.slider.display(tekenen);
-        tekenen.draw_text(&format!("Value: {}", self.slider.value), 300, 75);
+        // self.slider.draw(tekenen);
+        // tekenen.draw_text(&format!("Value: {}", self.slider.value), 300, 75);
 
         window.display_pixels(tekenen.get_pixels());
     }

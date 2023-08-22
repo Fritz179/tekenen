@@ -1,5 +1,7 @@
 use crate::{Pixel, colors, Tekenen};
 
+use super::UIBox;
+
 pub struct Slider {
     pub x1: i32,
     pub x2: i32,
@@ -16,8 +18,8 @@ pub struct Slider {
 }
 
 impl Slider {
-    pub fn new(x1: i32, x2: i32, y: i32) -> Self {
-        Self {
+    pub fn new(x1: i32, x2: i32, y: i32) -> Box<Self> {
+        Box::new(Self {
             x1,
             x2,
             x: (x1 + x2) / 2,
@@ -30,11 +32,11 @@ impl Slider {
             knob_radius: 20,
             know_color: colors::RED,
             scrolling: false,
-        }
+        })
     }
 
-    pub fn new_sized(x1: i32, x2: i32, y: i32, min: f32, max: f32, value: f32) -> Self {
-        Self {
+    pub fn new_sized(x1: i32, x2: i32, y: i32, min: f32, max: f32, value: f32) -> Box<Self> {
+        Box::new(Self {
             x1,
             x2,
             x: x1 + ((x2 - x1) as f32 * (value - min) / (max - min)) as i32,
@@ -47,7 +49,7 @@ impl Slider {
             knob_radius: 20,
             know_color: colors::RED,
             scrolling: false,
-        }
+        })
     }
 
     fn update_position(&mut self, x: i32) {
@@ -79,9 +81,11 @@ impl Slider {
             self.update_position(x);
         }
     }
+}
 
-    pub fn display(&self, tekenen: &mut Tekenen) {
-        tekenen.rect(self.x1, self.y - self.slider_width / 2, self.x2 - self.x1, self.slider_width, self.slider_color);
-        tekenen.circle(self.x, self.y, self.knob_radius, self.know_color);
+impl UIBox for Slider {
+    fn draw(&mut self, view: super::ViewBox, tek: &mut Tekenen) {
+        tek.rect(self.x1, self.y - self.slider_width / 2, self.x2 - self.x1, self.slider_width, self.slider_color);
+        tek.circle(self.x, self.y, self.knob_radius, self.know_color);
     }
 }

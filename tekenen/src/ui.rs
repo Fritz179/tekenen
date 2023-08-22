@@ -1,6 +1,13 @@
 use super::Tekenen;
 
-pub mod widgets;
+pub mod container;
+pub use container::Container;
+
+pub mod slider;
+pub use slider::Slider;
+
+pub mod text;
+pub use text::Text;
 
 #[derive(Debug, Default)]
 pub enum Unit {
@@ -44,98 +51,14 @@ impl ViewBox {
     }
 }
 
-pub enum Direction {
-    Horizonral,
-    Vertical
-}
-pub enum Container<'c> {
-    Single {
-        bounding_box: BoundingBox,
-        draw: Box<dyn FnMut(&ViewBox, &mut Tekenen) + 'c>,
-    },
-    Directional {
-        bounding_box: BoundingBox,
-        direction: Direction,
-        children: Vec<Container<'c>>
-    },
-}
-
-impl<'c> Container<'c> {
-    pub fn new(draw: impl FnMut(&ViewBox, &mut Tekenen) + 'c) -> Container<'c> {
-        Container::Single {
-            bounding_box: BoundingBox::default(),
-            draw: Box::new(draw),
-        }
-    }
-
-    pub fn vertical(children: Vec<Container>) -> Container {
-        Container::Directional {
-            bounding_box: BoundingBox::default(),
-            direction: Direction::Vertical, 
-            children
-        }
-    }
-
-    pub fn horiziontal(children: Vec<Container>) -> Container {
-        Container::Directional {
-            bounding_box: BoundingBox::default(),
-            direction: Direction::Horizonral, 
-            children
-        }
-    }
+pub trait UIBox {
+    fn draw(&mut self, view: ViewBox, tek: &mut Tekenen);
 }
 
 impl Tekenen {
-    fn ui_impl(&mut self, view: ViewBox, container: &mut Container) {
-        match container {
-            Container::Single { bounding_box, ref mut draw } => {
-                draw(&view, self);
-            },
-            Container::Directional { bounding_box, direction: Direction::Horizonral, children } => {
-                let size = children.len() as i32;
-                let new_width = view.w / size;
-
-                for i in 0..size {
-                    let child = &mut children[i as usize];
-
-                    let child_view = ViewBox {
-                        x: view.x + new_width * i,
-                        y: view.y,
-                        w: new_width,
-                        h: view.h
-                    };
-
-                    self.ui_impl(child_view, child)
-                }
-            },
-            Container::Directional { bounding_box, direction: Direction::Vertical, children } => {
-                let size = children.len() as i32;
-                let new_height = view.h / size;
-
-                for i in 0..size {
-                    let child = &mut children[i as usize];
-
-                    let child_view = ViewBox {
-                        x: view.x,
-                        y: view.y + new_height * i,
-                        w: view.w,
-                        h: new_height
-                    };
-
-                    self.ui_impl(child_view, child)
-                }
-            }
-        }
-    }
-
-    pub fn ui_boxed(&mut self, view: ViewBox, mut container: Container) {
-        self.ui_impl(view, &mut container)
-    }
-
-
-    pub fn ui(&mut self, container: Container) {
+    pub fn ui(&mut self, container: &mut Box<Container>) {
         let view = ViewBox::new(self);
 
-        self.ui_boxed(view, container)
+        container.draw(view, self)
     }
 }

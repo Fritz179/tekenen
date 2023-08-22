@@ -1,6 +1,9 @@
+use tekenen::platform::{Event, Platform, IntervalDecision};
+
 pub mod basic;
+pub mod text;
 
 pub trait Demo {
-    fn update(&mut self, event: tekenen::platform::Event) -> tekenen::platform::IntervalDecision;
-    fn draw(&mut self, window: &mut tekenen::platform::Platform);
+    fn update(&mut self, event: Event) -> IntervalDecision;
+    fn draw(&mut self, window: &mut Platform);
 }
