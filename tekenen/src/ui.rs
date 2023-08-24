@@ -13,8 +13,18 @@ pub use text::Text;
 pub enum Unit {
     #[default]
     Auto,
-    Pixel(i32),
+    Pixels(i32),
     Percent(f32),
+}
+
+impl Unit {
+    fn pixels(&self) -> i32 {
+        match self {
+            Unit::Auto => panic!("Auto no pixels"),
+            Unit::Percent(_) => panic!("Percent no pixels"),
+            Unit::Pixels(pixels) => *pixels
+        }
+    }
 }
 
 #[derive(Debug, Default)]
@@ -31,6 +41,17 @@ pub struct BoundingBox {
     border: Sides,
     width: Unit,
     height: Unit
+}
+
+impl BoundingBox {
+    fn new(width: i32, height: i32) -> Self {
+        Self {
+            margin: Sides::default(),
+            border: Sides::default(),
+            width: Unit::Pixels(width),
+            height: Unit::Pixels(height)
+        }
+    }
 }
 
 pub struct ViewBox {
@@ -53,11 +74,18 @@ impl ViewBox {
 
 pub trait UIBox {
     fn draw(&mut self, view: ViewBox, tek: &mut Tekenen);
+    fn get_box(&mut self, max: BoundingBox) -> &BoundingBox;
+    // fn get_children(&mut self) -> &[Box<dyn UIBox>];
 }
+
+// 1) Get size by passing down max allowed space for 100%
+// 2) Draw according to calculated size, invalidate all if needed
+// 3) React to key/mouse?
 
 impl Tekenen {
     pub fn ui(&mut self, container: &mut Box<Container>) {
-        let view = ViewBox::new(self);
+        let view = container.get_box(BoundingBox::new(self.width() as i32, self.height() as i32));
+        let view = ViewBox { x: 0, y: 0, w: view.width.pixels(), h: view.height.pixels() };
 
         container.draw(view, self)
     }

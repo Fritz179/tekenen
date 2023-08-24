@@ -40,11 +40,11 @@ impl super::Demo for TextDemo {
                 // .border(border::new()::bottom(unit::pixels::new(20))),
             Text::new("This is anorher Section!"),
             Container::horizontal(vec![
-                Text::new("Line 3:"),
+                Text::new("A:"),
                 Text::new("<z>")
             ]),//.justify(justify::space_beetwen),
             Container::horizontal(vec![
-                    Text::new("Line 4:"),
+                    Text::new("A very very very very very very long Line:"),
                     Text::new("<w>")
                 ])
                 ,//.justify(justify::space_beetwen)

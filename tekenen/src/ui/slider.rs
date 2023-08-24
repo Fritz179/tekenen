@@ -1,6 +1,5 @@
 use crate::{Pixel, colors, Tekenen};
-
-use super::UIBox;
+use super::{UIBox, ViewBox, BoundingBox};
 
 pub struct Slider {
     pub x1: i32,
@@ -15,6 +14,7 @@ pub struct Slider {
     pub knob_radius: i32,
     pub know_color: Pixel,
     pub scrolling: bool,
+    bounding_box: BoundingBox
 }
 
 impl Slider {
@@ -32,6 +32,7 @@ impl Slider {
             knob_radius: 20,
             know_color: colors::RED,
             scrolling: false,
+            bounding_box: BoundingBox::default()
         })
     }
 
@@ -49,6 +50,7 @@ impl Slider {
             knob_radius: 20,
             know_color: colors::RED,
             scrolling: false,
+            bounding_box: BoundingBox::default()
         })
     }
 
@@ -87,5 +89,10 @@ impl UIBox for Slider {
     fn draw(&mut self, view: super::ViewBox, tek: &mut Tekenen) {
         tek.rect(self.x1, self.y - self.slider_width / 2, self.x2 - self.x1, self.slider_width, self.slider_color);
         tek.circle(self.x, self.y, self.knob_radius, self.know_color);
+    }
+
+    fn get_box(&mut self, max: BoundingBox) -> &BoundingBox {
+        self.bounding_box = BoundingBox::new(self.x2 - self.x1, self.knob_radius * 2);
+        &self.bounding_box
     }
 }
