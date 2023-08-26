@@ -10,6 +10,7 @@ use sdl2::EventPump;
 
 use sdl2::keyboard;
 
+use crate::math::Vec2;
 use crate::tekenen::Pixels;
 use super::{PlatformTrait, PlatformError, Event, KeyDownEvent, Keycode, Keymod, IntervalDecision, time_manager::{TimeAction, TimeManager}};
 #[cfg(feature = "image")]
@@ -168,8 +169,8 @@ impl PlatformTrait for SDLPlatform {
                 sdl2::event::Event::MouseButtonUp { x, y, .. } => {
                     return Some(Event::MouseUp { x, y })
                 },
-                sdl2::event::Event::MouseMotion { x, y, .. } => {
-                    return Some(Event::MouseMove { x, y })
+                sdl2::event::Event::MouseMotion { x, y, xrel, yrel, .. } => {
+                    return Some(Event::MouseMove { x, y, xd: xrel, yd: yrel })
                 },
                 _ => {
                     // println!("Unhandled event: {:?}", event);

@@ -7,6 +7,14 @@ pub struct Point {
     pub position: Vec2
 }
 
+impl Point {
+    pub fn new(x: i32, y: i32) -> Self {
+        Self {
+            position: Vec2::new(x, y)
+        }
+    }
+}
+
 impl From<Vec2> for Point {
     fn from(position: Vec2) -> Self {
         Self {

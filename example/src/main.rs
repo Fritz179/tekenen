@@ -22,13 +22,15 @@ mod demo;
 //  3) Physics demo
 //  4) SubCanvas
 
+
 fn main() {
     Platform::set_assets(Asset);
 
     let mut window = Box::new(Platform::new(800, 600).unwrap());
 
     // let mut demo = demo::basic::BasicDemo::new();
-    let mut demo = demo::text::TextDemo::new();
+    // let mut demo = demo::text::TextDemo::new();
+    let mut demo = demo::transform::TransfromDemo::new();
 
     Platform::set_interval(move || {
         while let Some(event) = window.read_events() {

@@ -13,7 +13,11 @@ mod font {
     pub use font_default::*;
 }
 
+use std::{rc::Rc, cell::RefCell};
+
 use font::*;
+
+use crate::{math::Vec2, platform::Event, shapes::{rect::Rect, Intersect, point::Point, circle::Circle}};
 
 #[allow(dead_code)]
 pub mod colors {
@@ -31,6 +35,29 @@ pub mod colors {
     pub const SILVER: Pixel = [153, 153, 153, 255];
     pub const GRAY: Pixel = [51, 51, 51, 255];
     pub const BLACK: Pixel = [0, 0, 0, 255];
+}
+
+pub trait Draw {
+    fn rect(&mut self, rect: Rect, color: Pixel);
+    fn circle(&mut self, circle: Circle, color: Pixel);
+
+    fn rect_at(&mut self, pos: Vec2, size: Vec2, color: Pixel) {
+        self.rect(Rect::vec(pos, size), color)
+    }
+
+    fn circle_at(&mut self, pos: Vec2, radius: i32, color: Pixel) {
+        self.circle(Circle::vec(pos, radius), color)
+    }
+
+    fn rect_raw(&mut self, x: i32, y: i32, w: i32, h: i32, color: Pixel) {
+        self.rect(Rect::new(x, y, w, h), color)
+    }
+
+    fn circle_raw(&mut self, x: i32, y: i32, r: i32, color: Pixel) {
+        self.circle(Circle::new(x, y, r), color)
+    }
+
+    fn background(&mut self, color: Pixel);
 }
 
 pub struct Tekenen {
@@ -70,7 +97,34 @@ impl Tekenen {
     }
 }
 
-// Drawing implementation
+impl Draw for Tekenen {
+    fn rect(&mut self, rect: Rect, color: Pixel) {
+        for x in rect.position.x..rect.position.x + rect.size.x {
+            for y in rect.position.y..rect.position.y + rect.size.y {
+                self.set_pixel(x, y, color);
+            }
+        }
+    }
+
+    fn circle(&mut self, circle: Circle, color: Pixel) {
+        for xx in circle.position.x-circle.radius..circle.position.x+circle.radius {
+            for yy in circle.position.y-circle.radius..circle.position.y+circle.radius {
+                if (xx - circle.position.x) * (xx - circle.position.x) + (yy - circle.position.y) * (yy - circle.position.y) < circle.radius * circle.radius {
+                    self.set_pixel(xx, yy, color);
+                }
+            }
+        }
+    }
+
+    fn background(&mut self, color: Pixel) {
+        for x in 0..self.width {
+            for y in 0..self.height {
+                self.set_pixel(x as i32, y as i32, color);
+            }
+        }
+    }
+}
+
 impl Tekenen {
     pub fn pixel_index(&self, x: i32, y: i32) -> Option<usize> {
         if x < 0 || y < 0 || x >= self.width as i32 || y >= self.height as i32 {
@@ -102,24 +156,6 @@ impl Tekenen {
             ])
         } else {
             None
-        }
-    }
-
-    pub fn rect(&mut self, x: i32, y: i32, w: i32, h: i32, color: Pixel) {
-        for x in x..x + w {
-            for y in y..y + h {
-                self.set_pixel(x, y, color);
-            }
-        }
-    }
-
-    pub fn circle(&mut self, x: i32, y: i32, r: i32, color: Pixel) {
-        for xx in x-r..x+r {
-            for yy in y-r..y+r {
-                if (xx - x) * (xx - x) + (yy - y) * (yy - y) < r * r {
-                    self.set_pixel(xx, yy, color);
-                }
-            }
         }
     }
 
@@ -162,18 +198,10 @@ impl Tekenen {
         }
     }
 
-    pub fn background(&mut self, color: Pixel) {
-        for x in 0..self.width {
-            for y in 0..self.height {
-                self.set_pixel(x as i32, y as i32, color);
-            }
-        }
-    }
-
     pub fn draw_scaled_image(&mut self, x: i32, y: i32, image: &Tekenen, scale: i32) {
         for xd in 0..image.width as i32 {
             for yd in 0..image.height as i32 {
-                self.rect(x + xd * scale, y + yd * scale, scale, scale, image.get_pixel(xd, yd).unwrap())
+                self.rect_raw(x + xd * scale, y + yd * scale, scale, scale, image.get_pixel(xd, yd).unwrap())
             }
         }
     }
@@ -255,7 +283,122 @@ impl Tekenen {
         const BLINKING_TIME: u64 = 500;
 
         if time % BLINKING_TIME > BLINKING_TIME / 2 {
-            self.rect(x, y, 16, 16, colors::WHITE)
+            self.rect_raw(x, y, 16, 16, colors::WHITE)
+        }
+    }
+}
+
+pub struct TransforView {
+    target: Rc<RefCell<dyn Draw>>,
+    screen_posizion: Vec2,
+    screen_size: Vec2,
+    word_position: Vec2,
+    // word_size = screen_size * zoom
+    zoom: f32, 
+    moving: bool,
+}
+
+impl TransforView {
+    pub fn new(x: i32, y: i32, w: i32, h: i32, target: Rc<RefCell<dyn Draw>>) -> Self {
+        Self {
+            target,
+            screen_posizion: Vec2::new(x ,y),
+            screen_size: Vec2::new(w, h),
+            word_position: Vec2::default(),
+            zoom: 1.0,
+            moving: false,
+        }
+    }
+}
+
+impl Draw for TransforView {
+    fn rect(&mut self, rect: Rect, color: Pixel) {
+        let Rect { position: Vec2 {x, y}, size: Vec2 { x: w, y: h } } = rect;
+
+        let x = (x as f32 * self.zoom) as i32 + self.word_position.x + self.screen_posizion.x;
+        let y = (y as f32 * self.zoom) as i32 + self.word_position.y + self.screen_posizion.y;
+        let w = w as f32 * self.zoom;
+        let h = h as f32 * self.zoom;
+
+        // print!("{x}, {y}, {w}, {h}");
+
+        self.target.borrow_mut().rect(Rect::new(x as i32, y as i32, w as i32, h as i32), color)
+    }
+
+    fn circle(&mut self, circle: Circle, color: Pixel) {
+        let Circle { position: Vec2 { x, y }, radius: r } = circle;
+
+        let x = x as f32 * self.zoom + self.word_position.x as f32 + self.screen_posizion.x as f32;
+        let y = y as f32 * self.zoom + self.word_position.y as f32 + self.screen_posizion.y as f32;
+        let r = r as f32 * self.zoom;
+
+        self.target.borrow_mut().circle(Circle::new(x as i32, y as i32, r as i32), color)
+    }
+
+    fn background(&mut self, color: Pixel) {
+        let x = self.screen_posizion.x;
+        let y = self.screen_posizion.y;
+
+        let w = self.screen_size.x;
+        let h = self.screen_size.y;
+
+        self.target.borrow_mut().rect_raw(x, y, w as i32, h as i32, color)
+    }
+}
+
+impl TransforView {
+    pub fn scale(&mut self, scale: f32) {
+        self.zoom *= scale
+    }
+
+    pub fn set_scale(&mut self, scale: f32) {
+        self.zoom = scale
+    }
+
+    pub fn translate(&mut self, x: i32, y: i32) {
+        self.word_position.add(x, y)
+    }
+
+    pub fn set_translate(&mut self, x: i32, y: i32) {
+        self.word_position.set(x, y)
+    }
+
+    pub fn reset(&mut self) {
+        self.zoom = 1.0;
+        self.word_position.set(0, 0)
+    }
+
+    pub fn bounding_box(&self) -> Rect {
+        Rect {
+            position: Vec2 {
+                x: self.word_position.x,
+                y: self.word_position.y,
+            },
+            size: Vec2 {
+                x: (self.screen_size.x as f32 * self.zoom) as i32,
+                y: (self.screen_size.y as f32 * self.zoom) as i32,
+            }
+        }
+    }
+
+    pub fn handle_pan_and_zoom(&mut self, event: Event) {
+        match event {
+            Event::MouseDown { x, y } => {
+                dbg!(self.bounding_box(), x, y);
+
+                if self.bounding_box().encloses_point(&Point::new(x ,y)) {
+                    self.moving = true
+                }
+            },
+            Event::MouseMove { xd, yd, .. } => {
+                if self.moving {
+                    self.translate(xd, yd)
+                }
+            },
+            Event::MouseUp { x, y } => {
+                self.moving = false
+            },
+            _ => {}
         }
     }
 }

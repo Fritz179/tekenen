@@ -54,6 +54,8 @@ pub enum Event {
     MouseMove {
         x: i32,
         y: i32,
+        xd: i32,
+        yd: i32,
     },
     Quit,
 }

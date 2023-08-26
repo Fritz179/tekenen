@@ -9,10 +9,17 @@ pub struct Rect {
 }
 
 impl Rect {
-    pub fn new(x: i32, y: i32, w: i32, h:i32) -> Rect {
-        Rect {
+    pub fn new(x: i32, y: i32, w: i32, h:i32) -> Self {
+        Self {
             position: Vec2 { x, y },
             size: Vec2 {x: w, y: h}
+        }
+    }
+
+    pub fn vec(pos: Vec2, size: Vec2) -> Self {
+        Self {
+            position: pos,
+            size
         }
     }
 }

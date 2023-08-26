@@ -1,4 +1,4 @@
-use tekenen::{Tekenen, colors, ui::*};
+use tekenen::{Tekenen, colors, Draw};
 use tekenen::platform::{Platform, PlatformTrait, IntervalDecision, Event, KeyDownEvent};
 
 pub struct BasicDemo {
@@ -50,8 +50,8 @@ impl super::Demo for BasicDemo {
 
         tekenen.background(colors::GRAY);
 
-        tekenen.rect(50, 100, 100, 150, colors::BLACK);
-        tekenen.circle(150, 100, 50, colors::RED);
+        tekenen.rect_raw(50, 100, 100, 150, colors::BLACK);
+        tekenen.circle_raw(150, 100, 50, colors::RED);
 
         tekenen.line(50, 100, 150, 250, colors::WHITE);
 

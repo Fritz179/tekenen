@@ -2,6 +2,7 @@ use tekenen::platform::{Event, Platform, IntervalDecision};
 
 pub mod basic;
 pub mod text;
+pub mod transform;
 
 pub trait Demo {
     fn update(&mut self, event: Event) -> IntervalDecision;

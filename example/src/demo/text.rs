@@ -1,5 +1,5 @@
 use tekenen::platform::{Event, Platform, IntervalDecision, PlatformTrait};
-use tekenen::{Tekenen, colors};
+use tekenen::{Tekenen, colors, Draw};
 use tekenen::ui::{Container, Text};
 
 pub struct TextDemo {

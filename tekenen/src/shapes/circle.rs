@@ -8,6 +8,22 @@ pub struct Circle {
     pub radius: i32,
 }
 
+impl Circle {
+    pub fn new(x: i32, y: i32, radius: i32) -> Self {
+        Self {
+            position: Vec2::new(x, y),
+            radius
+        }
+    }
+
+    pub fn vec(pos: Vec2, radius: i32) -> Self {
+        Self {
+            position: pos,
+            radius
+        }
+    }
+}
+
 impl Intersect for Circle {
     fn intersect(&self, other: &dyn Intersect) -> bool {
         other.intersect_circle(self)
