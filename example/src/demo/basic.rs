@@ -22,7 +22,7 @@ impl BasicDemo {
 }
 
 impl super::Demo for BasicDemo {
-    fn update(&mut self, event: Event) -> tekenen::platform::IntervalDecision {
+    fn update(&mut self, event: &Event) -> tekenen::platform::IntervalDecision {
         match event {
             Event::Quit => {
                 return IntervalDecision::Stop
@@ -50,8 +50,8 @@ impl super::Demo for BasicDemo {
 
         tekenen.background(colors::GRAY);
 
-        tekenen.rect_raw(50, 100, 100, 150, colors::BLACK);
-        tekenen.circle_raw(150, 100, 50, colors::RED);
+        tekenen.rect(50, 100, 100, 150, colors::BLACK);
+        tekenen.circle(150, 100, 50, colors::RED);
 
         tekenen.line(50, 100, 150, 250, colors::WHITE);
 

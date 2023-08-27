@@ -38,7 +38,7 @@ fn main() {
                 return IntervalDecision::Stop
             }
 
-            match demo.update(event) {
+            match demo.update(&event) {
                 IntervalDecision::Repeat => {},
                 IntervalDecision::Stop => return IntervalDecision::Stop
             }

@@ -23,11 +23,11 @@ impl From<Vec2> for Point {
     }
 }
 
-impl Shape for Point {
-    fn get_bounding_box(&self) -> Rect {
-        Rect::new(self.position.x, self.position.y, 0, 0)
-    }
-}
+// impl Shape for Point {
+//     fn get_bounding_box(&self) -> Rect {
+//         Rect::new(self.position.x, self.position.y, 0, 0)
+//     }
+// }
 
 impl Intersect for Point {
     fn intersect(&self, other: &dyn Intersect) -> bool {

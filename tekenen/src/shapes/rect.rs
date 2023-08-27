@@ -24,7 +24,34 @@ impl Rect {
     }
 }
 
+impl IntoIterator for Rect {
+    type Item = Vec2;
+    type IntoIter = RectIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+impl Rect {
+    fn iter(&self) -> RectIter {
+        RectIter {
+            start: self.position.clone(),
+            end: self.position.clone() + self.size.clone(),
+            curr: self.position.clone(),
+            done: false
+        }
+    }
+}
+
 impl Shape for Rect {
+    fn transform(&mut self, offset: &Vec2, zoom: f32) {
+        self.position *= zoom;
+        self.position += offset;
+
+        self.size *= zoom
+    }
+
     fn get_bounding_box(&self) -> Rect {
         self.clone()
     }
@@ -85,5 +112,37 @@ impl Intersect for Rect {
         self.encloses_point(&other.p1.clone().into()) &&
         self.encloses_point(&other.p2.clone().into()) &&
         self.encloses_point(&other.p3.clone().into())
+    }
+}
+
+pub struct RectIter {
+    start: Vec2,
+    end: Vec2,
+    curr: Vec2,
+    done: bool
+}
+
+impl Iterator for RectIter {
+    type Item = Vec2;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let output = self.curr.clone();
+
+        if self.curr.x == self.end.x {
+            if self.curr.y == self.end.y {
+                if self.done {
+                    return None
+                } else {
+                    self.done = true;
+                }
+            } else {
+                self.curr.x = self.start.x;
+                self.curr.y += 1;
+            }
+        } else {
+            self.curr.x += 1;
+        }
+
+        Some(output)
     }
 }

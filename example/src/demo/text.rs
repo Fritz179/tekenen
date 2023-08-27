@@ -15,7 +15,7 @@ impl TextDemo {
 }
 
 impl super::Demo for TextDemo {
-    fn update(&mut self, event: Event) -> IntervalDecision {
+    fn update(&mut self, event: &Event) -> IntervalDecision {
         IntervalDecision::Repeat
     }
 

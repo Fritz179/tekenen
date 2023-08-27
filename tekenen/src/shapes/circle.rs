@@ -72,3 +72,77 @@ impl Intersect for Circle {
         todo!()
     }
 }
+
+impl Circle {
+    fn iter(&self) -> CircleIterator {
+        CircleIterator {
+            position: self.position.clone(),
+            radius: self.radius,
+            // TODO: can improve
+            curr: self.position.clone() + Vec2::new(-self.radius, -self.radius),
+            done: false,
+        }
+    }
+}
+
+impl IntoIterator for Circle {
+    type Item = Vec2;
+    type IntoIter = CircleIterator;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+impl Shape for Circle {
+    fn get_bounding_box(&self) -> Rect {
+        todo!()
+    }
+
+    fn transform(&mut self, offset: &Vec2, zoom: f32) {
+        self.position *= zoom;
+        self.position += offset;
+        
+        self.radius = (self.radius as f32 * zoom) as i32;
+    }
+}
+
+pub struct CircleIterator {
+    position: Vec2,
+    radius: i32,
+    curr: Vec2,
+    done: bool,
+}
+
+impl Iterator for CircleIterator {
+    type Item = Vec2;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            let output = self.curr.clone();
+
+            if self.curr.x == self.position.x + self.radius {
+                if self.curr.y == self.position.y + self.radius {
+                    if self.done {
+                        return None
+                    } else {
+                        self.done = true;
+                    }
+                } else {
+                    self.curr.x = self.position.x - self.radius;
+                    self.curr.y += 1;
+                }
+            } else {
+                self.curr.x += 1;
+            }
+
+            let dx = self.curr.x - self.position.x;
+            let dy = self.curr.y - self.position.y;
+            let r = self.radius;
+
+            if dx * dx + dy * dy < r * r {
+                return Some(output)
+            }
+        }
+    }
+}

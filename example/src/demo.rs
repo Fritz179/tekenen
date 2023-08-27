@@ -5,6 +5,6 @@ pub mod text;
 pub mod transform;
 
 pub trait Demo {
-    fn update(&mut self, event: Event) -> IntervalDecision;
+    fn update(&mut self, event: &Event) -> IntervalDecision;
     fn draw(&mut self, window: &mut Platform);
 }

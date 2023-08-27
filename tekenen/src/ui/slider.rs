@@ -87,8 +87,8 @@ impl Slider {
 
 impl UIBox for Slider {
     fn draw(&mut self, view: super::ViewBox, tek: &mut Tekenen) {
-        tek.rect_raw(self.x1, self.y - self.slider_width / 2, self.x2 - self.x1, self.slider_width, self.slider_color);
-        tek.circle_raw(self.x, self.y, self.knob_radius, self.know_color);
+        tek.rect(self.x1, self.y - self.slider_width / 2, self.x2 - self.x1, self.slider_width, self.slider_color);
+        tek.circle(self.x, self.y, self.knob_radius, self.know_color);
     }
 
     fn get_box(&mut self, max: BoundingBox) -> &BoundingBox {

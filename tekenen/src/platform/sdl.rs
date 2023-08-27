@@ -172,8 +172,11 @@ impl PlatformTrait for SDLPlatform {
                 sdl2::event::Event::MouseMotion { x, y, xrel, yrel, .. } => {
                     return Some(Event::MouseMove { x, y, xd: xrel, yd: yrel })
                 },
+                sdl2::event::Event::MouseWheel { y, ..} => {
+                    return Some(Event::MouseWheel { direction: y == 1 })
+                }
                 _ => {
-                    // println!("Unhandled event: {:?}", event);
+                    // println!("Unhandled event: {event:?}");
                 }
             }
         }

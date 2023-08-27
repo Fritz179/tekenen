@@ -57,6 +57,9 @@ pub enum Event {
         xd: i32,
         yd: i32,
     },
+    MouseWheel {
+        direction: bool
+    },
     Quit,
 }
 

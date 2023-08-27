@@ -9,10 +9,12 @@ use circle::Circle;
 use triangle::Triangle;
 
 use crate::math::Vec2;
+
 pub type Positon = Point;
 pub type Size = Vec2;
 
-pub trait Shape {
+pub trait Shape: IntoIterator<Item = Vec2> {
+    fn transform(&mut self, offset: &Vec2, zoom: f32);
     fn get_bounding_box(&self) -> Rect;
 }
 
