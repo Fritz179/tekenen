@@ -102,7 +102,7 @@ impl Tekenen {
 
 impl Draw for Tekenen {
     fn shape(&mut self, shape: &dyn Shape, color: Pixel) {
-        let shape = shape.dyn_clone();
+        // let shape = shape.dyn_clone();
 
         for Vec2 {x, y} in shape.iter() {
             self.set_pixel(x, y, color);
@@ -321,18 +321,14 @@ impl Draw for TransforView {
                 self.target.borrow_mut().shape(&*shape, color)
             },
             OverflowBehavior::Skip => {
-                todo!()
-                // if self.screen.encloses(shape as &dyn Shape as &dyn Intersect) {
-                //     self.target.borrow_mut().shape(shape, color)
-                // }
+                if self.screen.encloses(shape.intersect_upcast()) {
+                    self.target.borrow_mut().shape(&*shape, color)
+                }
             },
             OverflowBehavior::Hidden => {
-                todo!()
-                // // let new_shape = shape.join(&self.screen);
-                // let new_shape = Box::new(shape);
+                let shape = shape.join_and(&self.screen);
 
-                // self.target.borrow_mut().shape(*new_shape, color)
-                // // self.target.borrow_mut().shape((&shape as &dyn BitShaping) & (&self.screen as &dyn BitShaping), color)
+                self.target.borrow_mut().shape(&shape, color)
             }
         }
     }

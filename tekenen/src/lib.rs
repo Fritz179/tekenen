@@ -14,7 +14,7 @@ pub mod platform;
 /// - background(), rect(), draw_image()
 mod tekenen;
 
-pub use tekenen::{Tekenen, colors, Pixel, Draw, TransforView};
+pub use tekenen::{Tekenen, colors, Pixel, Draw, TransforView, OverflowBehavior};
 
 /// UI, Describe layout in a 'css' manner
 pub mod ui;

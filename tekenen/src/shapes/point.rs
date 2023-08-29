@@ -30,6 +30,10 @@ impl From<Vec2> for Point {
 // }
 
 impl Intersect for Point {
+    fn intersect_upcast(&self) -> &dyn Intersect {
+        self
+    }
+
     fn intersect(&self, other: &dyn Intersect) -> bool {
         other.intersect_point(self)
     }
@@ -51,6 +55,10 @@ impl Intersect for Point {
     }
 
     fn encloses(&self, other: &dyn Intersect) -> bool {
+        other.encloses_point(self)
+    }
+
+    fn is_enclosed_by(&self, other: &dyn Intersect) -> bool {
         other.encloses_point(self)
     }
 

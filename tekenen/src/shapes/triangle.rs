@@ -10,6 +10,10 @@ pub struct Triangle {
 }
 
 impl Intersect for Triangle {
+    fn intersect_upcast(&self) -> &dyn Intersect {
+        self
+    }
+
     fn intersect(&self, other: &dyn Intersect) -> bool {
         other.intersect(self)
     }
@@ -32,6 +36,10 @@ impl Intersect for Triangle {
 
     fn encloses(&self, other: &dyn Intersect) -> bool {
         todo!()
+    }
+
+    fn is_enclosed_by(&self, other: &dyn Intersect) -> bool {
+        other.encloses_triangle(self)
     }
 
     fn encloses_point(&self, other: &Point) -> bool {

@@ -13,6 +13,7 @@ pub mod triangle;
 use triangle::Triangle;
 
 mod composed_shape;
+use self::composed_shape::BitOperand;
 pub use self::composed_shape::ComposedShape;
 
 use crate::math::Vec2;
@@ -20,7 +21,7 @@ use crate::math::Vec2;
 pub type Positon = Point;
 pub type Size = Vec2;
 
-pub trait Shape: Intersect + BitShaping {
+pub trait Shape: Intersect + BitShaping + std::fmt::Debug {
     fn transform(&mut self, offset: Vec2, zoom: f32);
     fn get_bounding_box(&self) -> Rect;
     fn dyn_clone(&self) -> Box<dyn Shape>;
@@ -28,6 +29,8 @@ pub trait Shape: Intersect + BitShaping {
 }
 
 pub trait Intersect {
+    fn intersect_upcast(&self) -> &dyn Intersect;
+
     fn intersect(&self, other: &dyn Intersect) -> bool;
     fn intersect_point(&self, other: &Point) -> bool;
     fn intersect_rect(&self, other: &Rect) -> bool;
@@ -35,6 +38,7 @@ pub trait Intersect {
     fn intersect_triangle(&self, other: &Triangle) -> bool;
 
     fn encloses(&self, other: &dyn Intersect) -> bool;
+    fn is_enclosed_by(&self, other: &dyn Intersect) -> bool;
     fn encloses_point(&self, other: &Point) -> bool;
     fn encloses_rect(&self, other: &Rect) -> bool;
     fn encloses_circle(&self, other: &Circle) -> bool;
@@ -42,17 +46,24 @@ pub trait Intersect {
 }
 
 pub trait BitShaping {
-    fn join(&self, other: &dyn BitShaping) -> ComposedShape { todo!() }
-    fn join_point(&self, other: &Point) -> ComposedShape { todo!() }
-    fn join_rect(&self, other: &Rect) -> ComposedShape { todo!() }
-    fn join_circle(&self, other: &Circle) -> ComposedShape { todo!() }
-    fn join_triangle(&self, other: &Triangle) -> ComposedShape { todo!() }
+    fn bit_dyn_clone(&self) -> Box<dyn Shape>;
+    
+    fn join_and(&self, other: &dyn BitShaping) -> ComposedShape {
+        ComposedShape::and(self.bit_dyn_clone(), other.bit_dyn_clone())
+    }
+    // fn join_point(&self, other: &Point) -> ComposedShape { todo!() }
+    // fn join_rect(&self, other: &Rect) -> ComposedShape { todo!() }
+    // fn join_circle(&self, other: &Circle) -> ComposedShape { todo!() }
+    // fn join_triangle(&self, other: &Triangle) -> ComposedShape { todo!() }
 }
+
+// can &, |, ^, !
+// can get bounding boxes and test each pixel
 
 impl BitAnd for &dyn BitShaping {
     type Output = ComposedShape;
 
     fn bitand(self, rhs: &dyn BitShaping) -> Self::Output {
-        rhs.join(self)
+        rhs.join_and(self)
     }
 }

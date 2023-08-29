@@ -25,13 +25,17 @@ impl Circle {
 }
 
 impl Intersect for Circle {
+    fn intersect_upcast(&self) -> &dyn Intersect {
+        self
+    }
+
     fn intersect(&self, other: &dyn Intersect) -> bool {
         other.intersect_circle(self)
     }
 
     fn intersect_point(&self, other: &Point) -> bool {
         let dx = self.position.x - other.position.x;
-        let dy = self.position.x - other.position.x;
+        let dy = self.position.y - other.position.y;
 
         dx * dx + dy * dy <= self.radius * self.radius
     }
@@ -56,6 +60,10 @@ impl Intersect for Circle {
         todo!()
     }
 
+    fn is_enclosed_by(&self, other: &dyn Intersect) -> bool {
+        other.encloses_circle(self)
+    }
+
     fn encloses_point(&self, other: &Point) -> bool {
         todo!()
     }
@@ -74,12 +82,17 @@ impl Intersect for Circle {
 }
 
 impl BitShaping for Circle {
-    
+    fn bit_dyn_clone(&self) -> Box<dyn Shape> {
+        Box::new(*self)
+    }
 }
 
 impl Shape for Circle {
     fn get_bounding_box(&self) -> Rect {
-        todo!()
+        let Vec2 {x, y} = self.position;
+        let r = self.radius;
+
+        Rect::new(x - r, y - r, r + r, r + r)
     }
 
     fn transform(&mut self, offset: Vec2, zoom: f32) {

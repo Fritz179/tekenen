@@ -51,6 +51,10 @@ impl Shape for Rect {
 }
 
 impl Intersect for Rect {
+    fn intersect_upcast(&self) -> &dyn Intersect {
+        self
+    }
+
     fn intersect(&self, other: &dyn Intersect) -> bool {
         other.intersect_rect(self)
     }
@@ -80,7 +84,11 @@ impl Intersect for Rect {
     }
 
     fn encloses(&self, other: &dyn Intersect) -> bool {
-        todo!()
+        other.is_enclosed_by(self)
+    }
+
+    fn is_enclosed_by(&self, other: &dyn Intersect) -> bool {
+        other.encloses_rect(self)
     }
 
     fn encloses_point(&self, other: &Point) -> bool {
@@ -109,7 +117,9 @@ impl Intersect for Rect {
 }
 
 impl BitShaping for Rect {
-
+    fn bit_dyn_clone(&self) -> Box<dyn Shape> {
+        Box::new(*self)
+    }
 }
 
 pub struct RectIter {
