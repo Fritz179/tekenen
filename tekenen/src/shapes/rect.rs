@@ -1,8 +1,8 @@
 use crate::math::Vec2;
 
-use super::{Point, Circle, Triangle, Shape, Intersect};
+use super::{Point, Circle, Triangle, Shape, Intersect, BitShaping};
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct Rect {
     pub position: Vec2,
     pub size: Vec2,
@@ -24,28 +24,8 @@ impl Rect {
     }
 }
 
-impl IntoIterator for Rect {
-    type Item = Vec2;
-    type IntoIter = RectIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.iter()
-    }
-}
-
-impl Rect {
-    fn iter(&self) -> RectIter {
-        RectIter {
-            start: self.position.clone(),
-            end: self.position.clone() + self.size.clone(),
-            curr: self.position.clone(),
-            done: false
-        }
-    }
-}
-
 impl Shape for Rect {
-    fn transform(&mut self, offset: &Vec2, zoom: f32) {
+    fn transform(&mut self, offset: Vec2, zoom: f32) {
         self.position *= zoom;
         self.position += offset;
 
@@ -54,6 +34,19 @@ impl Shape for Rect {
 
     fn get_bounding_box(&self) -> Rect {
         self.clone()
+    }
+
+    fn dyn_clone(&self) -> Box<dyn Shape> {
+        Box::new(*self)
+    }
+
+    fn iter(&self) -> Box<dyn Iterator<Item = Vec2>> {
+        Box::new(RectIter {
+            start: self.position.clone(),
+            end: self.position.clone() + self.size.clone(),
+            curr: self.position.clone(),
+            done: false
+        })
     }
 }
 
@@ -113,6 +106,10 @@ impl Intersect for Rect {
         self.encloses_point(&other.p2.clone().into()) &&
         self.encloses_point(&other.p3.clone().into())
     }
+}
+
+impl BitShaping for Rect {
+
 }
 
 pub struct RectIter {

@@ -2,6 +2,8 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use tekenen::platform::{Event, Platform, IntervalDecision, PlatformTrait};
+use tekenen::shapes::Shape;
+use tekenen::shapes::rect::Rect;
 use tekenen::{Tekenen, colors, TransforView, Draw};
 
 pub struct TransfromDemo {

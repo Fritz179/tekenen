@@ -1,6 +1,6 @@
 use std::ops::{AddAssign, Add, SubAssign, Sub, Mul, MulAssign};
 
-#[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
 pub struct Vec2<T = i32> {
     pub x: T,
     pub y: T
@@ -48,28 +48,6 @@ impl<T: Add<Output = T>> Add for Vec2<T> {
     }
 }
 
-impl<T: Add<Output = T> + Copy> Add<&Self> for Vec2<T> {
-    type Output = Vec2<T>;
-
-    fn add(self, rhs: &Self) -> Self::Output {
-        Vec2::<T> {
-            x: self.x + rhs.x,
-            y: self.y + rhs.y
-        }
-    }
-}
-
-impl<T: Add<Output = T> + Copy> Add<Self> for &Vec2<T> {
-    type Output = Vec2<T>;
-
-    fn add(self, rhs: Self) -> Self::Output {
-        Vec2::<T> {
-            x: self.x + rhs.x,
-            y: self.y + rhs.y
-        }
-    }
-}
-
 impl AddAssign for Vec2 {
     fn add_assign(&mut self, rhs: Self) {
         self.x += rhs.x;
@@ -77,30 +55,11 @@ impl AddAssign for Vec2 {
     }
 }
 
-
-impl AddAssign<&Self> for Vec2 {
-    fn add_assign(&mut self, rhs: &Self) {
-        self.x += rhs.x;
-        self.y += rhs.y
-    }
-}
-
 // Subtraction
-impl<T: Sub<Output = T> + Copy> Sub for Vec2<T> {
+impl<T: Sub<Output = T>> Sub for Vec2<T> {
     type Output = Vec2<T>;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        Vec2::<T> {
-            x: self.x - rhs.x,
-            y: self.y - rhs.y
-        }
-    }
-}
-
-impl<T: Sub<Output = T> + Copy> Sub<&Self> for Vec2<T> {
-    type Output = Vec2<T>;
-
-    fn sub(self, rhs: &Self) -> Self::Output {
         Vec2::<T> {
             x: self.x - rhs.x,
             y: self.y - rhs.y

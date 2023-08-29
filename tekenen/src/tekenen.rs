@@ -17,7 +17,7 @@ use std::{rc::Rc, cell::RefCell};
 
 use font::*;
 
-use crate::{math::Vec2, platform::Event, shapes::{rect::Rect, Intersect, point::Point, circle::Circle, Shape}};
+use crate::{math::Vec2, platform::Event, shapes::{rect::Rect, Intersect, point::Point, circle::Circle, Shape, BitShaping, ComposedShape}};
 
 #[allow(dead_code)]
 pub mod colors {
@@ -39,25 +39,25 @@ pub mod colors {
 
 pub trait Draw {
     /// Draw any general shape
-    fn shape(&mut self, shape: impl Shape, color: Pixel);
+    fn shape(&mut self, shape: &dyn Shape, color: Pixel);
 
     /// Blanket implementation for specific shapes
     /// Rect
     fn rect(&mut self, x: i32, y: i32, w: i32, h: i32, color: Pixel) {
-        self.shape(Rect::new(x, y, w, h), color)
+        self.shape(&Rect::new(x, y, w, h), color)
     }
 
     fn rect_at(&mut self, pos: Vec2, size: Vec2, color: Pixel) {
-        self.shape(Rect::vec(pos, size), color)
+        self.shape(&Rect::vec(pos, size), color)
     }
 
     /// Circle
     fn circle(&mut self, x: i32, y: i32, r: i32, color: Pixel) {
-        self.shape(Circle::new(x, y, r), color)
+        self.shape(&Circle::new(x, y, r), color)
     }
 
     fn circle_at(&mut self, pos: Vec2, radius: i32, color: Pixel) {
-        self.shape(Circle::vec(pos, radius), color)
+        self.shape(&Circle::vec(pos, radius), color)
     }
 
     fn background(&mut self, color: Pixel);
@@ -101,8 +101,10 @@ impl Tekenen {
 }
 
 impl Draw for Tekenen {
-    fn shape(&mut self, shape: impl Shape, color: Pixel) {
-        for Vec2 {x, y} in shape {
+    fn shape(&mut self, shape: &dyn Shape, color: Pixel) {
+        let shape = shape.dyn_clone();
+
+        for Vec2 {x, y} in shape.iter() {
             self.set_pixel(x, y, color);
         }
     }
@@ -279,6 +281,12 @@ impl Tekenen {
     }
 }
 
+pub enum OverflowBehavior {
+    Overflow,
+    Hidden,
+    Skip
+}
+
 pub struct TransforView<T: Draw = Tekenen> {
     target: Rc<RefCell<T>>,
     screen: Rect,
@@ -286,6 +294,7 @@ pub struct TransforView<T: Draw = Tekenen> {
     // word_size = screen_size * zoom
     zoom: f32, 
     moving: bool,
+    overflow_behavior: OverflowBehavior
 }
 
 impl<T: Draw> TransforView<T> {
@@ -296,18 +305,40 @@ impl<T: Draw> TransforView<T> {
             word_position: Vec2::default(),
             zoom: 1.0,
             moving: false,
+            overflow_behavior: OverflowBehavior::Overflow
         }
     }
 }
 
 impl Draw for TransforView {
-    fn shape(&mut self, mut shape: impl Shape, color: Pixel) {
-        shape.transform(&(&self.word_position + &self.screen.position), self.zoom);
-        let target = self.target.borrow_mut().shape(shape, color);
+    fn shape(&mut self, shape: &dyn Shape, color: Pixel) {
+        let mut shape = shape.dyn_clone();
+
+        shape.transform(self.word_position + self.screen.position, self.zoom);
+
+        match self.overflow_behavior {
+            OverflowBehavior::Overflow => {
+                self.target.borrow_mut().shape(&*shape, color)
+            },
+            OverflowBehavior::Skip => {
+                todo!()
+                // if self.screen.encloses(shape as &dyn Shape as &dyn Intersect) {
+                //     self.target.borrow_mut().shape(shape, color)
+                // }
+            },
+            OverflowBehavior::Hidden => {
+                todo!()
+                // // let new_shape = shape.join(&self.screen);
+                // let new_shape = Box::new(shape);
+
+                // self.target.borrow_mut().shape(*new_shape, color)
+                // // self.target.borrow_mut().shape((&shape as &dyn BitShaping) & (&self.screen as &dyn BitShaping), color)
+            }
+        }
     }
 
     fn background(&mut self, color: Pixel) {
-        self.target.borrow_mut().shape(self.screen.clone(), color)
+        self.target.borrow_mut().shape(&self.screen, color)
     }
 }
 
@@ -331,6 +362,10 @@ impl TransforView {
     pub fn reset(&mut self) {
         self.zoom = 1.0;
         self.word_position.set(0, 0)
+    }
+
+    pub fn set_overflow_behavior(&mut self, behavior: OverflowBehavior) {
+        self.overflow_behavior = behavior
     }
 
     pub fn bounding_box(&self) -> Rect {

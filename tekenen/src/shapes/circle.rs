@@ -1,8 +1,8 @@
 use crate::math::Vec2;
 
-use super::{Point, Rect, Triangle, Shape, Intersect};
+use super::{Point, Rect, Triangle, Shape, Intersect, BitShaping};
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct Circle {
     pub position: Vec2,
     pub radius: i32,
@@ -73,25 +73,8 @@ impl Intersect for Circle {
     }
 }
 
-impl Circle {
-    fn iter(&self) -> CircleIterator {
-        CircleIterator {
-            position: self.position.clone(),
-            radius: self.radius,
-            // TODO: can improve
-            curr: self.position.clone() + Vec2::new(-self.radius, -self.radius),
-            done: false,
-        }
-    }
-}
-
-impl IntoIterator for Circle {
-    type Item = Vec2;
-    type IntoIter = CircleIterator;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.iter()
-    }
+impl BitShaping for Circle {
+    
 }
 
 impl Shape for Circle {
@@ -99,11 +82,25 @@ impl Shape for Circle {
         todo!()
     }
 
-    fn transform(&mut self, offset: &Vec2, zoom: f32) {
+    fn transform(&mut self, offset: Vec2, zoom: f32) {
         self.position *= zoom;
         self.position += offset;
         
         self.radius = (self.radius as f32 * zoom) as i32;
+    }
+
+    fn dyn_clone(&self) -> Box<dyn Shape> {
+        Box::new(*self)
+    }
+
+    fn iter(&self) -> Box<dyn Iterator<Item = Vec2>> {
+        Box::new(CircleIterator {
+            position: self.position.clone(),
+            radius: self.radius,
+            // TODO: can improve
+            curr: self.position.clone() + Vec2::new(-self.radius, -self.radius),
+            done: false,
+        })
     }
 }
 
