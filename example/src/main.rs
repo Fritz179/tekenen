@@ -1,5 +1,5 @@
 use demo::Demo;
-use tekenen::platform::{Platform, PlatformTrait, IntervalDecision, Event};
+use tekenen::platform::{Platform, PlatformTrait, IntervalDecision, Event, KeyDownEvent};
 
 use tekenen::rust_embed;
 use tekenen::rust_embed::{RustEmbed, DynRustEmbed, EmbeddedFile};
@@ -28,23 +28,37 @@ fn main() {
 
     let mut window = Box::new(Platform::new(800, 600).unwrap());
 
-    // let mut demo = demo::basic::BasicDemo::new();
-    // let mut demo = demo::text::TextDemo::new();
-    let mut demo = demo::transform::TransfromDemo::new();
+    let mut demos = vec![
+        Box::new(demo::basic::BasicDemo::new()) as Box<dyn Demo>,
+        Box::new(demo::text::TextDemo::new()),
+        Box::new(demo::transform::TransfromDemo::new()),
+    ];
+
+    let mut current_demo = 0;
 
     Platform::set_interval(move || {
         while let Some(event) = window.read_events() {
-            if let Event::Quit = event {
-                return IntervalDecision::Stop
+
+            match event {
+                Event::Quit => return IntervalDecision::Stop,
+                Event::KeyDown(KeyDownEvent { char: Some('n'), .. }) => {
+                    current_demo += 1;
+
+                    if current_demo >= demos.len() {
+                        current_demo = 0;
+                        continue
+                    }
+                }
+                _ => { }
             }
 
-            match demo.update(&event) {
+            match demos[current_demo].update(&event) {
                 IntervalDecision::Repeat => {},
                 IntervalDecision::Stop => return IntervalDecision::Stop
             }
         }
 
-        demo.draw(&mut window);
+        demos[current_demo].draw(&mut window);
 
         IntervalDecision::Repeat
     }, 60)

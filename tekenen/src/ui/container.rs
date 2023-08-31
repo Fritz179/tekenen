@@ -1,4 +1,6 @@
-use super::{BoundingBox, UIBox, ViewBox};
+use crate::Draw;
+
+use super::{BoundingBox, UIBox, TempTV};
 
 pub enum Direction {
     Horizonral,
@@ -36,43 +38,35 @@ impl Container {
 }
 
 impl UIBox for Container {
-    fn draw(&mut self, view: super::ViewBox, tek: &mut crate::Tekenen) {
+    fn draw(&mut self, tv: &mut dyn Draw) {
         match self {
             Container::Single { bounding_box, child } => {
-                child.draw(view, tek)
+                child.draw(tv)
             },
             Container::Directional { bounding_box, direction: Direction::Horizonral, children } => {
-                let size = children.len() as i32;
-                let new_width = view.w / size;
+                let children_len = children.len() as i32;
+                let size = tv.get_size();
+                let new_width = size.x / children_len;
 
-                for i in 0..size {
+                for i in 0..children_len {
                     let child = &mut children[i as usize];
 
-                    let child_view = ViewBox {
-                        x: view.x + new_width * i,
-                        y: view.y,
-                        w: new_width,
-                        h: view.h
-                    };
+                    let mut child_tv = TempTV::new(tv, new_width * i, 0, new_width, size.y);
 
-                    child.draw(child_view, tek)
+                    child.draw(&mut child_tv)
                 }
             },
             Container::Directional { bounding_box, direction: Direction::Vertical, children } => {
-                let size = children.len() as i32;
-                let new_height = view.h / size;
+                let children_len = children.len() as i32;
+                let size = tv.get_size();
+                let new_height = size.y / children_len;
 
-                for i in 0..size {
+                for i in 0..children_len {
                     let child = &mut children[i as usize];
 
-                    let child_view = ViewBox {
-                        x: view.x,
-                        y: view.y + new_height * i,
-                        w: view.w,
-                        h: new_height
-                    };
+                    let mut child_tv = TempTV::new(tv, 0, new_height * i, size.x, new_height);
 
-                    child.draw(child_view, tek)
+                    child.draw(&mut child_tv)
                 }
             }
         }

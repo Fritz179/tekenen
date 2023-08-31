@@ -1,3 +1,7 @@
+use std::{cell::RefCell, rc::Rc};
+
+use crate::{TransforView, Draw};
+
 use super::Tekenen;
 
 pub mod container;
@@ -54,26 +58,8 @@ impl BoundingBox {
     }
 }
 
-pub struct ViewBox {
-    pub x: i32,
-    pub y: i32,
-    pub w: i32,
-    pub h: i32,
-}
-
-impl ViewBox {
-    pub fn new(tekenen: &Tekenen) -> Self {
-        Self {
-            x: 0,
-            y: 0,
-            w: tekenen.width() as i32,
-            h: tekenen.height() as i32
-        }
-    }
-}
-
 pub trait UIBox {
-    fn draw(&mut self, view: ViewBox, tek: &mut Tekenen);
+    fn draw(&mut self, view: &mut dyn Draw);
     fn get_box(&mut self, max: BoundingBox) -> &BoundingBox;
     // fn get_children(&mut self) -> &[Box<dyn UIBox>];
 }
@@ -82,11 +68,40 @@ pub trait UIBox {
 // 2) Draw according to calculated size, invalidate all if needed
 // 3) React to key/mouse?
 
+struct TempTV<'a> {
+    target: &'a mut dyn Draw
+}
+
+impl<'a> TempTV<'a> {
+    fn new(target: &'a mut dyn Draw, x: i32, y: i32, w: i32, h: i32) -> TransforView<TempTV<'a>> {
+        TransforView::new(x, y, w, h, Rc::new(RefCell::new(Self {target})))
+    }
+}
+
+impl<'a> Draw for TempTV<'a> {
+    fn background(&mut self, color: crate::Pixel) {
+        self.target.background(color)
+    }
+
+    fn shape(&mut self, shape: &dyn crate::shapes::Shape, color: crate::Pixel) {
+        self.target.shape(shape, color)
+    }
+
+    fn draw_text(&mut self, text: &str, x: i32, y: i32) -> (i32, i32) {
+        self.target.draw_text(text, x, y)
+    }
+
+    fn get_size(&self) -> crate::math::Vec2 {
+        self.target.get_size()
+    }
+}
+
 impl Tekenen {
     pub fn ui(&mut self, container: &mut Box<Container>) {
         let view = container.get_box(BoundingBox::new(self.width() as i32, self.height() as i32));
-        let view = ViewBox { x: 0, y: 0, w: view.width.pixels(), h: view.height.pixels() };
 
-        container.draw(view, self)
+        let mut tv = TempTV::new(self, 0, 0, view.width.pixels(), view.height.pixels());
+
+        container.draw(&mut tv)
     }
 }

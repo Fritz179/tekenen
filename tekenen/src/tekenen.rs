@@ -61,6 +61,10 @@ pub trait Draw {
     }
 
     fn background(&mut self, color: Pixel);
+
+    fn draw_text(&mut self, text: &str, x: i32, y: i32) -> (i32, i32);
+
+    fn get_size(&self) -> Vec2;
 }
 
 pub struct Tekenen {
@@ -115,6 +119,68 @@ impl Draw for Tekenen {
                 self.set_pixel(x as i32, y as i32, color);
             }
         }
+    }
+
+    fn draw_text(&mut self, text: &str, x: i32, y: i32) -> (i32, i32) {
+        const FONT_SCALE: i32 = 2;
+        const FONT_SIZE: i32 = 8 * FONT_SCALE;
+
+        let mut curr_x = 0;
+        let mut curr_y = 0;
+
+        for char in text.chars() {
+            if curr_x >= 800 || char == '\n' {
+                curr_x = 0;
+                curr_y += FONT_SIZE;
+
+                if char == '\n' {
+                    continue;
+                }
+            }
+
+            // skip whitespace
+            if char == ' ' {
+                curr_x += FONT_SIZE;
+                continue;
+            }
+
+            // get data by finding offset in charset
+            let data = FONT.get(char as usize - FIRST_CHAR as usize);
+
+            let data = if let Some(data) = data {
+                data
+            } else {
+                println!("Invalid char! {}", char);
+                &FONT['?' as usize]
+            };
+
+            for (yd, line) in data.iter().enumerate() {
+                let y = y + yd as i32 * FONT_SCALE + curr_y;
+
+                for (xd, symbol) in line.iter().enumerate() {
+                    let x = x + xd as i32 * FONT_SCALE + curr_x;
+
+                    if *symbol == ' ' {
+                        continue;
+                    }
+
+                    for xf in 0..FONT_SCALE {
+                        for yf in 0..FONT_SCALE {
+                            self.set_pixel(x + xf, y + yf, colors::WHITE);
+                        }
+                    }
+                }
+            }
+
+            // increment for next character
+            curr_x += FONT_SIZE;
+        }
+
+        (curr_x, curr_y)
+    }
+
+    fn get_size(&self) -> Vec2 {
+        Vec2::new(self.width as i32, self.height as i32)
     }
 }
 
@@ -212,64 +278,6 @@ impl Tekenen {
         }
     }
 
-    pub fn draw_text(&mut self, text: &str, x: i32, y: i32) -> (i32, i32) {
-        const FONT_SCALE: i32 = 2;
-        const FONT_SIZE: i32 = 8 * FONT_SCALE;
-
-        let mut curr_x = 0;
-        let mut curr_y = 0;
-
-        for char in text.chars() {
-            if curr_x >= 800 || char == '\n' {
-                curr_x = 0;
-                curr_y += FONT_SIZE;
-
-                if char == '\n' {
-                    continue;
-                }
-            }
-
-            // skip whitespace
-            if char == ' ' {
-                curr_x += FONT_SIZE;
-                continue;
-            }
-
-            // get data by finding offset in charset
-            let data = FONT.get(char as usize - FIRST_CHAR as usize);
-
-            let data = if let Some(data) = data {
-                data
-            } else {
-                println!("Invalid char! {}", char);
-                &FONT['?' as usize]
-            };
-
-            for (yd, line) in data.iter().enumerate() {
-                let y = y + yd as i32 * FONT_SCALE + curr_y;
-
-                for (xd, symbol) in line.iter().enumerate() {
-                    let x = x + xd as i32 * FONT_SCALE + curr_x;
-
-                    if *symbol == ' ' {
-                        continue;
-                    }
-
-                    for xf in 0..FONT_SCALE {
-                        for yf in 0..FONT_SCALE {
-                            self.set_pixel(x + xf, y + yf, colors::WHITE);
-                        }
-                    }
-                }
-            }
-
-            // increment for next character
-            curr_x += FONT_SIZE;
-        }
-
-        (curr_x, curr_y)
-    }
-
     pub fn draw_terminal(&mut self, buffer: &str, time: u64) {
         let (x, y) = self.draw_text(buffer, 0, 0);
 
@@ -310,7 +318,7 @@ impl<T: Draw> TransforView<T> {
     }
 }
 
-impl Draw for TransforView {
+impl<T: Draw> Draw for TransforView<T> {
     fn shape(&mut self, shape: &dyn Shape, color: Pixel) {
         let mut shape = shape.dyn_clone();
 
@@ -335,6 +343,14 @@ impl Draw for TransforView {
 
     fn background(&mut self, color: Pixel) {
         self.target.borrow_mut().shape(&self.screen, color)
+    }
+
+    fn draw_text(&mut self, text: &str, x: i32, y: i32) -> (i32, i32) {
+        self.target.borrow_mut().draw_text(text, x + self.screen.position.x, y + self.screen.position.y)
+    }
+
+    fn get_size(&self) -> Vec2 {
+        self.screen.size * self.zoom
     }
 }
 
@@ -372,8 +388,6 @@ impl TransforView {
         match *event {
             Event::MouseDown { x, y } => {
                 if self.bounding_box().encloses_point(&Point::new(x ,y)) {
-                    dbg!(self.bounding_box(), &self.word_position , x, y);
-
                     self.moving = true
                 }
             },

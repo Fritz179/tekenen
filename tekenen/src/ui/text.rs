@@ -1,5 +1,5 @@
-use super::{UIBox, BoundingBox, ViewBox};
-use crate::Tekenen;
+use super::{UIBox, BoundingBox};
+use crate::Draw;
 
 pub struct Text {
     text: String,
@@ -16,8 +16,8 @@ impl Text {
 }
 
 impl UIBox for Text {
-    fn draw(&mut self, view: ViewBox, tek: &mut Tekenen) {
-        tek.draw_text(&self.text, view.x, view.y);
+    fn draw(&mut self, tv: &mut dyn Draw) {
+        tv.draw_text(&self.text, 0, 0);
     }
 
     fn get_box(&mut self, max: BoundingBox) -> &BoundingBox {
