@@ -60,6 +60,10 @@ pub enum Event {
     MouseWheel {
         direction: bool
     },
+    Resize {
+        w: i32,
+        h: i32
+    },
     Quit,
 }
 

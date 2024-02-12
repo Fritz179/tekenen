@@ -1,8 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use crate::{TransforView, Draw};
-
-use super::Tekenen;
+use crate::{TransforView, Draw, platform::Event};
 
 pub mod container;
 pub use container::Container;
@@ -48,7 +46,7 @@ pub struct BoundingBox {
 }
 
 impl BoundingBox {
-    fn new(width: i32, height: i32) -> Self {
+    pub fn new(width: i32, height: i32) -> Self {
         Self {
             margin: Sides::default(),
             border: Sides::default(),
@@ -58,15 +56,46 @@ impl BoundingBox {
     }
 }
 
-pub trait UIBox {
-    fn draw(&mut self, view: &mut dyn Draw);
-    fn get_box(&mut self, max: BoundingBox) -> &BoundingBox;
-    // fn get_children(&mut self) -> &[Box<dyn UIBox>];
+pub trait Element {
+    // React to event
+    fn event(&mut self, event: Event);
+
+    // TODO: Called with exact time difference
+    // fn fixed_update(&mut self)
+
+    // Called once before draw
+    fn update(&mut self);
+
+    // TODO: Should be draw(&self)
+    fn draw(&mut self);
 }
 
-// 1) Get size by passing down max allowed space for 100%
-// 2) Draw according to calculated size, invalidate all if needed
-// 3) React to key/mouse?
+pub trait Contain {
+    // React to event
+    fn event(&mut self, event: Event);
+
+    // TODO: Called with exact time difference
+    // fn fixed_update(&mut self)
+
+    // Called once before draw
+    fn update(&mut self);
+
+    // Also used to get tv size, pixels?
+    fn get_tv(&mut self) -> &mut dyn Draw;
+
+    // Used for propagating events
+    fn get_children(&mut self) -> &[&mut dyn Element];
+}
+
+// Element vs Container
+// Container has get_children and progagates events, also target of Draw
+// EndContainer children [Element] need get_tv to know the Container size
+// Who has margin & stuff, only Containers?
+
+// Elements gets draw(tv: &mut tv)
+// Container has on self
+
+// Are divs elements? 
 
 struct TempTV<'a> {
     target: &'a mut dyn Draw
@@ -96,12 +125,24 @@ impl<'a> Draw for TempTV<'a> {
     }
 }
 
-impl Tekenen {
-    pub fn ui(&mut self, container: &mut Box<Container>) {
-        let view = container.get_box(BoundingBox::new(self.width() as i32, self.height() as i32));
+pub struct UIBuilder {
+    tv: Rc<RefCell<TransforView>>,
+    children: Vec<Box<dyn Element>>
+}
 
-        let mut tv = TempTV::new(self, 0, 0, view.width.pixels(), view.height.pixels());
+pub trait UIBuilderTrait {
+    fn build();
+}
 
-        container.draw(&mut tv)
+impl UIBuilder {
+    pub fn new(tv: Rc<RefCell<TransforView>>) -> Self {
+        Self {
+            tv,
+            children: Vec::new()
+        }
+    }
+
+    pub fn build(self) -> Box<Container> {
+        Container::new_vertical(self.children)
     }
 }

@@ -22,6 +22,7 @@ mod demo;
 //  3) Physics demo
 //  4) SubCanvas
 
+static mut DEBUG_MODE: bool = false;
 
 fn main() {
     Platform::set_assets(Asset);
@@ -32,6 +33,7 @@ fn main() {
         Box::new(demo::basic::BasicDemo::new()) as Box<dyn Demo>,
         Box::new(demo::text::TextDemo::new()),
         Box::new(demo::transform::TransfromDemo::new()),
+        Box::new(demo::div::DivDemo::new()),
     ];
 
     let mut current_demo = 0;
@@ -47,6 +49,11 @@ fn main() {
                     if current_demo >= demos.len() {
                         current_demo = 0;
                         continue
+                    }
+                },
+                Event::KeyDown(KeyDownEvent { char: Some('m'), .. }) => {
+                    unsafe {
+                        DEBUG_MODE = !DEBUG_MODE
                     }
                 }
                 _ => { }

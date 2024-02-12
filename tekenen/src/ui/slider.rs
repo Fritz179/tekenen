@@ -1,5 +1,5 @@
-use crate::{Pixel, colors, Tekenen, tekenen::Draw};
-use super::{UIBox, BoundingBox};
+use crate::{Pixel, colors, tekenen::Draw};
+use super::{Element, BoundingBox, UIBuilder};
 
 pub struct Slider {
     pub x1: i32,
@@ -85,14 +85,30 @@ impl Slider {
     }
 }
 
-impl UIBox for Slider {
-    fn draw(&mut self, tv: &mut dyn Draw) {
-        tv.rect(self.x1, self.y - self.slider_width / 2, self.x2 - self.x1, self.slider_width, self.slider_color);
-        tv.circle(self.x, self.y, self.knob_radius, self.know_color);
+impl Element for Slider {
+    fn event(&mut self, event: crate::platform::Event) {
+        
     }
 
-    fn get_box(&mut self, max: BoundingBox) -> &BoundingBox {
-        self.bounding_box = BoundingBox::new(self.x2 - self.x1, self.knob_radius * 2);
-        &self.bounding_box
+    fn update(&mut self) {
+        
     }
+
+    fn draw(&mut self) {
+        
+    }
+
+    // fn draw(&mut self, tv: &mut dyn Draw) {
+    //     tv.rect(self.x1, self.y - self.slider_width / 2, self.x2 - self.x1, self.slider_width, self.slider_color);
+    //     tv.circle(self.x, self.y, self.knob_radius, self.know_color);
+    // }
+
+    // fn get_box(&mut self, max: BoundingBox) -> &BoundingBox {
+    //     self.bounding_box = BoundingBox::new(self.x2 - self.x1, self.knob_radius * 2);
+    //     &self.bounding_box
+    // }
+}
+
+impl UIBuilder {
+
 }
