@@ -1,68 +1,59 @@
-use std::cell::RefCell;
-use std::rc::Rc;
-
-use tekenen::platform::{Event, Platform, IntervalDecision, PlatformTrait};
-use tekenen::{Tekenen, colors, Draw};
-use tekenen::ui::{Text, Div};
+use tekenen::ui::{DivElement, ElementBox, TextElement};
+use tekenen::{colors, Draw, Tekenen};
+use tekenen::platform::{PlatformTrait, IntervalDecision, Event, KeyDownEvent};
 
 pub struct TextDemo {
-    tek: Rc<RefCell<Tekenen>>,
-    ui: Box<Div>,
-    ticker: Box<Text>
+    tek: Tekenen,
+    tick: i32,
+    text: TextElement,
+    div: DivElement,
 }
 
 impl TextDemo {
     pub fn new() -> Self {
-        let tek = Rc::new(RefCell::new(Tekenen::new(800, 600)));
-
-        let ticker = Text::new("Tick: ");
-        let ui = Div::new_vertical(vec![Text::new("Hello"), Text::new("There"), ticker]);
+        let text = TextElement::new("salve");
+        let clone = text.rc_clone();
+        let div = DivElement::new_vertical(vec![
+            clone.into(),
+            TextElement::new("hello").into(),
+            TextElement::new("world").into(),
+        ]);
 
         Self {
-            tek,
-            ui,
-            ticker
+            tek: Tekenen::new(800, 600),
+            tick: 0,
+            text,
+            div
         }
     }
 }
 
 impl super::Demo for TextDemo {
-    fn update(&mut self, _event: &Event) -> IntervalDecision {
+    fn update(&mut self, event: &Event) -> tekenen::platform::IntervalDecision {
+        match event {
+            Event::Quit => {
+                return IntervalDecision::Stop
+            },
+            Event::KeyDown(KeyDownEvent { char: Some(char), .. }) => {
+                println!("{char}")
+            },
+            _ => { }
+        };
+
         IntervalDecision::Repeat
     }
 
-    fn draw(&mut self, window: &mut Platform) {
-        let mut tek = self.tek.borrow_mut();
+    fn draw(&mut self, window: &mut tekenen::platform::Platform) {
+        let tekenen = &mut self.tek;
+        tekenen.background(colors::GRAY);
 
-        tek.background(colors::GRAY);
+        let mut text = self.text.get();
 
+        text.text = format!("Tick: {tick}", tick = self.tick);
 
-        // tek.ui(&mut Container::vertical(vec![
-        //     Text::new("This is a Section!"),
-        //     Container::horizontal(vec![
-        //         Text::new("Line 1:"),
-        //         Text::new("<x>")
-        //     ]),//.justify(justify::space_beetwen),
-        //     Container::horizontal(vec![
-        //             Text::new("Line 1:"),
-        //             Text::new("<y>")
-        //         ])
-        //         ,//.justify(justify::space_beetwen),
-        //         // .border(border::new()::bottom(unit::pixels::new(20))),
-        //     Text::new("This is anorher Section!"),
-        //     Container::horizontal(vec![
-        //         Text::new("A:"),
-        //         Text::new("<z>")
-        //     ]),//.justify(justify::space_beetwen),
-        //     Container::horizontal(vec![
-        //             Text::new("A very very very very very very long Line:"),
-        //             Text::new("<w>")
-        //         ])
-        //         ,//.justify(justify::space_beetwen)
-        // ]));
+        self.div.draw(tekenen);
 
-        self.ui.draw();
-
-        window.display_pixels(tek.get_pixels());
+        self.tick += 1;
+        window.display_pixels(tekenen.get_pixels());
     }
 }

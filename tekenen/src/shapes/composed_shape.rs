@@ -1,6 +1,6 @@
 use crate::math::Vec2;
 
-use super::{Shape, BitShaping, Intersect, point::Point, rect::{Rect, RectIter}, circle::Circle, triangle::Triangle};
+use super::{Shape, BitShaping, Intersect, point::Point, rect::Rect, circle::Circle, triangle::Triangle};
 
 #[derive(Debug, Clone, Copy)]
 pub enum BitOperand {

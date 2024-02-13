@@ -1,13 +1,15 @@
+use std::cell::RefMut;
+
 use crate::{platform::Event, Tekenen};
 
 pub mod div;
-pub use div::Div;
+pub use div::DivElement;
 
 pub mod slider;
 pub use slider::Slider;
 
 pub mod text;
-pub use text::Text;
+pub use text::TextElement;
 
 #[derive(Debug, Default)]
 pub enum Value {
@@ -54,12 +56,32 @@ impl BoundingBox {
     }
 }
 
-pub trait Element {
+pub trait ElementBox {
+    type InnerElement: Element;
+
+    fn get(&self) -> RefMut<'_, Self::InnerElement>;
+
     // React to event
-    fn event(&mut self, event: Event);
+    fn event(&mut self, event: Event) {
+        self.get().event(event)
+    }
 
     // TODO: Called with exact time difference
     // fn fixed_update(&mut self)
+
+    // Called once before draw
+    fn update(&mut self) {
+        self.get().update()
+    }
+
+    fn draw(&mut self, target: &mut Tekenen) {
+        self.get().draw(target)
+    }
+}
+
+pub trait Element {
+    // React to event
+    fn event(&mut self, event: Event);
 
     // Called once before draw
     fn update(&mut self);

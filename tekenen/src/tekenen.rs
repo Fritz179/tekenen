@@ -15,7 +15,7 @@ mod font {
 
 use font::*;
 
-use crate::{math::Vec2, platform::Event, shapes::{rect::Rect, Intersect, point::Point, circle::Circle, Shape, BitShaping}};
+use crate::{math::Vec2, platform::Event, shapes::{rect::Rect, Intersect, point::Point, circle::Circle, Shape}};
 
 #[allow(dead_code)]
 pub mod colors {

@@ -1,15 +1,43 @@
-use super::{Element};
-use crate::{Draw, Tekenen};
+use std::{cell::{RefCell, RefMut}, ops::Deref, rc::Rc};
+
+use super::{Element, ElementBox};
+use crate::{tekenen::Font, Draw, Tekenen};
 
 pub struct Text {
-    text: String,
+    pub text: String,
 }
 
-impl Text {
-    pub fn new(text: &str) -> Box<Self> {
-        Box::new(Self {
-            text: text.to_owned(),
-        })
+pub struct TextElement {
+    pub element: Rc<RefCell<Text>>
+}
+
+impl TextElement {
+    pub fn new(text: &str) -> Self {
+        TextElement {
+            element: Rc::new(RefCell::new(Text {
+                text: text.to_owned(),
+            }))
+        }
+    }
+
+    pub fn rc_clone(&self) -> Self {
+        Self {
+            element: Rc::clone(&self.element)
+        }
+    }
+}
+
+impl From<TextElement> for Rc<RefCell<dyn Element>> {
+    fn from(text: TextElement) -> Rc<RefCell<dyn Element>> {
+        text.element
+    }
+}
+
+impl ElementBox for TextElement {
+    type InnerElement = Text;
+
+    fn get(&self) -> RefMut<'_, Self::InnerElement> {
+        self.element.deref().borrow_mut()
     }
 }
 
@@ -23,6 +51,6 @@ impl Element for Text {
     }
 
     fn draw(&mut self, target: &mut Tekenen) {
-        // self.tv.draw_text(&self.text, 0, 0);
+        target.text(&self.text, 0, 0, Font::new(8));
     }
 }

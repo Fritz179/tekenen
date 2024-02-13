@@ -1,7 +1,8 @@
-use tekenen::{Tekenen, colors, Draw};
+use tekenen::{Tekenen, colors, Draw, Font};
 use tekenen::platform::{Platform, PlatformTrait, IntervalDecision, Event, KeyDownEvent};
 
-pub struct BasicDemo {
+
+pub struct ImageDemo {
     tek: Tekenen,
     // slider: slider::Slider,
     img8_png: Tekenen, 
@@ -9,7 +10,7 @@ pub struct BasicDemo {
     tick: i32,
 }
 
-impl BasicDemo {
+impl ImageDemo {
     pub fn new() -> Self {
         Self {
             tek: Tekenen::new(800, 600),
@@ -21,7 +22,7 @@ impl BasicDemo {
     }
 }
 
-impl super::Demo for BasicDemo {
+impl super::Demo for ImageDemo {
     fn update(&mut self, event: &Event) -> tekenen::platform::IntervalDecision {
         match event {
             Event::Quit => {
@@ -62,28 +63,12 @@ impl super::Demo for BasicDemo {
         tekenen.line(100, 400, 100, 350, colors::WHITE);
         tekenen.line(150, 400, 150, 550, colors::WHITE);
 
-        tekenen.draw_text(&format!("Hello there, tick: {}", self.tick), 200, 200);
+        tekenen.text(&format!("Hello there, tick: {}", self.tick), 200, 200, Font::new(8));
 
         tekenen.draw_image(600, 200, &self.img8_png);
         tekenen.draw_scaled_image(600, 25, &self.img8_fpia, 5);
 
-        // tekenen.ui(&mut Container::horizontal(vec![
-        //     Container::new(),
-        //     Container::vertical(vec![
-        //         Container::new(|_b, _tekenen| {
-        //             // tekenen.rect(b.x, b.y, b.w, b.h, colors::WHITE)
-        //         }),
-        //         Container::new(|b, tekenen| {
-        //             tekenen.rect(b.x, b.y, b.w, b.h, colors::WHITE)
-        //         }),
-        //     ])
-        // ]));
-
         self.tick += 1;
-
-        // Draw slider
-        // self.slider.draw(tekenen);
-        // tekenen.draw_text(&format!("Value: {}", self.slider.value), 300, 75);
 
         window.display_pixels(tekenen.get_pixels());
     }

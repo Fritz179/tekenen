@@ -1,12 +1,12 @@
 use tekenen::{colors, Draw, Tekenen};
 use tekenen::platform::{PlatformTrait, IntervalDecision, Event, KeyDownEvent};
 
-pub struct DivDemo {
+pub struct CanvasDemo {
     tek: Tekenen,
     tick: i32,
 }
 
-impl DivDemo {
+impl CanvasDemo {
     pub fn new() -> Self {
         Self {
             tek: Tekenen::new(800, 600),
@@ -15,7 +15,7 @@ impl DivDemo {
     }
 }
 
-impl super::Demo for DivDemo {
+impl super::Demo for CanvasDemo {
     fn update(&mut self, event: &Event) -> tekenen::platform::IntervalDecision {
         match event {
             Event::Quit => {
@@ -24,15 +24,6 @@ impl super::Demo for DivDemo {
             Event::KeyDown(KeyDownEvent { char: Some(char), .. }) => {
                 println!("{char}")
             },
-            // Event::MouseDown { x, y } => {
-            //     self.slider.mouse_down(x, y);
-            // },
-            // Event::MouseMove { x, y } => {
-            //     self.slider.mouse_move(x, y);
-            // },
-            // Event::MouseUp { x, y } => {
-            //     self.slider.mouse_up(x, y);
-            // },
             _ => { }
         };
 

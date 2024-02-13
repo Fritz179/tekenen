@@ -10,7 +10,6 @@ use sdl2::EventPump;
 
 use sdl2::keyboard;
 
-use crate::math::Vec2;
 use crate::tekenen::Pixels;
 use super::{PlatformTrait, PlatformError, Event, KeyDownEvent, Keycode, Keymod, IntervalDecision, time_manager::{TimeAction, TimeManager}};
 #[cfg(feature = "image")]

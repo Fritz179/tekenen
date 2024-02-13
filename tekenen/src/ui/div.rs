@@ -1,6 +1,8 @@
+use std::{cell::{RefCell, RefMut}, ops::Deref, rc::Rc};
+
 use crate::Tekenen;
 
-use super::{BoundingBox, Element};
+use super::{BoundingBox, Element, ElementBox};
 
 pub enum Direction {
     Horizonral,
@@ -12,32 +14,56 @@ pub enum Direction {
 pub struct Div {
     bounding_box: BoundingBox,
     direction: Direction,
-    children: Vec<Box<dyn Element>>
+    children: Vec<Rc<RefCell<dyn Element>>>
 }
 
-impl Div {
-    pub fn new(child: Box<dyn Element>) -> Box<Self> {
-        Box::new(Self {
-            bounding_box: BoundingBox::default(),
-            direction: Direction::Vertical,
-            children: vec![child]
-        })
+pub struct DivElement {
+    element: Rc<RefCell<Div>>
+}
+
+impl DivElement {
+    pub fn new(child: Rc<RefCell<dyn Element>>) -> Self {
+        Self {
+            element: Rc::new(RefCell::new(Div {
+                bounding_box: BoundingBox::default(),
+                direction: Direction::Vertical, 
+                children: vec![child]
+            }))
+        }
     }
 
-    pub fn new_vertical(children: Vec<Box<dyn Element>>) -> Box<Self> {
-        Box::new(Self {
-            bounding_box: BoundingBox::default(),
-            direction: Direction::Vertical, 
-            children
-        })
+    pub fn new_vertical(children: Vec<Rc<RefCell<dyn Element>>>) -> Self {
+        Self {
+            element: Rc::new(RefCell::new(Div {
+                bounding_box: BoundingBox::default(),
+                direction: Direction::Vertical, 
+                children
+            }))
+        }
     }
 
-    pub fn new_horizontal(children: Vec<Box<dyn Element>>) -> Box<Self> {
-        Box::new(Self {
-            bounding_box: BoundingBox::default(),
-            direction: Direction::Horizonral, 
-            children
-        })
+    pub fn new_horizontal(children: Vec<Rc<RefCell<dyn Element>>>) -> Self {
+        Self {
+            element: Rc::new(RefCell::new(Div {
+                bounding_box: BoundingBox::default(),
+                direction: Direction::Horizonral, 
+                children
+            }))
+        }
+    }
+
+    pub fn rc_clone(&self) -> Self {
+        Self {
+            element: Rc::clone(&self.element)
+        }
+    }
+}
+
+impl ElementBox for DivElement {
+    type InnerElement = Div;
+
+    fn get(&self) -> RefMut<'_, Self::InnerElement> {
+        self.element.deref().borrow_mut()
     }
 }
 
