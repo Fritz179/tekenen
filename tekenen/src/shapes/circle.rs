@@ -95,10 +95,12 @@ impl Shape for Circle {
         Rect::new(x - r, y - r, r + r, r + r)
     }
 
-    fn transform(&mut self, offset: Vec2, zoom: f32) {
+    fn tranlsate(&mut self, offset: Vec2) {
+        self.position += offset
+    }
+
+    fn scale(&mut self, zoom: f32) {
         self.position *= zoom;
-        self.position += offset;
-        
         self.radius = (self.radius as f32 * zoom) as i32;
     }
 

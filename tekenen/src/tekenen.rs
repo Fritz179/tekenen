@@ -13,11 +13,9 @@ mod font {
     pub use font_default::*;
 }
 
-use std::{rc::Rc, cell::RefCell};
-
 use font::*;
 
-use crate::{math::Vec2, platform::Event, shapes::{rect::Rect, Intersect, point::Point, circle::Circle, Shape, BitShaping, ComposedShape}};
+use crate::{math::Vec2, platform::Event, shapes::{rect::Rect, Intersect, point::Point, circle::Circle, Shape, BitShaping}};
 
 #[allow(dead_code)]
 pub mod colors {
@@ -37,40 +35,111 @@ pub mod colors {
     pub const BLACK: Pixel = [0, 0, 0, 255];
 }
 
+pub struct Font {
+    height: i32,
+}
+
+impl Font {
+    pub fn new(height: i32) -> Self {
+        Self {
+            height
+        }
+    }
+}
+
+pub enum OverflowBehavior {
+    /// Draw everything
+    Overflow,
+
+    /// Draw only pixels inside the clip zone
+    Hidden,
+
+    /// Draw only shapes fully inside the clip zone
+    Skip,
+
+    /// Draw onyl shapes intersecting the clip zone
+    MaybeFasterIDK
+}
+
 pub trait Draw {
     /// Draw any general shape
-    fn shape(&mut self, shape: &dyn Shape, color: Pixel);
+    fn shape<T: Shape>(&mut self, shape: T, color: Pixel);
 
     /// Blanket implementation for specific shapes
-    /// Rect
+    /// Point
+    
+    // TODO: point
+    // fn point(&mut self, x: i32, y: i32, color: Pixel) {
+    //     self.shape(&Point::new(x, y), color)
+    // }
+
+    /// Rectangle
     fn rect(&mut self, x: i32, y: i32, w: i32, h: i32, color: Pixel) {
-        self.shape(&Rect::new(x, y, w, h), color)
+        self.shape(Rect::new(x, y, w, h), color)
     }
 
-    fn rect_at(&mut self, pos: Vec2, size: Vec2, color: Pixel) {
-        self.shape(&Rect::vec(pos, size), color)
+    fn rect_vec(&mut self, pos: Vec2, size: Vec2, color: Pixel) {
+        self.shape(Rect::new_vec(pos, size), color)
     }
 
     /// Circle
-    fn circle(&mut self, x: i32, y: i32, r: i32, color: Pixel) {
-        self.shape(&Circle::new(x, y, r), color)
+    fn circle(&mut self, x: i32, y: i32, radius: i32, color: Pixel) {
+        self.shape(Circle::new(x, y, radius), color)
     }
 
-    fn circle_at(&mut self, pos: Vec2, radius: i32, color: Pixel) {
-        self.shape(&Circle::vec(pos, radius), color)
+    fn circle_vec(&mut self, pos: Vec2, radius: i32, color: Pixel) {
+        self.shape(Circle::vec(pos, radius), color);
     }
 
     fn background(&mut self, color: Pixel);
 
-    fn draw_text(&mut self, text: &str, x: i32, y: i32) -> (i32, i32);
+    fn text(&mut self, text: &str, x: i32, y: i32, font: Font) -> (i32, i32);
+
+    fn text_vec(&mut self, text: &str, pos: Vec2, font: Font) -> (i32, i32) {
+        self.text(text, pos.x, pos.y, font)
+    }
+
+    fn set_translation(&mut self, x: i32, y: i32) {
+        self.set_translation_vec(Vec2::new(x, y))
+    }
+
+    fn set_translation_vec(&mut self, pos: Vec2);
+
+    fn translate(&mut self, x: i32, y: i32) {
+        self.translate_vec(Vec2::new(x, y))
+    }
+
+    fn translate_vec(&mut self, pos: Vec2);
+
+    fn set_scale(&mut self, zoom: f32);
+
+    fn scale(&mut self, zoom: f32);
 
     fn get_size(&self) -> Vec2;
+
+    fn clip(&mut self, clip: Rect);
+
+    fn reset_clip(&mut self);
 }
 
 pub struct Tekenen {
+    /// The memory buffer holding the pixels
     pub pixels: Pixels,
     width: usize,
     height: usize,
+
+    /// World coordinates
+    /// Transformation
+    translation: Vec2,
+    zoom: f32,
+
+    /// Screen coordinates
+    /// clip object outside the clip area
+    clip: Rect,
+    overflow_behavior: OverflowBehavior,
+
+    /// used for panning and zooming
+    moving: bool,
 }
 
 // TODO: Load image
@@ -80,6 +149,11 @@ impl Tekenen {
             pixels: vec![0; width * height * 4],
             width,
             height,
+            translation: Vec2::default(),
+            zoom: 1.0,
+            clip: Rect::new(0, 0, width as i32, height as i32),
+            overflow_behavior: OverflowBehavior::Overflow,
+            moving: false
         }
     }
 
@@ -87,7 +161,12 @@ impl Tekenen {
         Self {
             width,
             height,
-            pixels
+            pixels,
+            translation: Vec2::default(),
+            zoom: 1.0,
+            clip: Rect::new(0, 0, width as i32, height as i32),
+            overflow_behavior: OverflowBehavior::Overflow,
+            moving: false,
         }
     }
 
@@ -104,12 +183,113 @@ impl Tekenen {
     }
 }
 
-impl Draw for Tekenen {
-    fn shape(&mut self, shape: &dyn Shape, color: Pixel) {
-        // let shape = shape.dyn_clone();
-
+impl Tekenen {
+    fn shape_impl<T: Shape>(&mut self, shape: T, color: Pixel) {
         for Vec2 {x, y} in shape.iter() {
             self.set_pixel(x, y, color);
+        }
+    }
+
+    fn dyn_shape_impl(&mut self, shape: &dyn Shape, color: Pixel) {
+        for Vec2 {x, y} in shape.iter() {
+            self.set_pixel(x, y, color);
+        }
+    }
+
+    pub fn handle_pan_and_zoom(&mut self, event: &Event) {
+        match *event {
+            Event::MouseDown { x, y } => {
+                if self.clip.encloses_point(&Point::new(x ,y)) {
+                    self.moving = true
+                }
+            },
+            Event::MouseMove { xd, yd, .. } => {
+                if self.moving {
+                    self.translate(xd, yd)
+                }
+            },
+            Event::MouseUp { x, y } => {
+                self.moving = false
+            },
+            Event::MouseWheel { direction } => {
+                self.zoom *= if direction { 0.99 } else { 1.01 }
+            }
+            _ => {}
+        }
+    }
+
+    /// offset => world offset to top left of screen
+    /// scale => world pixel to screen pixel
+    
+    pub fn world_to_screen(&self, x: i32, y:i32) -> (i32, i32) {
+        self.world_to_screen_vec(Vec2::new(x, y)).tuple()
+    }
+
+    pub fn world_to_screen_vec(&self, pos: Vec2) -> Vec2 {
+        pos * self.zoom - self.translation
+    }
+
+    pub fn screen_to_world(&self, x: i32, y: i32) -> (i32, i32) {
+        let x = ((x + self.translation.x) as f32 / self.zoom) as i32;
+        let y = ((y + self.translation.y) as f32 / self.zoom) as i32;
+
+        (x, y)
+    }
+
+    pub fn screen_to_world_vec(&self, pos: Vec2) -> Vec2 {
+        (pos + self.translation) / self.zoom
+    }
+}
+
+impl Draw for Tekenen {
+    fn set_translation_vec(&mut self, pos: Vec2) {
+        self.translation = pos
+    }
+
+    fn translate_vec(&mut self, pos: Vec2) {
+        self.translation += pos
+    }
+
+    fn set_scale(&mut self, zoom: f32) {
+        self.zoom = zoom
+    }
+
+    fn scale(&mut self, zoom: f32) {
+        self.zoom += zoom
+    }
+
+    fn clip(&mut self, clip: Rect) {
+        self.clip = clip
+    }
+
+    fn reset_clip(&mut self) {
+        self.clip = Rect::new(0, 0, self.width as i32, self.height as i32)
+    }
+
+    fn shape<T: Shape>(&mut self, mut shape: T, color: Pixel) {
+        shape.scale(self.zoom);
+        shape.tranlsate(self.translation);
+
+        match self.overflow_behavior {
+            OverflowBehavior::Overflow => {
+                self.shape_impl(shape, color)
+            },
+            OverflowBehavior::Skip => {
+                if self.clip.encloses(shape.intersect_upcast()) {
+                    self.shape_impl(shape, color)
+                }
+            },
+            OverflowBehavior::Hidden => {
+                let shape = shape.join_and(&self.clip);
+
+                self.shape_impl(shape, color)
+
+            },
+            OverflowBehavior::MaybeFasterIDK => {
+                if self.clip.intersect(shape.intersect_upcast()) {
+                    self.shape_impl(shape, color)
+                }
+            }
         }
     }
 
@@ -121,7 +301,7 @@ impl Draw for Tekenen {
         }
     }
 
-    fn draw_text(&mut self, text: &str, x: i32, y: i32) -> (i32, i32) {
+    fn text(&mut self, text: &str, x: i32, y: i32, font: Font) -> (i32, i32) {
         const FONT_SCALE: i32 = 2;
         const FONT_SIZE: i32 = 8 * FONT_SCALE;
 
@@ -275,134 +455,6 @@ impl Tekenen {
                     self.set_pixel(x + xd, y + yd, from)
                 }
             }
-        }
-    }
-
-    pub fn draw_terminal(&mut self, buffer: &str, time: u64) {
-        let (x, y) = self.draw_text(buffer, 0, 0);
-
-        const BLINKING_TIME: u64 = 500;
-
-        if time % BLINKING_TIME > BLINKING_TIME / 2 {
-            self.rect(x, y, 16, 16, colors::WHITE)
-        }
-    }
-}
-
-pub enum OverflowBehavior {
-    Overflow,
-    Hidden,
-    Skip
-}
-
-pub struct TransforView<T: Draw = Tekenen> {
-    target: Rc<RefCell<T>>,
-    screen: Rect,
-    word_position: Vec2,
-    // word_size = screen_size * zoom
-    zoom: f32, 
-    moving: bool,
-    overflow_behavior: OverflowBehavior
-}
-
-impl<T: Draw> TransforView<T> {
-    pub fn new(x: i32, y: i32, w: i32, h: i32, target: Rc<RefCell<T>>) -> Self {
-        Self {
-            target,
-            screen: Rect::new(x, y, w, h),
-            word_position: Vec2::default(),
-            zoom: 1.0,
-            moving: false,
-            overflow_behavior: OverflowBehavior::Overflow
-        }
-    }
-}
-
-impl<T: Draw> Draw for TransforView<T> {
-    fn shape(&mut self, shape: &dyn Shape, color: Pixel) {
-        let mut shape = shape.dyn_clone();
-
-        shape.transform(self.word_position + self.screen.position, self.zoom);
-
-        match self.overflow_behavior {
-            OverflowBehavior::Overflow => {
-                self.target.borrow_mut().shape(&*shape, color)
-            },
-            OverflowBehavior::Skip => {
-                if self.screen.encloses(shape.intersect_upcast()) {
-                    self.target.borrow_mut().shape(&*shape, color)
-                }
-            },
-            OverflowBehavior::Hidden => {
-                let shape = shape.join_and(&self.screen);
-
-                self.target.borrow_mut().shape(&shape, color)
-            }
-        }
-    }
-
-    fn background(&mut self, color: Pixel) {
-        self.target.borrow_mut().shape(&self.screen, color)
-    }
-
-    fn draw_text(&mut self, text: &str, x: i32, y: i32) -> (i32, i32) {
-        self.target.borrow_mut().draw_text(text, x + self.screen.position.x, y + self.screen.position.y)
-    }
-
-    fn get_size(&self) -> Vec2 {
-        self.screen.size * self.zoom
-    }
-}
-
-impl TransforView {
-    pub fn scale(&mut self, scale: f32) {
-        self.zoom *= scale
-    }
-
-    pub fn set_scale(&mut self, scale: f32) {
-        self.zoom = scale
-    }
-
-    pub fn translate(&mut self, x: i32, y: i32) {
-        self.word_position.add(x, y)
-    }
-
-    pub fn set_translate(&mut self, x: i32, y: i32) {
-        self.word_position.set(x, y)
-    }
-
-    pub fn reset(&mut self) {
-        self.zoom = 1.0;
-        self.word_position.set(0, 0)
-    }
-
-    pub fn set_overflow_behavior(&mut self, behavior: OverflowBehavior) {
-        self.overflow_behavior = behavior
-    }
-
-    pub fn bounding_box(&self) -> Rect {
-        self.screen.clone()
-    }
-
-    pub fn handle_pan_and_zoom(&mut self, event: &Event) {
-        match *event {
-            Event::MouseDown { x, y } => {
-                if self.bounding_box().encloses_point(&Point::new(x ,y)) {
-                    self.moving = true
-                }
-            },
-            Event::MouseMove { xd, yd, .. } => {
-                if self.moving {
-                    self.translate(xd, yd)
-                }
-            },
-            Event::MouseUp { x, y } => {
-                self.moving = false
-            },
-            Event::MouseWheel { direction } => {
-                self.zoom *= if direction { 0.99 } else { 1.01 }
-            }
-            _ => {}
         }
     }
 }

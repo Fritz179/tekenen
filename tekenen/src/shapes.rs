@@ -1,6 +1,4 @@
 pub mod point;
-use std::ops::BitAnd;
-
 use point::Point;
 
 pub mod rect;
@@ -13,16 +11,14 @@ pub mod triangle;
 use triangle::Triangle;
 
 mod composed_shape;
-use self::composed_shape::BitOperand;
 pub use self::composed_shape::ComposedShape;
 
 use crate::math::Vec2;
 
-pub type Positon = Point;
-pub type Size = Vec2;
-
 pub trait Shape: Intersect + BitShaping + std::fmt::Debug {
-    fn transform(&mut self, offset: Vec2, zoom: f32);
+    fn tranlsate(&mut self, offset: Vec2);
+    fn scale(&mut self, zoom: f32);
+
     fn get_bounding_box(&self) -> Rect;
     fn dyn_clone(&self) -> Box<dyn Shape>;
     fn iter(&self) -> Box<dyn Iterator<Item = Vec2>>;
@@ -60,7 +56,7 @@ pub trait BitShaping {
 // can &, |, ^, !
 // can get bounding boxes and test each pixel
 
-impl BitAnd for &dyn BitShaping {
+impl std::ops::BitAnd for &dyn BitShaping {
     type Output = ComposedShape;
 
     fn bitand(self, rhs: &dyn BitShaping) -> Self::Output {

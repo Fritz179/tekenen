@@ -1,35 +1,39 @@
-use crate::Draw;
+use crate::Tekenen;
 
-use super::{BoundingBox, Element, TempTV};
+use super::{BoundingBox, Element};
 
 pub enum Direction {
     Horizonral,
     Vertical
 }
 
-pub enum Container {
-    Single {
-        bounding_box: BoundingBox,
-        child: Box<dyn Element>
-    },
-    Directional {
-        bounding_box: BoundingBox,
-        direction: Direction,
-        children: Vec<Box<dyn Element>>
-    },
+/// A div is a flexbox by default
+/// A div with a single element is a flexbox with a single element
+pub struct Div {
+    bounding_box: BoundingBox,
+    direction: Direction,
+    children: Vec<Box<dyn Element>>
 }
 
-impl Container {
+impl Div {
+    pub fn new(child: Box<dyn Element>) -> Box<Self> {
+        Box::new(Self {
+            bounding_box: BoundingBox::default(),
+            direction: Direction::Vertical,
+            children: vec![child]
+        })
+    }
+
     pub fn new_vertical(children: Vec<Box<dyn Element>>) -> Box<Self> {
-        Box::new(Self::Directional {
+        Box::new(Self {
             bounding_box: BoundingBox::default(),
             direction: Direction::Vertical, 
             children
         })
     }
 
-    pub fn horizontal(children: Vec<Box<dyn Element>>) -> Box<Self> {
-        Box::new(Self::Directional {
+    pub fn new_horizontal(children: Vec<Box<dyn Element>>) -> Box<Self> {
+        Box::new(Self {
             bounding_box: BoundingBox::default(),
             direction: Direction::Horizonral, 
             children
@@ -37,7 +41,7 @@ impl Container {
     }
 }
 
-impl Element for Container {
+impl Element for Div {
     fn event(&mut self, event: crate::platform::Event) {
         
     }
@@ -46,7 +50,7 @@ impl Element for Container {
         
     }
 
-    fn draw(&mut self) {
+    fn draw(&mut self, target: &mut Tekenen) {
         // let event = Event::Resize { w: self.width() as i32, h: self.height() as i32 };
 
 

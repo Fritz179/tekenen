@@ -2,41 +2,32 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use tekenen::platform::{Event, Platform, IntervalDecision, PlatformTrait};
-use tekenen::{Tekenen, colors, Draw, TransforView};
-use tekenen::ui::{Container, Text, Element, UIBuilder};
+use tekenen::{Tekenen, colors, Draw};
+use tekenen::ui::{Text, Div};
 
 pub struct TextDemo {
     tek: Rc<RefCell<Tekenen>>,
-    ui: Box<Container>
+    ui: Box<Div>,
+    ticker: Box<Text>
 }
 
 impl TextDemo {
     pub fn new() -> Self {
         let tek = Rc::new(RefCell::new(Tekenen::new(800, 600)));
 
-        // let ui = UIBuilder::new(Rc::new(RefCell::new(TransforView::new(0, 0, 800, 600, tek.clone()))))
-        //     .vertical_container()
-        //         .text("Section 1")
-        //         .container()
-        //             .text("Line 1")
-        //             .text("<X>")
-        //         .build()
-        //     .build()
-        // .build();
-
-        let ui = UIBuilder::new(Rc::new(RefCell::new(TransforView::new(0, 0, 800, 600, tek.clone()))))
-        .text("Section 1")
-        .build();
+        let ticker = Text::new("Tick: ");
+        let ui = Div::new_vertical(vec![Text::new("Hello"), Text::new("There"), ticker]);
 
         Self {
             tek,
-            ui
+            ui,
+            ticker
         }
     }
 }
 
 impl super::Demo for TextDemo {
-    fn update(&mut self, event: &Event) -> IntervalDecision {
+    fn update(&mut self, _event: &Event) -> IntervalDecision {
         IntervalDecision::Repeat
     }
 

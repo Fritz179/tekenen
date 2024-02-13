@@ -109,7 +109,11 @@ impl Shape for ComposedShape {
         })
     }
 
-    fn transform(&mut self, offset: Vec2, zoom: f32) {
+    fn scale(&mut self, zoom: f32) {
+        todo!()
+    }
+
+    fn tranlsate(&mut self, offset: Vec2) {
         todo!()
     }
 }

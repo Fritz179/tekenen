@@ -1,4 +1,4 @@
-use std::ops::{AddAssign, Add, SubAssign, Sub, Mul, MulAssign};
+use std::ops::{AddAssign, Add, SubAssign, Sub, Mul, MulAssign, Div, DivAssign};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
 pub struct Vec2<T = i32> {
@@ -18,6 +18,10 @@ impl<T> Vec2<T> {
     pub fn set(&mut self, x: T, y: T) {
         self.x = x;
         self.y = y;
+    }
+
+    pub fn tuple(self) -> (T, T) {
+        (self.x, self.y)
     }
 }
 
@@ -81,6 +85,25 @@ impl Mul<f32> for Vec2 {
 
 impl MulAssign<f32> for Vec2 {
     fn mul_assign(&mut self, rhs: f32) {
+        self.x = (self.x as f32 * rhs) as i32; 
+        self.y = (self.y as f32 * rhs) as i32; 
+    }
+}
+
+// Multiplication
+impl Div<f32> for Vec2 {
+    type Output = Vec2;
+
+    fn div(self, rhs: f32) -> Self::Output {
+        Self {
+            x: (self.x as f32 * rhs) as i32,
+            y: (self.y as f32 * rhs) as i32,
+        }
+    }
+}
+
+impl DivAssign<f32> for Vec2 {
+    fn div_assign(&mut self, rhs: f32) {
         self.x = (self.x as f32 * rhs) as i32; 
         self.y = (self.y as f32 * rhs) as i32; 
     }

@@ -30,9 +30,9 @@ fn main() {
     let mut window = Box::new(Platform::new(800, 600).unwrap());
 
     let mut demos = vec![
-        Box::new(demo::basic::BasicDemo::new()) as Box<dyn Demo>,
-        Box::new(demo::text::TextDemo::new()),
-        Box::new(demo::transform::TransfromDemo::new()),
+        // Box::new(demo::basic::BasicDemo::new()) as Box<dyn Demo>,
+        // Box::new(demo::text::TextDemo::new()),
+        // Box::new(demo::transform::TransfromDemo::new()),
         Box::new(demo::div::DivDemo::new()),
     ];
 

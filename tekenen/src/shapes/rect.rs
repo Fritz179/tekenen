@@ -16,7 +16,7 @@ impl Rect {
         }
     }
 
-    pub fn vec(pos: Vec2, size: Vec2) -> Self {
+    pub fn new_vec(pos: Vec2, size: Vec2) -> Self {
         Self {
             position: pos,
             size
@@ -25,11 +25,13 @@ impl Rect {
 }
 
 impl Shape for Rect {
-    fn transform(&mut self, offset: Vec2, zoom: f32) {
-        self.position *= zoom;
-        self.position += offset;
+    fn tranlsate(&mut self, offset: Vec2) {
+        self.position += offset
+    }
 
-        self.size *= zoom
+    fn scale(&mut self, zoom: f32) {
+        self.position *= zoom;
+        self.size *= zoom;
     }
 
     fn get_bounding_box(&self) -> Rect {

@@ -1,5 +1,5 @@
-use crate::{Pixel, colors, tekenen::Draw};
-use super::{Element, BoundingBox, UIBuilder};
+use crate::{colors, Pixel, Tekenen};
+use super::{Element, BoundingBox};
 
 pub struct Slider {
     pub x1: i32,
@@ -94,7 +94,7 @@ impl Element for Slider {
         
     }
 
-    fn draw(&mut self) {
+    fn draw(&mut self, target: &mut Tekenen) {
         
     }
 
@@ -107,8 +107,4 @@ impl Element for Slider {
     //     self.bounding_box = BoundingBox::new(self.x2 - self.x1, self.knob_radius * 2);
     //     &self.bounding_box
     // }
-}
-
-impl UIBuilder {
-
 }

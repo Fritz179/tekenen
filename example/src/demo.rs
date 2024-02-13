@@ -1,9 +1,8 @@
 use tekenen::platform::{Event, Platform, IntervalDecision};
 
-pub mod basic;
-pub mod text;
-pub mod transform;
-pub mod idea;
+// pub mod basic;
+// pub mod text;
+// pub mod transform;
 pub mod div;
 
 pub trait Demo {

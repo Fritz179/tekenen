@@ -1,6 +1,5 @@
-use tekenen::ui::Element;
-use tekenen::Tekenen;
-use tekenen::platform::{Platform, PlatformTrait, IntervalDecision, Event, KeyDownEvent};
+use tekenen::{colors, Draw, Tekenen};
+use tekenen::platform::{PlatformTrait, IntervalDecision, Event, KeyDownEvent};
 
 pub struct DivDemo {
     tek: Tekenen,
@@ -42,9 +41,29 @@ impl super::Demo for DivDemo {
 
     fn draw(&mut self, window: &mut tekenen::platform::Platform) {
         let tekenen = &mut self.tek;
+        tekenen.set_translation(0, 0);
+        tekenen.set_scale(1.0);
 
 
         self.tick += 1;
+
+        tekenen.background(colors::GRAY);
+
+        tekenen.circle(0, 0, 10, colors::WHITE);
+        tekenen.rect(10, 10, 40, 40, colors::RED);
+
+
+        tekenen.set_translation(50, 100);
+        tekenen.circle(0, 0, 10, colors::WHITE);
+        tekenen.rect(0, 0, 40, 40, colors::BLUE);
+        tekenen.rect(50, 50, 40, 40, colors::BLUE);
+
+
+        tekenen.set_translation(50, 200);
+        tekenen.set_scale(2.0);
+        tekenen.circle(0, 0, 10, colors::WHITE);
+        tekenen.rect(0, 0, 40, 40, colors::BLUE);
+        tekenen.rect(50, 50, 40, 40, colors::BLUE);
 
 
         window.display_pixels(tekenen.get_pixels());
