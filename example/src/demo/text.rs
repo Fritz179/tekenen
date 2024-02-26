@@ -1,3 +1,4 @@
+use tekenen::math::Vec2;
 use tekenen::ui::{DivElement, ElementBox, TextElement};
 use tekenen::{colors, Draw, Tekenen};
 use tekenen::platform::{PlatformTrait, IntervalDecision, Event, KeyDownEvent};
@@ -13,10 +14,21 @@ impl TextDemo {
     pub fn new() -> Self {
         let text = TextElement::new("salve");
         let clone = text.rc_clone();
-        let div = DivElement::new_vertical(vec![
+        let div = DivElement::new_vertical(vec![DivElement::new_horizontal(vec![
             clone.into(),
-            TextElement::new("hello").into(),
-            TextElement::new("world").into(),
+            DivElement::new_horizontal(vec![
+                TextElement::new("hello").into(),
+                TextElement::new("world").into(),
+            ]).into(),
+            DivElement::new_vertical(vec![
+                TextElement::new("I").into(),
+                TextElement::new("Am").into(),
+                TextElement::new("A").into(),
+                TextElement::new("Column").into(),
+                TextElement::new("!").into(),
+            ]).into(),
+        ]).into(),
+        TextElement::new("Am I in the correct place?").into()
         ]);
 
         Self {
@@ -47,11 +59,11 @@ impl super::Demo for TextDemo {
         let tekenen = &mut self.tek;
         tekenen.background(colors::GRAY);
 
-        let mut text = self.text.get();
 
-        text.text = format!("Tick: {tick}", tick = self.tick);
+        self.text.get().text = format!("Tick: {tick}", tick = self.tick);
 
-        self.div.draw(tekenen);
+        tekenen.set_translation(0, 0);
+        self.div.draw(tekenen, Vec2::new(tekenen.width(), tekenen.height()));
 
         self.tick += 1;
         window.display_pixels(tekenen.get_pixels());

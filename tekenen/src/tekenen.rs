@@ -93,9 +93,9 @@ pub trait Draw {
 
     fn background(&mut self, color: Pixel);
 
-    fn text(&mut self, text: &str, x: i32, y: i32, font: Font) -> (i32, i32);
+    fn text(&mut self, text: &str, x: i32, y: i32, font: Font) -> Vec2;
 
-    fn text_vec(&mut self, text: &str, pos: Vec2, font: Font) -> (i32, i32) {
+    fn text_vec(&mut self, text: &str, pos: Vec2, font: Font) -> Vec2 {
         self.text(text, pos.x, pos.y, font)
     }
 
@@ -174,12 +174,12 @@ impl Tekenen {
         &self.pixels
     }
 
-    pub fn width(&self) -> usize {
-        self.width
+    pub fn width(&self) -> i32 {
+        self.width as i32
     }
 
-    pub fn height(&self) -> usize {
-        self.height
+    pub fn height(&self) -> i32 {
+        self.height as i32
     }
 }
 
@@ -301,7 +301,12 @@ impl Draw for Tekenen {
         }
     }
 
-    fn text(&mut self, text: &str, x: i32, y: i32, font: Font) -> (i32, i32) {
+    fn text(&mut self, text: &str, x: i32, y: i32, font: Font) -> Vec2 {
+        let mut pos = Vec2::new(x, y);
+        pos += self.translation;
+        let x = pos.x;
+        let y = pos.y;
+
         const FONT_SCALE: i32 = 2;
         const FONT_SIZE: i32 = 8 * FONT_SCALE;
 
@@ -356,7 +361,7 @@ impl Draw for Tekenen {
             curr_x += FONT_SIZE;
         }
 
-        (curr_x, curr_y)
+        Vec2::new(curr_x, curr_y + FONT_SIZE)
     }
 
     fn get_size(&self) -> Vec2 {
