@@ -96,7 +96,7 @@ pub struct IndefRange<T: std::cmp::PartialOrd + Copy = i32> {
 }
 
 impl<T: std::cmp::PartialOrd + Copy> IndefRange<T> {
-    pub fn new(min: T, mut max: T) -> Self {
+    pub fn new(min: T, max: T) -> Self {
         assert!(min <= max);
 
         Self {

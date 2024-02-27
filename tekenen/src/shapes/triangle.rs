@@ -1,6 +1,6 @@
 use crate::math::Vec2;
 
-use super::{Point, Rect, Circle, Shape, Intersect};
+use super::{Point, Rect, Circle, Intersect};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Triangle {

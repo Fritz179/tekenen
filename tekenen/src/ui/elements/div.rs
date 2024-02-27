@@ -1,8 +1,8 @@
-use std::{cell::{RefCell, RefMut}, ops::Deref, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 
 use crate::{math::{IndefRange, Vec2}, Draw, Tekenen};
 
-use super::{BoundingBox, Element, ElementBox, SpaceContraint, UISide, UISize};
+use super::{BoundingBox, Element, SpaceContraint, super::{UISide, UISize}};
 
 /// Flex-diretion
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -45,62 +45,6 @@ pub struct Div {
     children: Vec<Rc<RefCell<dyn Element>>>
 }
 
-pub struct DivElement {
-    element: Rc<RefCell<Div>>
-}
-
-impl DivElement {
-    pub fn new(child: Rc<RefCell<dyn Element>>) -> Self {
-        Self {
-            element: Rc::new(RefCell::new(Div {
-                bounding_box: BoundingBox::default(),
-                direction: Direction::Column, 
-                children: vec![child]
-            }))
-        }
-    }
-
-    pub fn new_vertical(children: Vec<Rc<RefCell<dyn Element>>>) -> Self {
-        Self {
-            element: Rc::new(RefCell::new(Div {
-                bounding_box: BoundingBox::default(),
-                direction: Direction::Column, 
-                children
-            }))
-        }
-    }
-
-    pub fn new_horizontal(children: Vec<Rc<RefCell<dyn Element>>>) -> Self {
-        Self {
-            element: Rc::new(RefCell::new(Div {
-                bounding_box: BoundingBox::default(),
-                direction: Direction::Row, 
-                children
-            }))
-        }
-    }
-
-    pub fn rc_clone(&self) -> Self {
-        Self {
-            element: Rc::clone(&self.element)
-        }
-    }
-}
-
-impl ElementBox for DivElement {
-    type InnerElement = Div;
-
-    fn get(&self) -> RefMut<'_, Self::InnerElement> {
-        self.element.deref().borrow_mut()
-    }
-}
-
-impl From<DivElement> for Rc<RefCell<dyn Element>> {
-    fn from(div: DivElement) -> Rc<RefCell<dyn Element>> {
-        div.element
-    }
-}
-
 /*
 Percentage resolution
 
@@ -114,6 +58,33 @@ font-size    => parent block's font-size
 line-height  => self element's font-size
 
 */
+impl Div {
+    pub fn new(child: Rc<RefCell<dyn Element>>) -> Rc<RefCell<Div>> {
+        Rc::new(RefCell::new(Div {
+            bounding_box: BoundingBox::default(),
+            direction: Direction::Column, 
+            children: vec![child]
+        }))
+        
+    }
+
+    pub fn new_vertical(children: Vec<Rc<RefCell<dyn Element>>>) -> Rc<RefCell<Div>> {
+        Rc::new(RefCell::new(Div {
+            bounding_box: BoundingBox::default(),
+            direction: Direction::Column, 
+            children
+        }))
+    }
+
+    pub fn new_horizontal(children: Vec<Rc<RefCell<dyn Element>>>) -> Rc<RefCell<Div>> {
+        Rc::new(RefCell::new(Div {
+            bounding_box: BoundingBox::default(),
+            direction: Direction::Row, 
+            children
+        }))
+    }
+}
+
 
 impl Element for Div {
     fn event(&mut self, event: crate::platform::Event) {

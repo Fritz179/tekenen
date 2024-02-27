@@ -1,34 +1,37 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use tekenen::math::Vec2;
-use tekenen::ui::{DivElement, ElementBox, TextElement};
+use tekenen::ui::elements::{Div, Text, Element};
 use tekenen::{colors, Draw, Tekenen};
 use tekenen::platform::{PlatformTrait, IntervalDecision, Event, KeyDownEvent};
 
 pub struct TextDemo {
     tek: Tekenen,
     tick: i32,
-    text: TextElement,
-    div: DivElement,
+    text: Rc<RefCell<Text>>,
+    div: Rc<RefCell<Div>>,
 }
 
 impl TextDemo {
     pub fn new() -> Self {
-        let text = TextElement::new("salve");
-        let clone = text.rc_clone();
-        let div = DivElement::new_vertical(vec![DivElement::new_horizontal(vec![
-            clone.into(),
-            DivElement::new_horizontal(vec![
-                TextElement::new("hello").into(),
-                TextElement::new("world").into(),
-            ]).into(),
-            DivElement::new_vertical(vec![
-                TextElement::new("I").into(),
-                TextElement::new("Am").into(),
-                TextElement::new("A").into(),
-                TextElement::new("Column").into(),
-                TextElement::new("!").into(),
-            ]).into(),
-        ]).into(),
-        TextElement::new("Am I in the correct place?").into()
+        let text = Text::new("salve");
+        let clone = Rc::clone(&text);
+        let div = Div::new_vertical(vec![Div::new_horizontal(vec![
+            clone,
+            Div::new_horizontal(vec![
+                Text::new("hello"),
+                Text::new("world"),
+            ]),
+            Div::new_vertical(vec![
+                Text::new("I"),
+                Text::new("Am"),
+                Text::new("A"),
+                Text::new("Column"),
+                Text::new("!"),
+            ]),
+        ]),
+        Text::new("Am I in the correct place?")
         ]);
 
         Self {
@@ -60,10 +63,10 @@ impl super::Demo for TextDemo {
         tekenen.background(colors::GRAY);
 
 
-        self.text.get().text = format!("Tick: {tick}", tick = self.tick);
+        self.text.borrow_mut().text = format!("Tick: {tick}", tick = self.tick);
 
         tekenen.set_translation(0, 0);
-        self.div.draw(tekenen, Vec2::new(tekenen.width(), tekenen.height()));
+        self.div.borrow_mut().draw(tekenen, Vec2::new(tekenen.width(), tekenen.height()));
 
         self.tick += 1;
         window.display_pixels(tekenen.get_pixels());
