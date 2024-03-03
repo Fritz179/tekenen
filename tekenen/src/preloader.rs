@@ -1,7 +1,7 @@
 use image::{io::Reader as ImageReader, GenericImageView};
 
 // Fritz Preloaded Image Asset
-const FPIA_MAGIC: [u8; 4] = ['F' as u8, 'P' as u8, 'I' as u8, 'A' as u8];
+const FPIA_MAGIC: [u8; 4] = [b'F', b'P', b'I', b'A'];
 
 pub fn parse_image(path: &str) -> Vec<u8> {
     let img = ImageReader::open(path).unwrap().decode().unwrap();

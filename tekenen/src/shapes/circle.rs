@@ -110,10 +110,10 @@ impl Shape for Circle {
 
     fn iter(&self) -> Box<dyn Iterator<Item = Vec2>> {
         Box::new(CircleIterator {
-            position: self.position.clone(),
+            position: self.position,
             radius: self.radius,
             // TODO: can improve
-            curr: self.position.clone() + Vec2::new(-self.radius, -self.radius),
+            curr: self.position + Vec2::new(-self.radius, -self.radius),
             done: false,
         })
     }
@@ -131,7 +131,7 @@ impl Iterator for CircleIterator {
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
-            let output = self.curr.clone();
+            let output = self.curr;
 
             if self.curr.x == self.position.x + self.radius {
                 if self.curr.y == self.position.y + self.radius {

@@ -91,7 +91,7 @@ pub fn preload_object(data: Vec<(&str, Preloaded)>) -> Preloaded {
         all_structs.append(&mut field.1.struct_definitions);
     }
 
-    value.push_str("}");
+    value.push('}');
     this_struct.push_str("}\n");
 
     all_structs.push(this_struct);
@@ -122,7 +122,7 @@ pub fn preload_array(data: Vec<Preloaded>) -> Preloaded {
     value.remove(value.len() - 1);
     value.remove(value.len() - 1);
 
-    value.push_str("]");
+    value.push(']');
 
     Preloaded {
         data_type,

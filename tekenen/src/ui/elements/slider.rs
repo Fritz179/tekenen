@@ -1,4 +1,4 @@
-use crate::{colors, math::{IndefRange, Range, Vec2}, ui::style::{Context, Style}, Draw, Pixel, Tekenen};
+use crate::{colors, math::{IndefRange, Vec2}, ui::style::{Context, Style}, Draw, Pixel, Tekenen};
 use super::Element;
 
 #[derive(Debug)]

@@ -27,7 +27,7 @@ impl Range {
     pub fn new_min_priority(min: i32, max: i32) -> Self {
         if max < min {
             Self {
-                min: min,
+                min,
                 max: min
             }
         } else {

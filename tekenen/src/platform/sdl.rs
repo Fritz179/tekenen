@@ -21,7 +21,7 @@ use image::GenericImageView;
 use crate::rust_embed::DynRustEmbed;
 
 // Fritz Preloaded Image Asset
-const FPIA_MAGIC: [u8; 4] = ['F' as u8, 'P' as u8, 'I' as u8, 'A' as u8];
+const FPIA_MAGIC: [u8; 4] = [b'F', b'P', b'I', b'A'];
 
 thread_local! {
     #[cfg(feature = "rust-embed")]
@@ -244,8 +244,8 @@ impl PlatformTrait for SDLPlatform {
             match e.borrow().as_ref() {
                 None => {
                     let path = std::path::Path::new(path);
-                    let img = image::io::Reader::open(path).or_else(|err| Err(ImageLoadingError::IOError(err)))?;
-                    let img = img.decode().or_else(|err| Err(ImageLoadingError::ImageError(err)))?;
+                    let img = image::io::Reader::open(path).map_err(ImageLoadingError::IOError)?;
+                    let img = img.decode().map_err(ImageLoadingError::ImageError)?;
                     Ok(image_to_tekenen(img))
                 },
                 Some(asset) => {
@@ -266,9 +266,9 @@ impl PlatformTrait for SDLPlatform {
     
                         assert_eq!(data.len(), width * height * 4);
     
-                        return Ok(Tekenen::from_pixels(width, height, data.to_owned()))
+                        Ok(Tekenen::from_pixels(width, height, data.to_owned()))
                     } else {
-                        let img = image::load_from_memory(&source.data).or_else(|err| Err(ImageLoadingError::ImageError(err)))?;
+                        let img = image::load_from_memory(&source.data).map_err(ImageLoadingError::ImageError)?;
                         Ok(image_to_tekenen(img))
                     }
                 }
@@ -284,7 +284,7 @@ impl PlatformTrait for SDLPlatform {
     
         let path = std::path::Path::new(&path);
 
-        image::save_buffer(&path, buffer, image.width() as u32, image.height() as u32, image::ColorType::Rgba8)?;
+        image::save_buffer(path, buffer, image.width() as u32, image.height() as u32, image::ColorType::Rgba8)?;
 
         println!("Saved image: {:?}", path);
 

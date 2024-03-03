@@ -2,6 +2,7 @@
 name = "tekenen"
 version = "0.0.5"
 edition = "2021"
+resolver = "2"
 description = "Simple library for drawing pixels in memory."
 readme = "README.md"
 license = "MIT"

@@ -1,4 +1,4 @@
-use std::{cell::{Ref, RefCell, RefMut}, marker::PhantomData, rc::{Rc, Weak}};
+use std::{cell::{Ref, RefCell}, marker::PhantomData, rc::{Rc}};
 
 use crate::{colors, math::{clamp, IndefRange, Vec2}, shapes::{rect::Rect, Sides}, Pixel};
 
@@ -74,19 +74,19 @@ impl PercentSolver for HeightOfContainingBlock {
 // https://developer.mozilla.org/en-US/docs/Web/CSS/percentage
 // https://drafts.csswg.org/css-values/#percentages
 #[derive(Debug, Clone)]
-pub struct CSSPercentage<Solver: PercentSolver, const only_positive: bool = false> {
+pub struct CSSPercentage<Solver: PercentSolver, const positive_only: bool = false> {
     value: f32,
     phantom: PhantomData<Solver>
 }
 
-impl<Solver: PercentSolver, const only_positive: bool> CSSPercentage<Solver, only_positive> {
+impl<Solver: PercentSolver, const positive_only: bool> CSSPercentage<Solver, positive_only> {
     fn new(value: f32) -> Self {
-        if only_positive {
+        if positive_only {
             assert!(value >= 0.0, "Value must be between positive");
         }
 
         Self {
-            value: value,
+            value,
             phantom: PhantomData
         }
     }
@@ -96,7 +96,7 @@ impl<Solver: PercentSolver, const only_positive: bool> CSSPercentage<Solver, onl
     }
 }
 
-impl<T: PercentSolver, const only_positive: bool> From<f32> for CSSPercentage<T, only_positive> {
+impl<T: PercentSolver, const positive_only: bool> From<f32> for CSSPercentage<T, positive_only> {
     fn from(value: f32) -> Self {
         Self::new(value)
     }
@@ -104,12 +104,12 @@ impl<T: PercentSolver, const only_positive: bool> From<f32> for CSSPercentage<T,
 
 // https://developer.mozilla.org/en-US/docs/Web/CSS/length-percentage
 #[derive(Debug, Clone)]
-enum CSSLengthPercentage<Solver: PercentSolver, const only_positive: bool = false> {
+enum CSSLengthPercentage<Solver: PercentSolver, const positive_only: bool = false> {
     Length(CSSLength),
-    Percentage(CSSPercentage<Solver, only_positive>),
+    Percentage(CSSPercentage<Solver, positive_only>),
 }
 
-impl<Solver: PercentSolver, const only_positive: bool> CSSLengthPercentage<Solver, only_positive> {
+impl<Solver: PercentSolver, const positive_only: bool> CSSLengthPercentage<Solver, positive_only> {
     fn solve(&self, context: &Context) -> i32 {
         match self {
             Self::Length(length) => length.solve(context),
@@ -118,14 +118,14 @@ impl<Solver: PercentSolver, const only_positive: bool> CSSLengthPercentage<Solve
     }
 }
 
-impl<Solver: PercentSolver, const only_positive: bool> From<CSSLength> for CSSLengthPercentage<Solver, only_positive> {
+impl<Solver: PercentSolver, const positive_only: bool> From<CSSLength> for CSSLengthPercentage<Solver, positive_only> {
     fn from(value: CSSLength) -> Self {
         Self::Length(value)
     }
 }
 
-impl<Solver: PercentSolver, const only_positive: bool> From<CSSPercentage<Solver, only_positive>> for CSSLengthPercentage<Solver, only_positive> {
-    fn from(value: CSSPercentage<Solver, only_positive>) -> Self {
+impl<Solver: PercentSolver, const positive_only: bool> From<CSSPercentage<Solver, positive_only>> for CSSLengthPercentage<Solver, positive_only> {
+    fn from(value: CSSPercentage<Solver, positive_only>) -> Self {
         Self::Percentage(value)
     }
 }

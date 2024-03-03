@@ -37,7 +37,7 @@ impl Shape for Rect {
     }
 
     fn get_bounding_box(&self) -> Rect {
-        self.clone()
+        *self
     }
 
     fn dyn_clone(&self) -> Box<dyn Shape> {
@@ -46,9 +46,9 @@ impl Shape for Rect {
 
     fn iter(&self) -> Box<dyn Iterator<Item = Vec2>> {
         Box::new(RectIter {
-            start: self.position.clone(),
-            end: self.position.clone() + self.size.clone(),
-            curr: self.position.clone(),
+            start: self.position,
+            end: self.position + self.size,
+            curr: self.position,
             done: false
         })
     }
@@ -114,9 +114,9 @@ impl Intersect for Rect {
     }
 
     fn encloses_triangle(&self, other: &Triangle) -> bool {
-        self.encloses_point(&other.p1.clone().into()) &&
-        self.encloses_point(&other.p2.clone().into()) &&
-        self.encloses_point(&other.p3.clone().into())
+        self.encloses_point(&other.p1.into()) &&
+        self.encloses_point(&other.p2.into()) &&
+        self.encloses_point(&other.p3.into())
     }
 }
 
@@ -137,7 +137,7 @@ impl Iterator for RectIter {
     type Item = Vec2;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let output = self.curr.clone();
+        let output = self.curr;
 
         if self.curr.x == self.end.x {
             if self.curr.y == self.end.y {

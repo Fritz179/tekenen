@@ -53,7 +53,7 @@ impl TimeManager {
         TIME_MANAGER.with(|manager| {
 
             let queue = manager.queue.borrow();
-            let task = queue.get(0);
+            let task = queue.front();
 
             let next_scheduled = if let Some(task) = task {
                 let now = Instant::now();

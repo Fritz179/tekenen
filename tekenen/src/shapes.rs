@@ -1,5 +1,5 @@
 pub mod point;
-use std::ops::{Add, AddAssign};
+use std::ops::{Add};
 
 use point::Point;
 

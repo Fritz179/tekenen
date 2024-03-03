@@ -549,7 +549,7 @@ impl Tekenen {
     pub fn set_pixel(&mut self, x: i32, y: i32, color: Pixel) {
         if let Some(index) = self.pixel_index(x, y) {
             // self.pixels.borrow_mut()[index] = color;
-            self.pixels[index * 4 + 0] = color[0];
+            self.pixels[index * 4] = color[0];
             self.pixels[index * 4 + 1] = color[1];
             self.pixels[index * 4 + 2] = color[2];
             self.pixels[index * 4 + 3] = color[3];
@@ -557,18 +557,12 @@ impl Tekenen {
     }
 
     pub fn get_pixel(&self, x: i32, y: i32) -> Option<Pixel> {
-        if let Some(index) = self.pixel_index(x, y) {
-            
-            // TODO: return from slice?
-            Some([
-                self.pixels[index * 4 + 0],
+        self.pixel_index(x, y).map(|index| [
+                self.pixels[index * 4],
                 self.pixels[index * 4 + 1],
                 self.pixels[index * 4 + 2],
                 self.pixels[index * 4 + 3],
             ])
-        } else {
-            None
-        }
     }
 
     pub fn line(&mut self, mut x1: i32, mut y1: i32, mut x2: i32, mut y2: i32, color: Pixel) {

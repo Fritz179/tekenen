@@ -1,8 +1,8 @@
 use std::cell::{Ref, RefCell};
-use std::clone;
+
 use std::rc::Rc;
 
-use tekenen::math::Vec2;
+
 use tekenen::shapes::rect::Rect;
 use tekenen::ui::elements::{Div, Text, Element};
 use tekenen::ui::style::Context;
@@ -76,7 +76,7 @@ impl super::Demo for TextDemo {
     }
 
     fn draw(&mut self, window: &mut tekenen::platform::Platform) {
-        println!("");
+        println!();
         println!("Drawing");
 
         // Clear canvas

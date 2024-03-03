@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use crate::{math::{IndefRange, Vec2}, shapes::rect::Rect, ui::style::{CSSDisplay, CSSFlexDirection, Context}, Draw, Tekenen};
+use crate::{math::{IndefRange, Vec2}, shapes::rect::Rect, ui::style::{CSSDisplay, CSSFlexDirection, Context}, Tekenen};
 
 use super::{Element, Painter, Style};
 
@@ -220,7 +220,7 @@ impl Div {
             // Grow all elements by same ammout
 
             // TODO: Exact correction is float
-            let correction = error / min_curr_width_height.iter().count() as i32;
+            let correction = error / min_curr_width_height.len() as i32;
             min_curr_width_height.iter_mut().for_each(|(child, _, curr, height)| {
                 *curr += correction;
                 let child = child.borrow();
@@ -396,7 +396,7 @@ impl Div {
         }
         
         // 3. margin, border and padding
-        return context.containing_block.size.x - self.style.get_total_bounding_width(context)
+        context.containing_block.size.x - self.style.get_total_bounding_width(context)
     }
 
     fn determine_height_range(&self, context: &Context) -> IndefRange {
@@ -409,6 +409,6 @@ impl Div {
         let min = self.style.min_height.solve(context);
         let max = self.style.max_height.solve(context);
 
-        return IndefRange::new_option(min, max)
+        IndefRange::new_option(min, max)
     }
 }
