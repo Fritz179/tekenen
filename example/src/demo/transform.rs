@@ -48,7 +48,7 @@ impl super::Demo for TransfromDemo {
         let tv = &mut self.tv;
 
         // Top right (GRAY)
-        tv.background(colors::GRAY);
+        tv.background(colors::FRITZ_GRAY);
 
         // Simple red Rect
         self.first.rect(50, 50, 50, 50, colors::RED);

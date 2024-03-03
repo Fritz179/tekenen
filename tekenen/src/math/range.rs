@@ -1,10 +1,10 @@
-use std::{iter::Sum, ops::Add};
+use std::{iter::Sum, ops::{Add, AddAssign}};
 
 /// Garanteed to have a valid range (min <= max)
 #[derive(Debug, Default, Clone)]
 pub struct Range<T: std::cmp::PartialOrd + Copy = i32> {
-    min: T,
-    max: T,
+    pub min: T,
+    pub max: T,
 }
 
 impl Range {
@@ -87,12 +87,10 @@ impl Range<i32> {
     }
 }
 
-/// Can have a valid range (min <= max) or no range at all
-
 #[derive(Debug, Default, Clone)]
 pub struct IndefRange<T: std::cmp::PartialOrd + Copy = i32> {
-    min: Option<T>,
-    max: Option<T>,
+    pub min: Option<T>,
+    pub max: Option<T>,
 }
 
 impl<T: std::cmp::PartialOrd + Copy> IndefRange<T> {
@@ -161,14 +159,8 @@ impl<T: std::cmp::PartialOrd + Copy> IndefRange<T> {
         }
     }
 
-    // TODO: Implement this
-    // pub fn get_range(&self) -> Option<Range<T>> {
-    //     let min = self.min?;
-    //     let max = self.max?;
-
-    //     Some(Range::<T>::new(min, max))
-    // }
-
+    /// Result fits in both
+    /// Result is stricter or equeal
     pub fn and_max(&mut self, other: Option<T>) {
         if let Some(other) = other {
             if let Some(this) = self.max {
@@ -183,6 +175,8 @@ impl<T: std::cmp::PartialOrd + Copy> IndefRange<T> {
         }
     }
 
+    /// Result may fit it only one
+    /// Result is looser or equal
     pub fn or_max(&mut self, other: Option<T>) {
         if let Some(other) = other {
             if let Some(this) = self.max {
@@ -197,6 +191,8 @@ impl<T: std::cmp::PartialOrd + Copy> IndefRange<T> {
         }
     }
 
+    /// Result fits in both
+    /// Result is stricter or equeal
     pub fn and_min(&mut self, other: Option<T>) {
         if let Some(other) = other {
             if let Some(this) = self.min {
@@ -211,6 +207,8 @@ impl<T: std::cmp::PartialOrd + Copy> IndefRange<T> {
         }
     }
 
+    /// Result may fit it only one
+    /// Result is looser or equal
     pub fn or_min(&mut self, other: Option<T>) {
         if let Some(other) = other {
             if let Some(this) = self.min {
@@ -267,6 +265,18 @@ impl<T: std::cmp::PartialOrd + Copy + Add<Output = T>> Add for IndefRange<T> {
         Self {
             min,
             max
+        }
+    }
+}
+
+impl<T: PartialOrd + Copy + Add<Output = T>> AddAssign<T> for IndefRange<T> {
+    fn add_assign(&mut self, rhs: T) {
+        if let Some(min) = self.min {
+            self.min = Some(min + rhs);
+        }
+
+        if let Some(max) = self.max {
+            self.max = Some(max + rhs);
         }
     }
 }

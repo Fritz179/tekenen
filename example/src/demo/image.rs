@@ -49,7 +49,7 @@ impl super::Demo for ImageDemo {
     fn draw(&mut self, window: &mut tekenen::platform::Platform) {
         let tekenen = &mut self.tek;
 
-        tekenen.background(colors::GRAY);
+        tekenen.background(colors::FRITZ_GRAY);
 
         tekenen.rect(50, 100, 100, 150, colors::BLACK);
         tekenen.circle(150, 100, 50, colors::RED);

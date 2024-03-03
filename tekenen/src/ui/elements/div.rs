@@ -1,47 +1,15 @@
 use std::{cell::RefCell, rc::Rc};
 
-use crate::{math::{IndefRange, Vec2}, Draw, Tekenen};
+use crate::{math::{IndefRange, Vec2}, shapes::rect::Rect, ui::style::{CSSDisplay, CSSFlexDirection, Context}, Draw, Tekenen};
 
-use super::{BoundingBox, Element, SpaceContraint, super::{UISide, UISize}};
+use super::{Element, Painter, Style};
 
-/// Flex-diretion
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Direction {
-    /// Horizontal layout
-    /// Width is the max width
-    /// Height is the heighest element
-    /// Children calculated with parent_size. = {width, 0}
-    Row,
-    /// Vertical layout
-    /// Width is the max width
-    /// Height is the sum of all elements heights
-    /// Children calculated with parent_size. = {width, 0}
-    Column
-}
-
-// TODO: The others
-pub enum JustifyContent {
-    Start,
-    End,
-    Center,
-    SpaceBetween,
-    SpaceAround,
-    SpaceEvenly
-}
-
-pub enum AlignItems {
-    Start,
-    End,
-    Center,
-    Stretch
-}
 
 /// A div is a flexbox
 /// A div with a single element is a flexbox with a single element
 #[derive(Debug)]
 pub struct Div {
-    bounding_box: BoundingBox,
-    direction: Direction,
+    style: Style,
     children: Vec<Rc<RefCell<dyn Element>>>
 }
 
@@ -61,25 +29,42 @@ line-height  => self element's font-size
 impl Div {
     pub fn new(child: Rc<RefCell<dyn Element>>) -> Rc<RefCell<Div>> {
         Rc::new(RefCell::new(Div {
-            bounding_box: BoundingBox::default(),
-            direction: Direction::Column, 
+            style: Style::default(),
             children: vec![child]
         }))
-        
     }
 
-    pub fn new_vertical(children: Vec<Rc<RefCell<dyn Element>>>) -> Rc<RefCell<Div>> {
+    pub fn new_fn(child: Rc<RefCell<dyn Element>>, fun: impl FnOnce(&mut Self)) -> Rc<RefCell<Div>> {
+        let mut div = Div {
+            style: Style::default(),
+            children: vec![child]
+        };
+
+        fun(&mut div);
+
+        Rc::new(RefCell::new(div))
+    }
+
+    pub fn new_vertical_flex(children: Vec<Rc<RefCell<dyn Element>>>) -> Rc<RefCell<Div>> {
+        let mut style = Style::default();
+
+        style.display = CSSDisplay::Flex;
+        style.flex_direction = CSSFlexDirection::Column;
+
         Rc::new(RefCell::new(Div {
-            bounding_box: BoundingBox::default(),
-            direction: Direction::Column, 
+            style,
             children
         }))
     }
 
-    pub fn new_horizontal(children: Vec<Rc<RefCell<dyn Element>>>) -> Rc<RefCell<Div>> {
+    pub fn new_horizontal_flex(children: Vec<Rc<RefCell<dyn Element>>>) -> Rc<RefCell<Div>> {
+        let mut style = Style::default();
+
+        style.display = CSSDisplay::Flex;
+        style.flex_direction = CSSFlexDirection::Row;
+
         Rc::new(RefCell::new(Div {
-            bounding_box: BoundingBox::default(),
-            direction: Direction::Row, 
+            style,
             children
         }))
     }
@@ -95,177 +80,300 @@ impl Element for Div {
         
     }
 
-    fn draw(&self, target: &mut Tekenen, space: Vec2) -> Vec2 {
+    fn draw(&self, target: &mut Tekenen, context: &Context, size: Vec2) {
+
+    }
+
+    fn get_children_painters(&self, context: &Context, size: Vec2) -> Vec<super::Painter> {
         // 1. Get this restriction
-        let (width, height_range) = self.determine_size(space);
+        let width = self.determine_width(context);
+        let height_range = self.determine_height_range(context);
         let apparent_size = Vec2::new(width, 0);
 
-        // get children desired size
-        let desired: Vec<SpaceContraint> = self.children.iter().map(|child| child.borrow()
-            .get_layout()).collect();
-
-        // 2. Flex
-        match self.direction {
-            Direction::Row => {
-                // 1. Calculate desired sizes 
-
-                // min, curr
-                let mut min_curr: Vec<(i32, i32)> = desired.iter().map(|constraint| {
-                    (constraint.get_min_content(), constraint.get_max_content())
-                }).collect();
-
-                let desired_size = min_curr.iter().map(|(_, curr)| curr).sum::<i32>();
-                let error = width - desired_size;
-
-                // 2. Distribute error
-                if error > 0 {
-                    // Grow all elements by same ammout
-
-                    // TODO: Exact correction is float
-                    let correction = error / min_curr.iter().count() as i32;
-                    min_curr.iter_mut().for_each(|(_, curr)| *curr += correction)
-
-                } else if error < 0 {
-                    loop {
-                        
-                        // Error to distribute
-                        let desired_size: i32 = min_curr.iter().map(|(_, curr)| curr).sum();
-                        let error = width - desired_size;
-
-                        // Space distributed
-                        if error >= 0 {
-                            break
-                        }
-                        
-                        // how many can adjust
-                        let unfrozen = min_curr.iter().filter(|(min, curr)| min != curr).count() as i32;
-    
-                        // no one can be adjusted
-                        if unfrozen == 0 {
-                            break
-                        }
-    
-                        // positive correction
-                        let correction = -error / unfrozen;
-    
-                        min_curr.iter_mut().filter(|(min, curr)| min != curr).for_each(|(min, curr)| {
-                            if *curr - correction >= *min {
-                                *curr -= correction;
-                            } else {
-                                *curr = *min
-                            }
-                        })
+        match self.style.display {
+            CSSDisplay::None => vec![],
+            CSSDisplay::Block => todo!(),
+            CSSDisplay::Inline => todo!(),
+            CSSDisplay::Flex => {
+                match self.style.flex_direction {
+                    CSSFlexDirection::Row => {
+                        self.flex_row(context, size)
+                    },
+                    CSSFlexDirection::Column => {
+                        self.flex_column(context, size)
+                    },
+                    CSSFlexDirection::RowReverse => {
+                        todo!()
+                    },
+                    CSSFlexDirection::ColumnReverse => {
+                        todo!()
                     }
                 }
-
-                let sizes: Vec<i32> = min_curr.iter().map(|(_, curr)| *curr).collect();
-                let mut max_height = 0;
-
-                // 3. Draw
-                let mut total = 0;
-                self.children.iter().zip(sizes).zip(desired).for_each(|((child, width), constrint)| {
-                    let child_size = child.borrow_mut().draw(target, Vec2::new(width, space.y));
-                    
-                    if child_size.y > max_height {
-                        max_height = child_size.y
-                    }
-                    
-                    println!("child_size: {child_size:?}, width: {width:?}");
-                    target.translate(width, 0);
-                    total += width;
-                });
-
-                target.translate(-total, 0);
-
-                if max_height > space.y {
-                    max_height = space.y
-                }
-
-                // 4. Return size
-                Vec2::new(space.x, max_height)
-            },
-            Direction::Column => {
-                // 1. Calculate desired sizes 
-
-                // min, curr
-                let mut min_curr: Vec<(i32, i32)> = desired.iter().map(|constraint| {
-                    (constraint.get_height(constraint.get_min_content(), apparent_size), constraint.get_height(constraint.get_max_content(), apparent_size))
-                }).collect();
-
-                let desired_size: i32 = min_curr.iter().map(|(_, curr)| curr).sum();
-                let error = width - desired_size;
-
-                // 2. Distribute error only if to short
-                if error < 0 {
-                    loop {
-                        
-                        // Error to distribute
-                        let desired_size = min_curr.iter().map(|(_, curr)| curr).sum::<i32>();
-                        let error = width - desired_size;
-
-                        // Space distributed
-                        if error >= 0 {
-                            break
-                        }
-                        
-                        // how many can adjust
-                        let unfrozen = min_curr.iter().filter(|(min, curr)| min != curr).count() as i32;
-    
-                        // no one can be adjusted
-                        if unfrozen == 0 {
-                            break
-                        }
-    
-                        // positive correction
-                        let correction = -error / unfrozen;
-    
-                        min_curr.iter_mut().filter(|(min, curr)| min != curr).for_each(|(min, curr)| {
-                            if *curr - correction >= *min {
-                                *curr -= correction;
-                            } else {
-                                *curr = *min
-                            }
-                        })
-                    }
-                }
-
-                let sizes: Vec<i32> = min_curr.iter().map(|(_, curr)| *curr).collect();
-
-                // 3. Draw
-                let mut total = 0;
-                self.children.iter().zip(sizes).zip(desired).for_each(|((child, height), constrint)| {
-                    let child_size = child.borrow_mut().draw(target, Vec2::new(constrint.get_width(height, space), space.y));
-                    
-                    // TODO: Should be height
-                    target.translate(0, child_size.y);
-                    total += child_size.y;
-                });
-
-                target.translate(0, -total);
-
-                // 4. Return size
-                Vec2::new(space.x, total)
             }
         }
     }
 
-    fn get_layout(&self) -> SpaceContraint {    
-        // 1. Get children restrictions
-        let children_space = SpaceContraint::new_combined(
-            self.children.iter().map(|child| child.borrow().get_layout()).collect(), 
-            self.direction.clone(),
-            (0, 10000) // TODO: ?
-        );
+    fn get_width_from_height(&self, height: i32, context: &Context) -> i32 {
+        let child_context = Context {
+            containing_block: Rect::new_vec(context.containing_block.position, Vec2::new(self.determine_width(context), 0))
+        };
+        
+        self.children.iter().map(|child| {
+            let child = child.borrow();
+            child.get_style().get_width_from_height(&child, height, &child_context)
+        }).sum()
+    }
 
-        // 2. TODO: Add self restrictions (min / max)
+    fn get_height_from_width(&self, width: i32, context: &Context) -> i32 {
+        let child_context = Context {
+            containing_block: Rect::new_vec(context.containing_block.position, Vec2::new(self.determine_width(context), 0))
+        };
 
-        // TODO: Add self constraint
-        children_space
+        self.children.iter().map(|child| {
+            let child = child.borrow();
+            child.get_style().get_height_from_width(&child, width, &child_context)
+        }).sum()
+    }
+
+    fn get_inner_min_max_content(&self, context: &Context) -> Vec2<IndefRange> {
+        let child_context = Context {
+            containing_block: Rect::new_vec(context.containing_block.position, Vec2::new(self.determine_width(context), 0))
+        };
+
+        let children: Vec<Vec2<IndefRange>> = self.children.iter().map(|child| {
+            let child = child.borrow();
+            child.get_style().get_min_max_margin_area(&child, &child_context)
+        }).collect();
+
+
+        match self.style.display {
+            CSSDisplay::None => todo!(),
+            CSSDisplay::Block => todo!(),
+            CSSDisplay::Inline => todo!(),
+            CSSDisplay::Flex => {
+                match self.style.flex_direction {
+                    CSSFlexDirection::Row => {
+                        let width = children.iter().map(|child| child.x.clone()).reduce(|acc, el| acc + el).unwrap();
+                        
+                        let height = children.iter().map(|child| child.y.clone()).reduce(|mut acc, el| {
+                            acc.or_max(el.max);
+                            acc.and_min(el.min);
+                            acc
+                        }).unwrap();
+        
+                        Vec2::new(width, height)
+                    },
+                    CSSFlexDirection::Column => {
+                        let width = children.iter().map(|child| child.x.clone()).reduce(|mut acc, el| {
+                            acc.or_max(el.max);
+                            acc.and_min(el.min);
+                            acc
+                        }).unwrap();
+        
+                        let height = children.iter().map(|child| child.y.clone()).reduce(|acc, el| acc + el).unwrap();
+        
+                        Vec2::new(width, height)
+                    },
+                    CSSFlexDirection::RowReverse => {
+                        todo!()
+                    },
+                    CSSFlexDirection::ColumnReverse => {
+                        todo!()
+                    }
+                }
+            }
+        }
+    }
+
+    fn get_style(&self) -> &Style {
+        &self.style
     }
 }
 
 impl Div {
-    fn constrain_dimension((start, end, size): (&UISide, &UISide, &UISize), parent_size: i32) -> i32 {
+    fn flex_row(&self, context: &Context, size: Vec2) -> Vec<Painter> {
+        let width = self.determine_width(context);
+
+        let child_context = Context {
+            containing_block: Rect::new_vec(context.containing_block.position, Vec2::new(self.determine_width(context), 0))
+        };
+
+        // 1. Calculate desired sizes 
+
+        // child, minimum width, curr = maximum_width, height
+        let mut min_curr_width_height: Vec<(Rc<RefCell<dyn Element>>, i32, i32, i32)> = self.children.iter().map(|child| {
+            let child_b = child.borrow();
+            let bb = child_b.get_style();
+
+            let size = bb.get_min_max_margin_area(&child_b, &child_context);
+            let height = bb.get_height_from_width(&child_b, size.x.max.unwrap(), &child_context);
+
+            (Rc::clone(child), size.x.min.unwrap(), size.x.max.unwrap(), height)
+        }).collect();
+
+        let desired_size: i32 = min_curr_width_height.iter().map(|(_, _, curr, _)| curr).sum();
+        let error = width - desired_size;
+
+
+        // 2. Distribute error
+        if error > 0 {
+            // Grow all elements by same ammout
+
+            // TODO: Exact correction is float
+            let correction = error / min_curr_width_height.iter().count() as i32;
+            min_curr_width_height.iter_mut().for_each(|(child, _, curr, height)| {
+                *curr += correction;
+                let child = child.borrow();
+                *height = child.get_style().get_height_from_width(&child, *curr, &child_context);
+            })
+
+        } else if error < 0 {
+            loop {
+                
+                // Error to distribute
+                let desired_size: i32 = min_curr_width_height.iter().map(|(_, _, curr, _)| curr).sum();
+                let error = width - desired_size;
+
+                // Space distributed
+                if error >= 0 {
+                    break
+                }
+                
+                // how many can adjust
+                let unfrozen = min_curr_width_height.iter().filter(|(_, min, curr, _)| min != curr).count() as i32;
+
+                // no one can be adjusted
+                if unfrozen == 0 {
+                    break
+                }
+
+                // positive correction
+                let correction = -error / unfrozen;
+
+                min_curr_width_height.iter_mut().filter(|(child, min, curr, height)| min != curr)
+                .for_each(|(child, min, curr, height)| {
+                    if *curr - correction >= *min {
+                        *curr -= correction;
+                    } else {
+                        *curr = *min
+                    }
+
+                    let child = child.borrow();
+                    *height = child.get_style().get_height_from_width(&child, *curr, &child_context);
+                })
+            }
+        }
+
+        let height = *min_curr_width_height.iter().map(|(_, _, _, curr)| curr).max().unwrap();
+        let real_context = Context {
+            containing_block: Rect::new_vec(context.containing_block.position, Vec2::new(width, height))
+        };
+        let mut offset = Vec2::new(0, 0);
+
+        // Get Painters
+        min_curr_width_height.into_iter().map(|(child, _, curr, height)| {
+            let child_b = child.borrow();
+            let bb = child_b.get_style();
+
+            let margin_box = Rect::new_vec(context.containing_block.position + offset, Vec2::new(curr, height));
+            let content_box = margin_box - bb.get_total_computed_boudning(context);
+
+            let painter = bb.get_painter(Rc::clone(&child), content_box, real_context.clone());
+            offset.x += curr;
+            painter
+        }).collect()
+    }
+
+    fn flex_column(&self, context: &Context, size: Vec2) -> Vec<Painter> {
+        let width = self.determine_width(context);
+
+        let height_range = self.determine_height_range(context);
+        
+        let child_context = Context {
+            containing_block: Rect::new_vec(context.containing_block.position, Vec2::new(width, 0))
+        };
+        // 1. Calculate desired sizes 
+
+        // child, minimum height, curr = maximum_height, width
+        let mut min_curr_height_width: Vec<(Rc<RefCell<dyn Element>>, i32, i32, i32)> = self.children.iter().map(|child| {
+            let child_b = child.borrow();
+            let bb = child_b.get_style();
+
+            let min_max = bb.get_min_max_margin_area(&child_b, &child_context);
+            let width = bb.get_width_from_height(&child_b, min_max.y.max.unwrap(), &child_context);
+
+            (Rc::clone(child), min_max.y.min.unwrap(), min_max.y.max.unwrap(), width)
+        }).collect();
+
+        // for (_, min, curr, width) in &min_curr_height_width {
+        //     println!("COLUMN: Min: {}, Curr: {}, Width: {}", min, curr, width)
+        // }
+
+        let desired_size: i32 = min_curr_height_width.iter().map(|(_, _, curr, _)| curr).sum();
+        let height = height_range.constrain(desired_size);
+        let error = height - desired_size;
+
+        // 2. Distribute error only if to short
+        if error < 0 {
+            loop {
+                
+                // Error to distribute
+                let desired_size: i32 = min_curr_height_width.iter().map(|(_, _, curr, _)| curr).sum();
+                let error = height - desired_size;
+
+                // Space distributed
+                if error >= 0 {
+                    break
+                }
+                
+                // how many can adjust
+                let unfrozen = min_curr_height_width.iter().filter(|(_, min, curr, _)| min != curr).count() as i32;
+
+                // no one can be adjusted
+                if unfrozen == 0 {
+                    break
+                }
+
+                // positive correction
+                let correction = -error / unfrozen;
+
+                min_curr_height_width.iter_mut().filter(|(child, min, curr, width)| min != curr).for_each(|(child, min, curr, width)| {
+                    if *curr - correction >= *min {
+                        *curr -= correction;
+                    } else {
+                        *curr = *min
+                    }
+
+                    let child = child.borrow();
+                    *width = child.get_style().get_width_from_height(&child, *curr, &child_context);
+                })
+            }
+        }
+
+        let height = *min_curr_height_width.iter().map(|(_, _, curr, _)| curr).max().unwrap();
+        let real_context = Context {
+            containing_block: Rect::new_vec(context.containing_block.position, Vec2::new(width, height))
+        };
+
+        let mut offset = Vec2::new(0, 0);
+
+        min_curr_height_width.into_iter().map(|(child, _, curr, _)| {
+            let child_b = child.borrow();
+            let bb = child_b.get_style();
+            
+            let margin_box = Rect::new_vec(context.containing_block.position + offset, Vec2::new(width, curr));
+            let content_box = margin_box - bb.get_total_computed_boudning(context);
+
+            let painter = bb.get_painter(Rc::clone(&child), content_box, real_context.clone());
+
+            offset.y += curr;
+            painter
+        }).collect()
+    }
+}
+
+impl Div {
+    fn determine_width(&self, context: &Context) -> i32 {
         // Determine the available main and cross space for the flex items. For
         // each dimension, if that dimension of the flex container’s content box
         // is a definite size, use that; if that dimension of the flex container
@@ -275,40 +383,32 @@ impl Div {
         // to the flex container in that dimension and use that value.
 
         // 1. is definite
-        if let Some(value) = size.value.get_pixels(parent_size) {
+        if let Some(value) = self.style.width.solve(context) {
             return value
         }
 
-
         // 2. is under min/max constraint
-        let constraint = size.get_constraint(parent_size);
+        let min = self.style.min_width.solve(context);
+        let max = self.style.max_width.solve(context);
 
-        if constraint.is_constrained() {
-            return constraint.constrain(parent_size)
+        if min.is_some() || max.is_some() {
+            return IndefRange::new_option(min, max).constrain(context.containing_block.size.x)
         }
-
+        
         // 3. margin, border and padding
-        return parent_size - start.total_size(parent_size) - end.total_size(parent_size)
+        return context.containing_block.size.x - self.style.get_total_bounding_width(context)
     }
 
-    fn constrain_dimension_range((start, end, size): (&UISide, &UISide, &UISize), parent_size: i32) -> IndefRange {
-        // 1. height is definite
-        if let Some(value) = size.value.get_pixels(parent_size) {
+    fn determine_height_range(&self, context: &Context) -> IndefRange {
+        // 1. is definite
+        if let Some(value) = self.style.height.solve(context) {
             return IndefRange::new_definite(value)
         }
 
-        // 2. height is under min/max constraint
-        size.get_constraint(parent_size)
-    }
-    
+        // 2. is under min/max constraint
+        let min = self.style.min_height.solve(context);
+        let max = self.style.max_height.solve(context);
 
-    // https://www.w3.org/TR/css-flexbox-1/#layout-algorithm
-    fn determine_size(&self, parent_size: Vec2) -> (i32, IndefRange) {
-        let bbox = &self.bounding_box;
-
-        let width = Self::constrain_dimension((&bbox.left, &bbox.right, &bbox.width), parent_size.x);
-        let height = Self::constrain_dimension_range((&bbox.up, &bbox.down, &bbox.height), parent_size.y);
-
-        (width, height)
+        return IndefRange::new_option(min, max)
     }
 }

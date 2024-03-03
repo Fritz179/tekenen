@@ -1,5 +1,5 @@
-use crate::{colors, math::Vec2, Pixel, Tekenen, Draw};
-use super::{Element, SpaceContraint};
+use crate::{colors, math::{IndefRange, Range, Vec2}, ui::style::{Context, Style}, Draw, Pixel, Tekenen};
+use super::Element;
 
 #[derive(Debug)]
 pub struct Slider {
@@ -13,6 +13,7 @@ pub struct Slider {
     pub knob_radius: i32,
     pub knob_color: Pixel,
     scrolling: bool,
+    style: Style
 }
 
 impl Slider {
@@ -28,6 +29,7 @@ impl Slider {
             knob_radius: 20,
             knob_color: colors::RED,
             scrolling: false,
+            style: Style::default()
         })
     }
 
@@ -43,6 +45,7 @@ impl Slider {
             knob_radius: 20,
             knob_color: colors::RED,
             scrolling: false,
+            style: Style::default()
         })
     }
 
@@ -92,14 +95,26 @@ impl Element for Slider {
         
     }
 
-    fn get_layout(&self) -> SpaceContraint {
-        SpaceContraint::new_fixed(self.width, self.knob_radius * 2, (self.width, self.width))
+    fn get_width_from_height(&self, height: i32, context: &Context) -> i32 {
+        self.width
     }
 
-    fn draw(&self, target: &mut Tekenen, available_space: Vec2) -> Vec2 {
+    fn get_height_from_width(&self, width: i32, context: &Context) -> i32 {
+        self.knob_radius * 2
+    }
+
+    fn get_inner_min_max_content(&self, context: &Context) -> Vec2<IndefRange> {
+        Vec2::new(IndefRange::new_definite(self.width), IndefRange::new_definite(self.knob_radius * 2))
+    }
+
+    fn draw(&self, target: &mut Tekenen, context: &Context, space: Vec2) {
         target.rect(0, 0, self.width, self.knob_radius * 2, self.slider_color);
         target.circle(self.current, self.knob_radius, self.knob_radius, self.knob_color);
 
-        Vec2::new(self.width, self.knob_radius * 2)
+        Vec2::new(self.width, self.knob_radius * 2);
+    }
+
+    fn get_style(&self) -> &Style {
+        &self.style
     }
 }

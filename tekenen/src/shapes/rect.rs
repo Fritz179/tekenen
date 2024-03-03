@@ -1,6 +1,8 @@
+use std::ops::{Add, AddAssign, Sub};
+
 use crate::math::Vec2;
 
-use super::{Point, Circle, Triangle, Shape, Intersect, BitShaping};
+use super::{BitShaping, Circle, Intersect, Point, Shape, Sides, Triangle};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct Rect {
@@ -153,5 +155,48 @@ impl Iterator for RectIter {
         }
 
         Some(output)
+    }
+}
+
+impl Add<Sides> for Rect {
+    type Output = Self;
+
+    fn add(self, rhs: Sides) -> Self::Output {
+        Self {
+            position: Vec2 {
+                x: self.position.x - rhs.left,
+                y: self.position.y - rhs.top
+            },
+            size: Vec2 {
+                x: self.size.x + rhs.left + rhs.right,
+                y: self.size.y + rhs.top + rhs.bottom
+            }
+        }
+    }
+}
+
+impl AddAssign<Sides> for Rect {
+    fn add_assign(&mut self, rhs: Sides) {
+        self.position.x -= rhs.top;
+        self.position.y -= rhs.left;
+        self.size.x += rhs.top + rhs.bottom;
+        self.size.y += rhs.left + rhs.right;
+    }
+}
+
+impl Sub<Sides> for Rect {
+    type Output = Self;
+
+    fn sub(self, rhs: Sides) -> Self::Output {
+        Self {
+            position: Vec2 {
+                x: self.position.x + rhs.left,
+                y: self.position.y + rhs.top
+            },
+            size: Vec2 {
+                x: self.size.x - rhs.left - rhs.right,
+                y: self.size.y - rhs.top - rhs.bottom
+            }
+        }
     }
 }

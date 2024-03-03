@@ -7,10 +7,10 @@ pub use mat::*;
 mod range;
 pub use range::*;
 
-pub fn constrain(val: i32, min: i32, max: i32) -> i32 {
-    if val > min {
-        if val < max {
-            val
+pub fn clamp<T: PartialOrd>(value: T, min: T, max: T) -> T {
+    if value > min {
+        if value < max {
+            value
         } else {
             max
         }

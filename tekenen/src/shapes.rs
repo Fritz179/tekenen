@@ -1,4 +1,6 @@
 pub mod point;
+use std::ops::{Add, AddAssign};
+
 use point::Point;
 
 pub mod rect;
@@ -61,5 +63,59 @@ impl std::ops::BitAnd for &dyn BitShaping {
 
     fn bitand(self, rhs: &dyn BitShaping) -> Self::Output {
         rhs.join_and(self)
+    }
+}
+
+/// A helper to store all the directions
+#[derive(Debug, Clone)]
+pub struct Sides<T = i32> {
+    pub top: T,
+    pub right: T,
+    pub bottom: T,
+    pub left: T,
+}
+
+impl<T: Default> Default for Sides<T> {
+    fn default() -> Self {
+        Self {
+            top: T::default(),
+            right: T::default(),
+            bottom: T::default(),
+            left: T::default()
+        }
+    }
+} 
+
+impl<T: Copy > Sides<T> {
+    pub fn new(value: T) -> Self {
+        Self {
+            top: value,
+            right: value,
+            bottom: value,
+            left: value
+        }
+    }
+}
+
+impl Sides {
+    pub fn get_total_height(&self) -> i32 {
+        self.top + self.bottom
+    }
+
+    pub fn get_total_width(&self) -> i32 {
+        self.left + self.right
+    }
+}
+
+impl<T: Add<Output = T>> Add for Sides<T> {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Self {
+            top: self.top + rhs.top,
+            right: self.right + rhs.right,
+            bottom: self.bottom + rhs.bottom,
+            left: self.left + rhs.left
+        }
     }
 }

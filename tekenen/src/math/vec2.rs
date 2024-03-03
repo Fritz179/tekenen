@@ -6,6 +6,15 @@ pub struct Vec2<T = i32> {
     pub y: T
 }
 
+impl Vec2<i32> {
+    pub fn zero() -> Self {
+        Self {
+            x: 0,
+            y: 0
+        }
+    }
+}
+
 // Modify
 impl<T> Vec2<T> {
     pub fn new(x: T, y: T) -> Self {

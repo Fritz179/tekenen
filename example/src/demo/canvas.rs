@@ -38,7 +38,7 @@ impl super::Demo for CanvasDemo {
 
         self.tick += 1;
 
-        tekenen.background(colors::GRAY);
+        tekenen.background(colors::FRITZ_GRAY);
 
         tekenen.circle(0, 0, 10, colors::WHITE);
         tekenen.rect(10, 10, 40, 40, colors::RED);
