@@ -63,7 +63,7 @@ impl super::Demo for ImageDemo {
         tekenen.line(100, 400, 100, 350, colors::WHITE);
         tekenen.line(150, 400, 150, 550, colors::WHITE);
 
-        tekenen.text(&format!("Hello there, tick: {}", self.tick), 200, 200, Font::new(8));
+        tekenen.text(&format!("Hello there, tick: {}", self.tick), 200, 200, Font::new(16, colors::WHITE));
 
         tekenen.draw_image(600, 200, &self.img8_png);
         tekenen.draw_scaled_image(600, 25, &self.img8_fpia, 5);

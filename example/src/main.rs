@@ -32,8 +32,8 @@ fn main() {
     let mut demos: Vec<Box<dyn Demo>> = vec![
         Box::new(demo::image::ImageDemo::new()),
         Box::new(demo::canvas::CanvasDemo::new()),
-        Box::new(demo::text::TextDemo::new()),
-        // Box::new(demo::transform::TransfromDemo::new()),
+        Box::new(demo::float::FloatDemo::new()),
+        // Box::new(demo::text::TextDemo::new()),
     ];
 
     let mut current_demo = 0;

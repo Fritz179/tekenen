@@ -89,8 +89,8 @@ impl Range<i32> {
 
 #[derive(Debug, Default, Clone)]
 pub struct IndefRange<T: std::cmp::PartialOrd + Copy = i32> {
-    pub min: Option<T>,
-    pub max: Option<T>,
+    min: Option<T>,
+    max: Option<T>,
 }
 
 impl<T: std::cmp::PartialOrd + Copy> IndefRange<T> {
@@ -123,8 +123,51 @@ impl<T: std::cmp::PartialOrd + Copy> IndefRange<T> {
         }
     }
 
+    pub fn new_min_priority(min: Option<T>, max: Option<T>) -> Self {
+        if let Some(min) = min {
+            if let Some(max) = max {
+                if max < min {
+                    return Self {
+                        min: Some(min),
+                        max: Some(min)
+                    }
+                }
+            }
+        }
+
+        Self {
+            min, 
+            max, 
+        }
+    }
+
+    pub fn new_max_priority(min: Option<T>, max: Option<T>) -> Self {
+        if let Some(min) = min {
+            if let Some(max) = max {
+                if max < min {
+                    return Self {
+                        min: Some(max),
+                        max: Some(max)
+                    }
+                }
+            }
+        }
+        
+        Self {
+            min,
+            max,
+        }
+    }
+
+    pub fn get_min(&self) -> Option<T> {
+        self.min
+    }
+
+    pub fn get_max(&self) -> Option<T> {
+        self.max
+    }
+
     pub fn constrain(&self, value: T) -> T {
-        // Min has priority over max
         if let Some(min) = self.min {
             if value < min {
                 return min

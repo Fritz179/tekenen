@@ -1,25 +1,25 @@
-use std::{cell::{Ref, RefCell}, marker::PhantomData, rc::{Rc}};
+use std::{cell::{Ref, RefCell}, marker::PhantomData, rc::Rc};
 
 use crate::{colors, math::{clamp, IndefRange, Vec2}, shapes::{rect::Rect, Sides}, Pixel};
 
-use super::elements::{Element, Painter};
+use super::elements::{BlockLayoutBox, DomElement, LayoutNode, PainterTree};
 
 #[derive(Debug, Clone)]
-pub struct Context {
+pub struct LayoutContext {
     pub containing_block: Rect,
 }
 
 // https://developer.mozilla.org/en-US/docs/Web/CSS/length
 // https://www.w3.org/TR/css-values-4/#lengths
 #[derive(Debug, Clone)]
-pub enum CSSLength<const positive_only: bool = false> {
+pub enum CSSLength<const POSITIVE_ONLY: bool = false> {
     Pixels(i32),
     Em(i32),
 }
 
-impl<const positive_only: bool> CSSLength<positive_only> {
+impl<const POSITIVE_ONLY: bool> CSSLength<POSITIVE_ONLY> {
     pub fn new_pixels(value: i32) -> Self {
-        if positive_only {
+        if POSITIVE_ONLY {
             assert!(value >= 0, "Value must be positive");
         }
 
@@ -27,14 +27,14 @@ impl<const positive_only: bool> CSSLength<positive_only> {
     }
 
     pub fn new_rem(value: i32) -> Self {
-        if positive_only {
+        if POSITIVE_ONLY {
             assert!(value >= 0, "Value must be positive");
         }
 
         Self::Em(value)
     }
 
-    pub fn solve(&self, context: &Context) -> i32 {
+    pub fn solve(&self, context: &LayoutContext) -> i32 {
         match self {
             Self::Pixels(pixels) => *pixels,
             Self::Em(rem) => todo!(),
@@ -42,22 +42,22 @@ impl<const positive_only: bool> CSSLength<positive_only> {
     }
 }
 
-impl<const positive_only: bool> From<i32> for CSSLength<positive_only> {
+impl<const POSITIVE_ONLY: bool> From<i32> for CSSLength<POSITIVE_ONLY> {
     fn from(value: i32) -> Self {
         Self::Pixels(value)
     }
 }
 
 // Used to determine what the percentage is relative to
-trait PercentSolver {
-    fn solve(value: f32, context: &Context) -> i32;
+pub trait PercentSolver {
+    fn solve(value: f32, context: &LayoutContext) -> i32;
 }
 
 /// refer to logical width of containing block 
 #[derive(Debug, Clone)]
 pub struct WidthOfContainingBlock;
 impl PercentSolver for WidthOfContainingBlock {
-    fn solve(value: f32, context: &Context) -> i32 {
+    fn solve(value: f32, context: &LayoutContext) -> i32 {
         (context.containing_block.size.x as f32 * value) as i32
     }
 }
@@ -66,7 +66,7 @@ impl PercentSolver for WidthOfContainingBlock {
 #[derive(Debug, Clone)]
 pub struct HeightOfContainingBlock;
 impl PercentSolver for HeightOfContainingBlock {
-    fn solve(value: f32, context: &Context) -> i32 {
+    fn solve(value: f32, context: &LayoutContext) -> i32 {
         todo!()
     }
 }
@@ -74,14 +74,14 @@ impl PercentSolver for HeightOfContainingBlock {
 // https://developer.mozilla.org/en-US/docs/Web/CSS/percentage
 // https://drafts.csswg.org/css-values/#percentages
 #[derive(Debug, Clone)]
-pub struct CSSPercentage<Solver: PercentSolver, const positive_only: bool = false> {
+pub struct CSSPercentage<Solver: PercentSolver, const POSITIVE_ONLY: bool = false> {
     value: f32,
     phantom: PhantomData<Solver>
 }
 
-impl<Solver: PercentSolver, const positive_only: bool> CSSPercentage<Solver, positive_only> {
+impl<Solver: PercentSolver, const POSITIVE_ONLY: bool> CSSPercentage<Solver, POSITIVE_ONLY> {
     fn new(value: f32) -> Self {
-        if positive_only {
+        if POSITIVE_ONLY {
             assert!(value >= 0.0, "Value must be between positive");
         }
 
@@ -91,12 +91,12 @@ impl<Solver: PercentSolver, const positive_only: bool> CSSPercentage<Solver, pos
         }
     }
 
-    fn solve(&self, context: &Context) -> i32 {
+    fn solve(&self, context: &LayoutContext) -> i32 {
         Solver::solve(self.value, context)
     }
 }
 
-impl<T: PercentSolver, const positive_only: bool> From<f32> for CSSPercentage<T, positive_only> {
+impl<T: PercentSolver, const POSITIVE_ONLY: bool> From<f32> for CSSPercentage<T, POSITIVE_ONLY> {
     fn from(value: f32) -> Self {
         Self::new(value)
     }
@@ -104,13 +104,13 @@ impl<T: PercentSolver, const positive_only: bool> From<f32> for CSSPercentage<T,
 
 // https://developer.mozilla.org/en-US/docs/Web/CSS/length-percentage
 #[derive(Debug, Clone)]
-enum CSSLengthPercentage<Solver: PercentSolver, const positive_only: bool = false> {
-    Length(CSSLength),
-    Percentage(CSSPercentage<Solver, positive_only>),
+pub enum CSSLengthPercentage<Solver: PercentSolver, const POSITIVE_ONLY: bool = false> {
+    Length(CSSLength<POSITIVE_ONLY>),
+    Percentage(CSSPercentage<Solver, POSITIVE_ONLY>),
 }
 
-impl<Solver: PercentSolver, const positive_only: bool> CSSLengthPercentage<Solver, positive_only> {
-    fn solve(&self, context: &Context) -> i32 {
+impl<Solver: PercentSolver, const POSITIVE_ONLY: bool> CSSLengthPercentage<Solver, POSITIVE_ONLY> {
+    fn solve(&self, context: &LayoutContext) -> i32 {
         match self {
             Self::Length(length) => length.solve(context),
             Self::Percentage(percent) => percent.solve(context),
@@ -118,14 +118,14 @@ impl<Solver: PercentSolver, const positive_only: bool> CSSLengthPercentage<Solve
     }
 }
 
-impl<Solver: PercentSolver, const positive_only: bool> From<CSSLength> for CSSLengthPercentage<Solver, positive_only> {
-    fn from(value: CSSLength) -> Self {
+impl<Solver: PercentSolver, const POSITIVE_ONLY: bool> From<CSSLength<POSITIVE_ONLY>> for CSSLengthPercentage<Solver, POSITIVE_ONLY> {
+    fn from(value: CSSLength<POSITIVE_ONLY>) -> Self {
         Self::Length(value)
     }
 }
 
-impl<Solver: PercentSolver, const positive_only: bool> From<CSSPercentage<Solver, positive_only>> for CSSLengthPercentage<Solver, positive_only> {
-    fn from(value: CSSPercentage<Solver, positive_only>) -> Self {
+impl<Solver: PercentSolver, const POSITIVE_ONLY: bool> From<CSSPercentage<Solver, POSITIVE_ONLY>> for CSSLengthPercentage<Solver, POSITIVE_ONLY> {
+    fn from(value: CSSPercentage<Solver, POSITIVE_ONLY>) -> Self {
         Self::Percentage(value)
     }
 }
@@ -173,7 +173,7 @@ impl CSSMargin {
         Self::Auto
     }
 
-    pub fn solve_or_auto(&self, context: &Context) -> Option<i32> {
+    pub fn solve_or_auto(&self, context: &LayoutContext) -> Option<i32> {
         match self {
             Self::LengthPercentage(value) => Some(value.solve(context)),
             _ => None
@@ -182,11 +182,11 @@ impl CSSMargin {
 }
 
 impl Sides<CSSMargin> {
-    pub fn get_total_height(&self, context: &Context) -> i32 {
+    pub fn get_total_height(&self, context: &LayoutContext) -> i32 {
         self.top.solve_or_auto(context).unwrap() + self.bottom.solve_or_auto(context).unwrap()
     }
 
-    pub fn get_total_width(&self, context: &Context) -> i32 {
+    pub fn get_total_width(&self, context: &LayoutContext) -> i32 {
         self.left.solve_or_auto(context).unwrap() + self.right.solve_or_auto(context).unwrap()
     }
 
@@ -234,31 +234,39 @@ impl Default for CSSPadding {
 }
 
 impl CSSPadding {
-    pub fn new_length(value: CSSLength) -> Self {
+    pub fn new_length(value: CSSLength<true>) -> Self {
         Self {
             value: value.into()
         }
     }
 
-    pub fn solve(&self, context: &Context) -> i32 {
+    pub fn solve(&self, context: &LayoutContext) -> i32 {
         self.value.solve(context)
+    }
+
+    pub fn set(&mut self, value: CSSLength<true>) {
+        self.value = value.into();
+    }
+
+    pub fn set_percent(&mut self, value: CSSPercentage<WidthOfContainingBlock, true>) {
+        self.value = value.into();
     }
 }
 
 impl Sides<CSSPadding> {
-    pub fn get_total_height(&self, context: &Context) -> i32 {
+    pub fn get_total_height(&self, context: &LayoutContext) -> i32 {
         self.top.solve(context) + self.bottom.solve(context)
     }
 
-    pub fn get_total_width(&self, context: &Context) -> i32 {
+    pub fn get_total_width(&self, context: &LayoutContext) -> i32 {
         self.left.solve(context) + self.right.solve(context)
     }
 
-    pub fn set(&mut self, sides: CSSLength) {
-        self.top = CSSPadding::new_length(sides.clone());
-        self.right = CSSPadding::new_length(sides.clone());
-        self.bottom = CSSPadding::new_length(sides.clone());
-        self.left = CSSPadding::new_length(sides);
+    pub fn set(&mut self, sides: CSSLength<true>) {
+        self.top.set(sides.clone());
+        self.right.set(sides.clone());
+        self.bottom.set(sides.clone());
+        self.left.set(sides);
     }
 }
 
@@ -340,7 +348,7 @@ enum CSSColor {
 }
 
 impl CSSColor {
-    fn get_color(&self, context: &Context) -> Pixel {
+    fn get_color(&self, context: &LayoutContext) -> Pixel {
         match self {
             Self::ColorBase(pixel) => *pixel,
             Self::CurrentColor => todo!(),
@@ -366,7 +374,7 @@ pub enum CSSLineWidth {
 }
 
 impl CSSLineWidth {
-    pub fn solve(&self, context: &Context) -> i32 {
+    pub fn solve(&self, context: &LayoutContext) -> i32 {
         match self {
             Self::Length(length) => length.solve(context),
             Self::Thin => 1,
@@ -410,7 +418,7 @@ impl CSSBorderWidth {
         }
     }
 
-    pub fn solve(&self, context: &Context) -> i32 {
+    pub fn solve(&self, context: &LayoutContext) -> i32 {
         self.value.solve(context)
     }
 }
@@ -464,7 +472,7 @@ pub struct CSSBorder {
 }
 
 impl CSSBorder {
-    pub fn solve(&self, context: &Context) -> i32 {
+    pub fn solve(&self, context: &LayoutContext) -> i32 {
         match self.line_style.value {
             CSSLineStyle::None | CSSLineStyle::Hidden => 0,
             _ => self.line_width.solve(context)
@@ -473,11 +481,11 @@ impl CSSBorder {
 }
 
 impl Sides<CSSBorder> {
-    pub fn get_total_height(&self, context: &Context) -> i32 {
+    pub fn get_total_height(&self, context: &LayoutContext) -> i32 {
         self.top.solve(context) + self.bottom.solve(context)
     }
 
-    pub fn get_total_width(&self, context: &Context) -> i32 {
+    pub fn get_total_width(&self, context: &LayoutContext) -> i32 {
         self.left.solve(context) + self.right.solve(context)
     }
 
@@ -518,7 +526,7 @@ pub enum CSSSize<Solver: PercentSolver> {
 }
 
 impl<Solver: PercentSolver> CSSSize<Solver> {
-    pub fn solve(&self, context: &Context) -> Option<i32> {
+    pub fn solve(&self, context: &LayoutContext) -> Option<i32> {
         match self {
             Self::LengthPercentage(value) => Some(value.solve(context)),
             Self::MinContent => todo!(),
@@ -530,6 +538,10 @@ impl<Solver: PercentSolver> CSSSize<Solver> {
             )),
             Self::AutoNone => None
         }
+    }
+
+    pub fn set(&mut self, value: CSSLength<true>) {
+        *self = Self::LengthPercentage(value.into());
     }
 }
 
@@ -611,7 +623,7 @@ impl CSSBackgroundColor {
         self.color = CSSColor::ColorBase(color);
     }
 
-    pub fn solve(&self, context: &Context) -> Pixel {
+    pub fn solve(&self, context: &LayoutContext) -> Pixel {
         self.color.get_color(context)
     }
 }
@@ -641,54 +653,31 @@ pub struct Style {
 }
 
 impl Style {
-    pub fn get_painter(&self, target: Rc<RefCell<dyn Element>>, content_box: Rect, context: Context) -> Painter {
+    // pub fn get_width_from_height(&self, target: &Ref<'_, dyn DomElement>, height: i32, context: &LayoutContext) -> i32 {
+    //     let inner_height = height - self.get_total_bounding_height(context);
+    //     let inner_width = target.get_width_from_height(inner_height, context);
+    //     inner_width + self.get_total_bounding_width(context)
+    // }
 
-        let padding_box = content_box + self.get_computed_padding(&context);
-        let border_box = padding_box + self.get_computed_border(&context);
-        let margin_box = border_box + self.get_computed_margin(&context);
+    // pub fn get_height_from_width(&self, target: &Ref<'_, dyn DomElement>, width: i32, context: &LayoutContext) -> i32 {
+    //     let inner_width = width - self.get_total_bounding_width(context);
+    //     let inner_height = target.get_height_from_width(inner_width, context);
+    //     inner_height + self.get_total_bounding_height(context)
+    // }
 
-        let child_context = Context {
-            containing_block: content_box
-        };
-
-        let children = target.borrow().get_children_painters(&child_context, content_box.size);
-
-        Painter {
-            margin_box,
-            border_box,
-            padding_box,
-            content_box,
-            element: target,
-            context,
-            children
-        }
-    }
-
-    pub fn get_width_from_height(&self, target: &Ref<'_, dyn Element>, height: i32, context: &Context) -> i32 {
-        let inner_height = height - self.get_total_bounding_height(context);
-        let inner_width = target.get_width_from_height(inner_height, context);
-        inner_width + self.get_total_bounding_width(context)
-    }
-
-    pub fn get_height_from_width(&self, target: &Ref<'_, dyn Element>, width: i32, context: &Context) -> i32 {
-        let inner_width = width - self.get_total_bounding_width(context);
-        let inner_height = target.get_height_from_width(inner_width, context);
-        inner_height + self.get_total_bounding_height(context)
-    }
-
-    pub fn get_total_bounding_height(&self, context: &Context) -> i32 {
+    pub fn get_total_bounding_height(&self, context: &LayoutContext) -> i32 {
         self.margin.get_total_height(context) 
             + self.padding.get_total_height(context) 
             + self.border.get_total_height(context) 
     }
 
-    pub fn get_total_bounding_width(&self, context: &Context) -> i32 {
+    pub fn get_total_bounding_width(&self, context: &LayoutContext) -> i32 {
         self.margin.get_total_width(context) 
             + self.padding.get_total_width(context) 
             + self.border.get_total_width(context) 
     }
 
-    pub fn get_computed_padding(&self, context: &Context) -> Sides {
+    pub fn get_computed_padding(&self, context: &LayoutContext) -> Sides {
         Sides {
             top: self.padding.top.solve(context),
             right: self.padding.right.solve(context),
@@ -697,7 +686,7 @@ impl Style {
         }
     }
 
-    pub fn get_computed_border(&self, context: &Context) -> Sides {
+    pub fn get_computed_border(&self, context: &LayoutContext) -> Sides {
         Sides {
             top: self.border.top.solve(context),
             right: self.border.right.solve(context),
@@ -706,7 +695,7 @@ impl Style {
         }
     }
 
-    pub fn get_computed_margin(&self, context: &Context) -> Sides {
+    pub fn get_computed_margin(&self, context: &LayoutContext) -> Sides {
         Sides {
             top: self.margin.top.solve_or_auto(context).unwrap_or(0),
             right: self.margin.right.solve_or_auto(context).unwrap_or(0),
@@ -715,25 +704,25 @@ impl Style {
         }
     }
 
-    pub fn get_total_computed_boudning(&self, context: &Context) -> Sides {
+    pub fn get_total_computed_boudning(&self, context: &LayoutContext) -> Sides {
         self.get_computed_margin(context) + self.get_computed_padding(context) + self.get_computed_border(context)
     }
 
-    pub fn get_min_max_margin_area(&self, target: &Ref<'_, dyn Element>, context: &Context) -> Vec2<IndefRange> {
-        let mut base = target.get_inner_min_max_content(context);
+    // pub fn get_min_max_margin_area(&self, target: &Ref<'_, dyn DomElement>, context: &LayoutContext) -> Vec2<IndefRange> {
+    //     let mut base = target.get_inner_min_max_content(context);
 
-        base.x += self.get_total_bounding_width(context);
-        base.y += self.get_total_bounding_height(context);
+    //     base.x += self.get_total_bounding_width(context);
+    //     base.y += self.get_total_bounding_height(context);
 
-        base
-    }
+    //     base
+    // }
 
-    pub fn get_min_max_border_area(&self, target: &Ref<'_, dyn Element>, context: &Context) -> (Vec2<IndefRange>, Sides) {
-        let mut base = target.get_inner_min_max_content(context);
+    // pub fn get_min_max_border_area(&self, target: &Ref<'_, dyn DomElement>, context: &LayoutContext) -> (Vec2<IndefRange>, Sides) {
+    //     let mut base = target.get_inner_min_max_content(context);
 
-        base.x += self.padding.get_total_width(context) + self.border.get_total_width(context);
-        base.y += self.padding.get_total_height(context) + self.border.get_total_height(context);
+    //     base.x += self.padding.get_total_width(context) + self.border.get_total_width(context);
+    //     base.y += self.padding.get_total_height(context) + self.border.get_total_height(context);
 
-        (base, self.get_computed_margin(context))
-    }
+    //     (base, self.get_computed_margin(context))
+    // }
 }
