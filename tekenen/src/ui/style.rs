@@ -1,6 +1,6 @@
-use std::{cell::{Ref, RefCell}, marker::PhantomData, rc::Rc};
+use std::{marker::PhantomData};
 
-use crate::{colors, math::{clamp, IndefRange, Vec2}, shapes::{rect::Rect, Sides}, Pixel};
+use crate::{colors, math::{clamp}, shapes::{rect::Rect, Sides}, Pixel};
 
 
 #[derive(Debug, Clone)]

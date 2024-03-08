@@ -1,6 +1,6 @@
-use std::{cell::RefCell, rc::Rc};
 
-use crate::{colors, math::{IndefRange, Vec2}, tekenen::Font, ui::style::{LayoutContext, Style}, Draw, Tekenen};
+
+use crate::{ui::style::{LayoutContext}, Draw};
 
 use super::DomElement;
 
@@ -37,7 +37,7 @@ impl TextFragment {
             current_width += token_width + 16;
         }
 
-        if current.len() > 0 {
+        if !current.is_empty() {
             result.push(current);
         }
 

@@ -14,7 +14,7 @@ pub mod platform;
 /// - background(), rect(), draw_image()
 mod tekenen;
 
-use std::{borrow::Borrow, cell::{Ref, RefCell, RefMut}, ops::Deref, rc::Rc};
+use std::{borrow::Borrow, cell::{Ref, RefCell, RefMut}, rc::Rc};
 
 pub use tekenen::{Tekenen, colors, Pixel, Draw, OverflowBehavior, Font};
 
@@ -41,9 +41,7 @@ pub struct Wrapper<T>(Rc<RefCell<T>>);
 
 impl<T> Wrapper<T> {
     fn wrap(t: T) -> Box<Wrapper<T>> {
-        Box::new(Wrapper::<T> {
-            0: Rc::new(RefCell::new(t))
-        })
+        Box::new(Wrapper::<T>(Rc::new(RefCell::new(t))))
     }
 
     pub fn borrow(&self) -> Ref<'_, T> {
@@ -55,6 +53,6 @@ impl<T> Wrapper<T> {
     }
 
     pub fn clone(&self) -> Box<Wrapper<T>> {
-        Box::new(Wrapper::<T> {0: Rc::clone(&self.0)})
+        Box::new(Wrapper::<T>(Rc::clone(&self.0)))
     }
 }

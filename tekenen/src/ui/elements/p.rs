@@ -1,6 +1,6 @@
-use std::{borrow::Borrow, cell::{Ref, RefCell}, rc::Rc};
+use std::{borrow::Borrow, cell::{Ref}};
 
-use super::{DomElement, LayoutBox, LayoutNode, PaintElement, PainterTree, Stylable, TextFragment};
+use super::{DomElement, LayoutBox, LayoutNode, PaintElement, Stylable, TextFragment};
 use crate::{colors, math::{IndefRange, Vec2}, platform::Event, shapes::rect::Rect, tekenen::Font, ui::style::{LayoutContext, Style}, Draw, Tekenen, Wrapper};
 
 #[derive(Debug)]

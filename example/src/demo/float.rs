@@ -1,10 +1,6 @@
-use std::cell::{Ref, RefCell};
-
-use std::rc::Rc;
-
 use tekenen::shapes::rect::Rect;
-use tekenen::ui::elements::{BlockFormattingContext, Div, DomElement, LayoutBox, LayoutNode, P};
-use tekenen::ui::style::LayoutContext;
+use tekenen::ui::elements::{BlockFormattingContext, Div, DomElement, P};
+
 use tekenen::{colors, Draw, Tekenen};
 use tekenen::platform::{PlatformTrait, IntervalDecision, Event, KeyDownEvent};
 

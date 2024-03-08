@@ -1,8 +1,8 @@
-use std::{any::Any, cell::{Ref, RefCell}, rc::Rc};
+use std::cell::Ref;
 
-use crate::{math::{IndefRange, Vec2}, shapes::rect::Rect, ui::style::{CSSDisplay, CSSFlexDirection, LayoutContext}, Draw, Tekenen, Wrapper};
+use crate::{math::{IndefRange, Vec2}, shapes::rect::Rect, ui::style::{CSSDisplay, LayoutContext}, Draw, Tekenen, Wrapper};
 
-use super::{BlockLayoutBox, DomElement, LayoutBox, LayoutNode, PaintElement, PainterTree, Stylable, Style};
+use super::{BlockLayoutBox, DomElement, LayoutBox, LayoutNode, PaintElement, Stylable, Style};
 
 
 /// A div is a flexbox

@@ -1,5 +1,5 @@
 pub mod div;
-use std::{borrow::Borrow, cell::{Ref, RefCell}, fmt::Debug, rc::Rc};
+use std::{cell::{Ref}, fmt::Debug};
 
 pub use div::Div;
 
@@ -12,7 +12,7 @@ pub use textFragment::TextFragment;
 pub mod p;
 pub use p::P;
 
-use crate::{math::{IndefRange, Vec2}, platform::Event, shapes::rect::Rect, Draw, Tekenen, Wrapper};
+use crate::{math::{IndefRange, Vec2}, platform::Event, shapes::rect::Rect, Draw, Tekenen};
 
 
 use super::style::{LayoutContext, Style};
@@ -93,6 +93,12 @@ pub struct BlockFormattingContext {
     
 }
 
+impl Default for BlockFormattingContext {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl BlockFormattingContext {
     pub fn new() -> Self {
         Self {
@@ -141,6 +147,12 @@ impl BlockFormattingContext {
 
 pub struct InlineFormattingContext {
 
+}
+
+impl Default for InlineFormattingContext {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl InlineFormattingContext {
