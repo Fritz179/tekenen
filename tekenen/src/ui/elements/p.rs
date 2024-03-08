@@ -1,65 +1,67 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{borrow::Borrow, cell::{Ref, RefCell}, rc::Rc};
 
-use super::{DomElement, TextFragment};
-use crate::{colors, math::{IndefRange, Vec2}, tekenen::Font, ui::style::{LayoutContext, Style}, Draw, Tekenen};
+use super::{DomElement, LayoutBox, LayoutNode, TextFragment};
+use crate::{colors, math::{IndefRange, Vec2}, platform::Event, tekenen::Font, ui::style::{LayoutContext, Style}, Draw, Tekenen, Wrapper};
 
 #[derive(Debug)]
 enum Component {
     Fragment(TextFragment),
-    Element(Rc<RefCell<dyn DomElement>>)
+    Element(Box<dyn DomElement>)
 }
 
 #[derive(Debug)]
-pub struct P {
+pub struct InnerP {
     pub style: Style,
 
     components: Vec<Component>
 }
 
+pub type P = Wrapper<InnerP>;
+
 impl P {
-    pub fn new(text: &str) -> Rc<RefCell<Self>> {
-        let mut bb = Style::default();
+    pub fn new(text: &str) -> Box<Self> {
+        let mut style = Style::default();
 
         // TODO: should be 1rem
-        bb.margin.set_2(16.into(), 0.into());
+        style.margin.set_2(16.into(), 0.into());
 
-        let mut this = Rc::new(RefCell::new(P {
-            components: vec![],
-            style: bb
-        }));
+        let p = Wrapper::wrap(InnerP {
+            style,
+            components: vec![]
+        });
 
-        let clone = Rc::clone(&this) as Rc<RefCell<dyn DomElement>>;
+        let clone = p.clone() as Box<dyn DomElement>;
 
-        this.borrow_mut().components.push(Component::Fragment(TextFragment::new(text, clone)));
+        p.borrow_mut().components.push(Component::Fragment(TextFragment::new(text, clone)));
 
-        this
+        p
     }
 
-    pub fn new_fn(text: &str, fun: impl FnOnce(&mut Self)) -> Rc<RefCell<Self>> {
-        let mut bb = Style::default();
+    pub fn new_fn(text: &str, fun: impl FnOnce(&mut InnerP)) -> Box<Self> {
+        let mut style = Style::default();
 
         // TODO: should be 1rem
-        bb.margin.set_2(16.into(), 0.into());
+        style.margin.set_2(16.into(), 0.into());
 
-        let mut p = P {
-            components: vec![],
-            style: bb
+        let mut inner = InnerP {
+            style,
+            components: vec![]
         };
 
-        fun(&mut p);
+        fun(&mut inner);
 
-        let this = Rc::new(RefCell::new(p));
+        let p = Wrapper::wrap(inner);
 
-        let clone = Rc::clone(&this) as Rc<RefCell<dyn DomElement>>;
+        let clone = p.clone() as Box<dyn DomElement>;
 
-        this.borrow_mut().components.push(Component::Fragment(TextFragment::new(text, clone)));
+        p.borrow_mut().components.push(Component::Fragment(TextFragment::new(text, clone)));
 
-        this
+        p
     }
 }
 
 impl DomElement for P {
-    fn event(&mut self, event: crate::platform::Event) {
+    fn event(&mut self, event: Event) {
         
     }
 
@@ -67,11 +69,11 @@ impl DomElement for P {
         
     }
 
-    fn get_dom_children(&self) -> &Vec<Rc<RefCell<dyn DomElement>>> {
+    fn get_dom_children(&self) -> &Vec<Box<dyn DomElement>> {
         todo!()
     }
 
-    fn get_layout_box(&self, target: Rc<RefCell<dyn DomElement>>) -> super::LayoutNode<dyn super::LayoutBox> {
+    fn get_layout_box(&self, parent: &LayoutNode<dyn LayoutBox>) {
         todo!()
     }
 
@@ -95,7 +97,7 @@ impl DomElement for P {
     //     Vec2::new(IndefRange::new(16, self.text.len() as i32 * 16), IndefRange::new(16, 16))
     // }
 
-    fn get_style(&self) -> &Style {
-        &self.style
+    fn get_style(&self) -> Ref<'_, Style> {
+        Ref::map(self.0.as_ref().borrow(), |borrow| &borrow.style)
     }
 }

@@ -7,11 +7,11 @@ use super::DomElement;
 #[derive(Debug)]
 pub struct TextFragment {
     pub text: String,
-    pub owner: Rc<RefCell<dyn DomElement>>
+    pub owner: Box<dyn DomElement>
 }
 
 impl TextFragment {
-    pub fn new(text: &str, owner: Rc<RefCell<dyn DomElement>> ) -> Self{
+    pub fn new(text: &str, owner: Box<dyn DomElement>) -> Self{
         Self {
             text: text.to_owned(),
             owner

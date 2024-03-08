@@ -3,14 +3,14 @@ use std::cell::{Ref, RefCell};
 use std::rc::Rc;
 
 use tekenen::shapes::rect::Rect;
-use tekenen::ui::elements::{Div, P, DomElement};
+use tekenen::ui::elements::{Div, DomElement, LayoutNode, P};
 use tekenen::ui::style::LayoutContext;
 use tekenen::{colors, Draw, Tekenen};
 use tekenen::platform::{PlatformTrait, IntervalDecision, Event, KeyDownEvent};
 
 pub struct FloatDemo {
     tek: Tekenen,
-    div: Rc<RefCell<Div>>,
+    div: Box<Div>,
 }
 
 impl FloatDemo {
@@ -66,28 +66,27 @@ impl super::Demo for FloatDemo {
         println!();
         println!("Drawing");
 
-        // Clear canvas
+        // 1. Clear canvas
         let tekenen = &mut self.tek;
         tekenen.set_translation(0, 0);
         tekenen.background(colors::FRITZ_GRAY);
 
-        // Get the Paint Tree
+        // 2. Generate Layout Box Tree
+        let layout = self.div.start_get_layout_box();
+
+        // 3. Do Layouting and get Paint Tree
+        todo!();
         let context = LayoutContext {
             containing_block: Rect::new(0, 0, 800, 600)
         };
 
-        let div: Ref<'_, dyn DomElement> = self.div.borrow();
-
-
-
-        let layout = div.get_layout_box(Rc::clone(&self.div) as Rc<RefCell<dyn DomElement>>);
-
         let painter = layout.get_painter(Rect::new(0, 0, 800, 600), context);
 
-        // Draw the Paint Tree
+
+        // 4. Draw the Paint Tree
         painter.paint(tekenen);
 
-        // Display the pixels
+        // 5. Display the pixels
         window.display_pixels(tekenen.get_pixels());
     }
 }

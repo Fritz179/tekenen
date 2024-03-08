@@ -1,6 +1,6 @@
-use std::{any::Any, cell::RefCell, rc::Rc};
+use std::{any::Any, cell::{Ref, RefCell}, rc::Rc};
 
-use crate::{math::{IndefRange, Vec2}, shapes::rect::Rect, ui::style::{CSSDisplay, CSSFlexDirection, LayoutContext}, Tekenen};
+use crate::{math::{IndefRange, Vec2}, shapes::rect::Rect, ui::style::{CSSDisplay, CSSFlexDirection, LayoutContext}, Tekenen, Wrapper};
 
 use super::{BlockLayoutBox, DomElement, LayoutBox, LayoutNode, PainterTree, Style};
 
@@ -8,74 +8,63 @@ use super::{BlockLayoutBox, DomElement, LayoutBox, LayoutNode, PainterTree, Styl
 /// A div is a flexbox
 /// A div with a single element is a flexbox with a single element
 #[derive(Debug)]
-pub struct Div {
-    pub style: RefCell<Style>,
-    children: RefCell<Vec<Rc<dyn DomElement>>>,
+pub struct InnerDiv {
+    pub style: Style,
+    children: Vec<Box<dyn DomElement>>,
 }
 
-/*
-Percentage resolution
+pub type Div = Wrapper<InnerDiv>;
 
-width        => containing block's width
-height       => containing block's height (if not zero)
-padding      => containing block's width
-margin       => containing block's width
-left / right => containing block's width
-top / bottom => containing block's height
-font-size    => parent block's font-size
-line-height  => self element's font-size
-
-*/
 impl Div {
-    pub fn new(children: Vec<Rc<RefCell<dyn DomElement>>>) -> Rc<RefCell<Div>> {
+    pub fn new(children: Vec<Box<dyn DomElement>>) -> Box<Self> {
         let mut style = Style::default();
 
         style.display = CSSDisplay::Block;
 
-        Rc::new(RefCell::new(Div {
+        Wrapper::wrap(InnerDiv {
             style,
             children
-        }))
+        })
     }
 
-    pub fn new_fn(children: Vec<Rc<RefCell<dyn DomElement>>>, fun: impl FnOnce(&mut Self)) -> Rc<RefCell<Div>> {
+    pub fn new_fn(children: Vec<Box<dyn DomElement>>, fun: impl FnOnce(&mut InnerDiv)) -> Box<Self> {
         let mut style = Style::default();
 
         style.display = CSSDisplay::Block;
 
-        let mut div = Div {
+        let mut div = InnerDiv {
             style,
             children
         };
 
         fun(&mut div);
 
-        Rc::new(RefCell::new(div))
+        Wrapper::wrap(div)
     }
 
-    pub fn new_vertical_flex(children: Vec<Rc<RefCell<dyn DomElement>>>) -> Rc<RefCell<Div>> {
-        let mut style = Style::default();
+    // pub fn new_vertical_flex(children: Vec<RcRefCell<dyn DomElement>>) -> RcRefCell<Self> {
+    //     let mut style = Style::default();
 
-        style.display = CSSDisplay::Flex;
-        style.flex_direction = CSSFlexDirection::Column;
+    //     style.display = CSSDisplay::Flex;
+    //     style.flex_direction = CSSFlexDirection::Column;
 
-        Rc::new(RefCell::new(Div {
-            style,
-            children
-        }))
-    }
+    //     Rc::new(RefCell::new(Div {
+    //         style,
+    //         children
+    //     }))
+    // }
 
-    pub fn new_horizontal_flex(children: Vec<Rc<RefCell<dyn DomElement>>>) -> Rc<RefCell<Div>> {
-        let mut style = Style::default();
+    // pub fn new_horizontal_flex(children: Vec<RcRefCell<dyn DomElement>>) -> RcRefCell<Self> {
+    //     let mut style = Style::default();
 
-        style.display = CSSDisplay::Flex;
-        style.flex_direction = CSSFlexDirection::Row;
+    //     style.display = CSSDisplay::Flex;
+    //     style.flex_direction = CSSFlexDirection::Row;
 
-        Rc::new(RefCell::new(Div {
-            style,
-            children
-        }))
-    }
+    //     Rc::new(RefCell::new(Div {
+    //         style,
+    //         children
+    //     }))
+    // }
 }
 
 
@@ -88,28 +77,23 @@ impl DomElement for Div {
         
     }
 
-    fn get_layout_box(&self, target: Rc<RefCell<dyn DomElement>>) -> LayoutNode<dyn LayoutBox> {
-
-        let a = Div {
-            style: Style::default(),
-            children: vec![]
-        };
-        
-        let c = Rc::new(RefCell::new(a));
-        let b = c as Rc<RefCell<dyn Any>>;
-
-        let node = match self.style.display {
-            CSSDisplay::Block => LayoutNode::<dyn BlockLayoutBox>::new(target),
+    fn get_layout_box(&self) -> LayoutNode<dyn LayoutBox> {
+        let node = match self.borrow().style.display {
+            CSSDisplay::Block => LayoutNode::new(self.clone() as Box<dyn BlockLayoutBox>),
             CSSDisplay::Inline => todo!(),
             CSSDisplay::Flex => todo!(),
             CSSDisplay::None => todo!(),
         };
 
-        todo!()
+        for child in self.borrow().children.iter() {
+            node.add_box(child.get_layout_box())
+        }
+
+        node
     }
 
-    fn get_dom_children(&self) -> &Vec<Rc<RefCell<dyn DomElement>>> {
-        &self.children
+    fn get_dom_children(&self) -> &Vec<Box<dyn DomElement>> {
+        todo!()
     }
 
 
@@ -185,8 +169,8 @@ impl DomElement for Div {
     //     }
     // }
 
-    fn get_style(&self) -> &Style {
-        &self.style
+    fn get_style(&self) -> Ref<'_, Style> {
+        Ref::map(self.0.as_ref().borrow(), |borrow| &borrow.style)
     }
 }
 
@@ -206,12 +190,14 @@ impl LayoutBox for Div {
     fn get_min_max_content(&self, context: LayoutContext) -> Vec2<IndefRange> {
         todo!()
     }
-}
 
-impl BlockLayoutBox for Div {
     fn get_painter(&self, content_box: Rect, context: LayoutContext) -> PainterTree {
         todo!()
     }
+}
+
+impl BlockLayoutBox for Div {
+    
 }
 
 impl Div {
@@ -405,6 +391,8 @@ impl Div {
 
 impl Div {
     fn determine_width(&self, context: &LayoutContext) -> i32 {
+        let style = self.get_style();
+
         // Determine the available main and cross space for the flex items. For
         // each dimension, if that dimension of the flex container’s content box
         // is a definite size, use that; if that dimension of the flex container
@@ -414,31 +402,33 @@ impl Div {
         // to the flex container in that dimension and use that value.
 
         // 1. is definite
-        if let Some(value) = self.style.width.solve(context) {
+        if let Some(value) = style.width.solve(context) {
             return value
         }
 
         // 2. is under min/max constraint
-        let min = self.style.min_width.solve(context);
-        let max = self.style.max_width.solve(context);
+        let min = style.min_width.solve(context);
+        let max = style.max_width.solve(context);
 
         if min.is_some() || max.is_some() {
             return IndefRange::new_min_priority(min, max).constrain(context.containing_block.size.x)
         }
         
         // 3. margin, border and padding
-        context.containing_block.size.x - self.style.get_total_bounding_width(context)
+        context.containing_block.size.x - style.get_total_bounding_width(context)
     }
 
     fn determine_height_range(&self, context: &LayoutContext) -> IndefRange {
+        let style = self.get_style();
+
         // 1. is definite
-        if let Some(value) = self.style.height.solve(context) {
+        if let Some(value) = style.height.solve(context) {
             return IndefRange::new_definite(value)
         }
 
         // 2. is under min/max constraint
-        let min = self.style.min_height.solve(context);
-        let max = self.style.max_height.solve(context);
+        let min = style.min_height.solve(context);
+        let max = style.max_height.solve(context);
 
         IndefRange::new_option(min, max)
     }

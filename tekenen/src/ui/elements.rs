@@ -1,5 +1,5 @@
 pub mod div;
-use std::{alloc::Layout, cell::RefCell, fmt::Debug, rc::Rc};
+use std::{cell::{Ref, RefCell}, fmt::Debug, rc::Rc};
 
 pub use div::Div;
 
@@ -12,11 +12,12 @@ pub use textFragment::TextFragment;
 pub mod p;
 pub use p::P;
 
-use crate::{math::{IndefRange, Vec2}, platform::Event, shapes::rect::Rect, Draw, Tekenen};
+use crate::{math::{IndefRange, Vec2}, platform::Event, shapes::rect::Rect, Draw, Tekenen, Wrapper};
 
 
 use super::style::{LayoutContext, Style};
 
+// Every HTML element has to implement this Trait
 pub trait DomElement: std::fmt::Debug + std::any::Any {
     // React to event
     fn event(&mut self, event: Event);
@@ -25,19 +26,16 @@ pub trait DomElement: std::fmt::Debug + std::any::Any {
     fn update(&mut self);
 
     // Implement for default behavior
-    fn get_dom_children(&self) -> &Vec<Rc<RefCell<dyn DomElement>>>;
+    fn get_dom_children(&self) -> &Vec<Box<dyn DomElement>>;
 
     // Implement to get a Layout/Box Tree
-    fn get_layout_box(&self, target: Rc<RefCell<dyn DomElement>>) -> LayoutNode<dyn LayoutBox>;
+    fn get_layout_box(&self) -> LayoutNode<dyn LayoutBox>;
 
     // Get the bounding box
-    fn get_style(&self) -> &Style;
-
-    fn as_any(&self) -> &dyn std::any::Any {
-        todo!()
-    }
+    fn get_style(&self) -> Ref<'_, Style>;
 }
 
+// Every entry in the Layout/Box tree has to implemnet this 
 pub trait LayoutBox: Debug {
     fn get_min_max_content(&self, context: LayoutContext) -> Vec2<IndefRange>;
 
@@ -47,46 +45,50 @@ pub trait LayoutBox: Debug {
     // Used for layouting
     fn get_width_from_height(&self, height: i32, context: &LayoutContext) -> i32;
     fn get_height_from_width(&self, width: i32, context: &LayoutContext) -> i32;
+
+    fn get_painter(&self, content_box: Rect, context: LayoutContext) -> PainterTree;
 }
 
-// Every Node of the Layout / Box Tree implements this trait
+// A block-level box is a box that participates in a block formatting context
 pub trait BlockLayoutBox: LayoutBox {
-    fn get_painter(&self, content_box: Rect, context: LayoutContext) -> PainterTree;
 
 }
 
 // An inline-level box is a box that participates in an inline formatting context
-pub trait InlineLayoutBox: BlockLayoutBox {
+pub trait InlineLayoutBox: LayoutBox {
     fn split_into_line(&self, formatter: InlineFormattingContext);
 }
 
 #[derive(Debug)]
 enum LayoutNodeVec {
-    Block(Vec<Rc<RefCell<dyn BlockLayoutBox>>>),
-    Inline(Vec<Rc<RefCell<dyn InlineLayoutBox>>>),
+    Block(Vec<LayoutNode<dyn BlockLayoutBox>>),
+    Inline(Vec<LayoutNode<dyn InlineLayoutBox>>),
 }
 
+// This is what the tree is made of
+// Each sub_context initiates a new context type
+// Each children can either be a Block or Inline level box
+// Formatting Context are not limited to this two (Flex, Grid, Table...)
 #[derive(Debug)]
-// Principal Box
 pub struct LayoutNode<T: LayoutBox + ?Sized> {
-    node: Rc<RefCell<T>>,
-    children: Vec<LayoutNodeVec>
+    node: Box<T>,
+    sub_context: Vec<LayoutNodeVec>
 }
 
 impl<T: LayoutBox + ?Sized> LayoutNode<T> {
-    pub fn new(node: Rc<RefCell<T>>) -> Self {
+    pub fn new(node: Box<T>) -> Self {
         Self {
             node,
-            children: Vec::new()
+            sub_context: Vec::new()
         }
     }
 }
 
-impl LayoutNode<dyn LayoutBox> {
-    pub fn get_painter(&self, content_box: Rect, context: LayoutContext) -> PainterTree {
-        todo!()
-    }
-}
+// impl LayoutNode<dyn LayoutBox> {
+//     pub fn get_painter(&self, content_box: Rect, context: LayoutContext) -> PainterTree {
+//         todo!()
+//     }
+// }
 
 impl<T: LayoutBox + ?Sized> LayoutBox for LayoutNode<T> {
     fn get_min_max_content(&self, context: LayoutContext) -> Vec2<IndefRange> {
@@ -104,13 +106,15 @@ impl<T: LayoutBox + ?Sized> LayoutBox for LayoutNode<T> {
     fn get_height_from_width(&self, width: i32, context: &LayoutContext) -> i32 {
         todo!()
     }
+
+    fn get_painter(&self, content_box: Rect, context: LayoutContext) -> PainterTree {
+        todo!()
+    }
 }
 
 // Block Box with Block Children
 impl BlockLayoutBox for LayoutNode<dyn BlockLayoutBox> {
-    fn get_painter(&self, content_box: Rect, context: LayoutContext) -> PainterTree {
-        todo!()
-    }
+
 }
 
 // Atomic Inline-Level Box
@@ -122,9 +126,7 @@ impl InlineLayoutBox for LayoutNode<dyn BlockLayoutBox> {
 
 // Needed beacuse InlineLayoutBox is a supertrait of BlockLayoutBox
 impl BlockLayoutBox for LayoutNode<dyn InlineLayoutBox> {
-    fn get_painter(&self, content_box: Rect, context: LayoutContext) -> PainterTree {
-        todo!()
-    }
+
 }
 
 // Inline Box with Inline Children
@@ -136,58 +138,39 @@ impl InlineLayoutBox for LayoutNode<dyn InlineLayoutBox> {
 
 
 // Every Formatting Context must be able to differentiate between block- and inline-level boxes
-impl<T: BlockLayoutBox + ?Sized> LayoutNode<T> {
-    fn add_block_box(&mut self, box_: Rc<RefCell<dyn BlockLayoutBox>>) {
-        match self.children.last_mut() {
+impl<T: LayoutBox + ?Sized> LayoutNode<T> {
+    fn add_block_box(&mut self, node: LayoutNode<dyn BlockLayoutBox>) {
+        match self.sub_context.last_mut() {
             // Empty or Inline
             None | Some(LayoutNodeVec::Inline(_)) => {
-                self.children.push(LayoutNodeVec::Block(vec![box_]));
+                self.sub_context.push(LayoutNodeVec::Block(vec![node]));
             },
             Some(LayoutNodeVec::Block(vec)) => {
-                vec.push(box_);
+                vec.push(node);
             },
         }
     }
 
-    fn add_inline_box(&mut self, box_: Rc<RefCell<dyn InlineLayoutBox>>) {
-        match self.children.last_mut() {
+    fn add_inline_box(&mut self, node: LayoutNode<dyn InlineLayoutBox>) {
+        match self.sub_context.last_mut() {
             // Empty or Inline
             None | Some(LayoutNodeVec::Block(_)) => {
-                self.children.push(LayoutNodeVec::Inline(vec![box_]));
+                self.sub_context.push(LayoutNodeVec::Inline(vec![node]));
             },
             Some(LayoutNodeVec::Inline(vec)) => {
-                vec.push(box_);
+                vec.push(node);
             },
         }
     }
 }
 
-struct InlineFormattingContext {
+pub struct BlockFormattingContext {
 
 }
 
-// The root of the layout tree
-// Lay out the children in a vertical stack
-// #[derive(Debug, Default)]
-// pub struct BlockFormattingContext {
-//     boxes_to_block: Vec<Rc<RefCell<BlockLevelBox>>>,
-//     last_inline_context: Option<Rc<RefCell<BlockLevelBox>>>,
-// }
+pub struct InlineFormattingContext {
 
-// impl FormattingContext for BlockFormattingContext {
-
-
-//     fn get_next_inline_available_width(&self) -> (i32, bool) {
-//         todo!()
-//     }
-// }
-
-
-// impl BlockFormattingContext {
-//     fn new() -> Self {
-//         Self::default()
-//     }
-// }
+}
 
 // The line box is a horizontal stack of inline-level boxes
 #[derive(Debug)]
@@ -251,7 +234,7 @@ struct LineBox {
 
 #[derive(Debug)]
 struct AnonymousTextBox {
-    pub parent: Rc<RefCell<dyn DomElement>>,
+    pub parent: Box<dyn DomElement>,
     pub value: String
 }
 
