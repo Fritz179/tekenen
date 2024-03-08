@@ -3,7 +3,7 @@ use std::cell::{Ref, RefCell};
 use std::rc::Rc;
 
 use tekenen::shapes::rect::Rect;
-use tekenen::ui::elements::{Div, DomElement, LayoutNode, P};
+use tekenen::ui::elements::{BlockFormattingContext, Div, DomElement, LayoutBox, LayoutNode, P};
 use tekenen::ui::style::LayoutContext;
 use tekenen::{colors, Draw, Tekenen};
 use tekenen::platform::{PlatformTrait, IntervalDecision, Event, KeyDownEvent};
@@ -72,15 +72,12 @@ impl super::Demo for FloatDemo {
         tekenen.background(colors::FRITZ_GRAY);
 
         // 2. Generate Layout Box Tree
-        let layout = self.div.start_get_layout_box();
+        let layout = self.div.get_layout_box();
 
         // 3. Do Layouting and get Paint Tree
-        todo!();
-        let context = LayoutContext {
-            containing_block: Rect::new(0, 0, 800, 600)
-        };
+        let context = BlockFormattingContext::new();
 
-        let painter = layout.get_painter(Rect::new(0, 0, 800, 600), context);
+        let painter = context.get_painter(&layout, Rect::new(0, 0, 800, 600));
 
 
         // 4. Draw the Paint Tree

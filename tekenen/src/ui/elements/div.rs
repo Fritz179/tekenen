@@ -1,8 +1,8 @@
 use std::{any::Any, cell::{Ref, RefCell}, rc::Rc};
 
-use crate::{math::{IndefRange, Vec2}, shapes::rect::Rect, ui::style::{CSSDisplay, CSSFlexDirection, LayoutContext}, Tekenen, Wrapper};
+use crate::{math::{IndefRange, Vec2}, shapes::rect::Rect, ui::style::{CSSDisplay, CSSFlexDirection, LayoutContext}, Draw, Tekenen, Wrapper};
 
-use super::{BlockLayoutBox, DomElement, LayoutBox, LayoutNode, PainterTree, Style};
+use super::{BlockLayoutBox, DomElement, LayoutBox, LayoutNode, PaintElement, PainterTree, Stylable, Style};
 
 
 /// A div is a flexbox
@@ -67,6 +67,11 @@ impl Div {
     // }
 }
 
+impl Stylable for Div {
+    fn get_style(&self) -> Ref<'_, Style> {
+        Ref::map(self.0.as_ref().borrow(), |borrow| &borrow.style)
+    }
+}
 
 impl DomElement for Div {
     fn event(&mut self, event: crate::platform::Event) {
@@ -77,16 +82,16 @@ impl DomElement for Div {
         
     }
 
-    fn get_layout_box(&self) -> LayoutNode<dyn LayoutBox> {
-        let node = match self.borrow().style.display {
-            CSSDisplay::Block => LayoutNode::new(self.clone() as Box<dyn BlockLayoutBox>),
+    fn get_layout_box(&self) -> LayoutNode {
+        let mut node = match self.borrow().style.display {
+            CSSDisplay::Block => LayoutNode::new(self.clone()),
             CSSDisplay::Inline => todo!(),
             CSSDisplay::Flex => todo!(),
             CSSDisplay::None => todo!(),
         };
 
         for child in self.borrow().children.iter() {
-            node.add_box(child.get_layout_box())
+            node.add_node(child.get_layout_box())
         }
 
         node
@@ -168,10 +173,6 @@ impl DomElement for Div {
     //         }
     //     }
     // }
-
-    fn get_style(&self) -> Ref<'_, Style> {
-        Ref::map(self.0.as_ref().borrow(), |borrow| &borrow.style)
-    }
 }
 
 impl LayoutBox for Div {
@@ -191,13 +192,27 @@ impl LayoutBox for Div {
         todo!()
     }
 
-    fn get_painter(&self, content_box: Rect, context: LayoutContext) -> PainterTree {
-        todo!()
+    fn get_painter(&self, content_box: Rect, context: &LayoutContext) -> Box<dyn PaintElement> {
+        self.clone()
+    }
+
+    fn is_inline(&self) -> bool {
+        false
     }
 }
 
 impl BlockLayoutBox for Div {
-    
+
+}
+
+impl PaintElement for Div {
+    fn draw(&self, target: &mut Tekenen, context: &LayoutContext, space: Vec2) {
+        let color = self.get_style().background_color.solve(context);
+
+        if color[3] > 0 {
+            target.rect_vec(Vec2::zero(), space, color)
+        }
+    }
 }
 
 impl Div {

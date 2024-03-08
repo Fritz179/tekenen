@@ -1,7 +1,7 @@
 use std::{borrow::Borrow, cell::{Ref, RefCell}, rc::Rc};
 
-use super::{DomElement, LayoutBox, LayoutNode, TextFragment};
-use crate::{colors, math::{IndefRange, Vec2}, platform::Event, tekenen::Font, ui::style::{LayoutContext, Style}, Draw, Tekenen, Wrapper};
+use super::{DomElement, LayoutBox, LayoutNode, PaintElement, PainterTree, Stylable, TextFragment};
+use crate::{colors, math::{IndefRange, Vec2}, platform::Event, shapes::rect::Rect, tekenen::Font, ui::style::{LayoutContext, Style}, Draw, Tekenen, Wrapper};
 
 #[derive(Debug)]
 enum Component {
@@ -12,6 +12,8 @@ enum Component {
 #[derive(Debug)]
 pub struct InnerP {
     pub style: Style,
+
+    text: String,
 
     components: Vec<Component>
 }
@@ -27,7 +29,8 @@ impl P {
 
         let p = Wrapper::wrap(InnerP {
             style,
-            components: vec![]
+            components: vec![],
+            text: text.to_string()
         });
 
         let clone = p.clone() as Box<dyn DomElement>;
@@ -45,7 +48,8 @@ impl P {
 
         let mut inner = InnerP {
             style,
-            components: vec![]
+            components: vec![],
+            text: text.to_string()
         };
 
         fun(&mut inner);
@@ -57,6 +61,12 @@ impl P {
         p.borrow_mut().components.push(Component::Fragment(TextFragment::new(text, clone)));
 
         p
+    }
+}
+
+impl Stylable for P {
+    fn get_style(&self) -> Ref<'_, Style> {
+        Ref::map(self.0.as_ref().borrow(), |borrow| &borrow.style)
     }
 }
 
@@ -73,8 +83,8 @@ impl DomElement for P {
         todo!()
     }
 
-    fn get_layout_box(&self, parent: &LayoutNode<dyn LayoutBox>) {
-        todo!()
+    fn get_layout_box(&self) -> LayoutNode {
+        LayoutNode::new(self.clone())
     }
 
     // fn draw(&self, target: &mut Tekenen, context: &LayoutContext, space: Vec2) {
@@ -96,8 +106,36 @@ impl DomElement for P {
     //     // TODO: Get the actual size of the text
     //     Vec2::new(IndefRange::new(16, self.text.len() as i32 * 16), IndefRange::new(16, 16))
     // }
+}
 
-    fn get_style(&self) -> Ref<'_, Style> {
-        Ref::map(self.0.as_ref().borrow(), |borrow| &borrow.style)
+impl LayoutBox for P {
+    fn get_height_from_width(&self, width: i32, context: &LayoutContext) -> i32 {
+        todo!()
+    }
+
+    fn get_width_from_height(&self, height: i32, context: &LayoutContext) -> i32 {
+        todo!()
+    }
+
+    fn get_inner_min_max_content(&self, context: &LayoutContext) -> Vec2<IndefRange> {
+        todo!()
+    }
+
+    fn get_min_max_content(&self, context: LayoutContext) -> Vec2<IndefRange> {
+        todo!()
+    }
+
+    fn get_painter(&self, content_box: Rect, context: &LayoutContext) -> Box<dyn PaintElement> {
+        self.clone()
+    }
+
+    fn is_inline(&self) -> bool {
+        false
+    }
+}
+
+impl PaintElement for P {
+    fn draw(&self, target: &mut Tekenen, context: &LayoutContext, space: Vec2) {
+        target.text_vec(&self.borrow().text, Vec2::zero(), Font::new(16, colors::BLUE));
     }
 }
