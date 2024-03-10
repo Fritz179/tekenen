@@ -1,10 +1,10 @@
 use std::{marker::PhantomData};
 
-use crate::{colors, math::{clamp}, shapes::{rect::Rect, Sides}, Pixel};
+use crate::{colors, math::{clamp, IndefRange, Vec2}, shapes::{rect::Rect, Sides}, Pixel};
 
 
 #[derive(Debug, Clone)]
-pub struct LayoutContext {
+pub struct FormattingInfo {
     pub containing_block: Rect,
 }
 
@@ -33,7 +33,7 @@ impl<const POSITIVE_ONLY: bool> CSSLength<POSITIVE_ONLY> {
         Self::Em(value)
     }
 
-    pub fn solve(&self, context: &LayoutContext) -> i32 {
+    pub fn solve(&self, context: &FormattingInfo) -> i32 {
         match self {
             Self::Pixels(pixels) => *pixels,
             Self::Em(rem) => todo!(),
@@ -49,14 +49,14 @@ impl<const POSITIVE_ONLY: bool> From<i32> for CSSLength<POSITIVE_ONLY> {
 
 // Used to determine what the percentage is relative to
 pub trait PercentSolver {
-    fn solve(value: f32, context: &LayoutContext) -> i32;
+    fn solve(value: f32, context: &FormattingInfo) -> i32;
 }
 
 /// refer to logical width of containing block 
 #[derive(Debug, Clone)]
 pub struct WidthOfContainingBlock;
 impl PercentSolver for WidthOfContainingBlock {
-    fn solve(value: f32, context: &LayoutContext) -> i32 {
+    fn solve(value: f32, context: &FormattingInfo) -> i32 {
         (context.containing_block.size.x as f32 * value) as i32
     }
 }
@@ -65,7 +65,7 @@ impl PercentSolver for WidthOfContainingBlock {
 #[derive(Debug, Clone)]
 pub struct HeightOfContainingBlock;
 impl PercentSolver for HeightOfContainingBlock {
-    fn solve(value: f32, context: &LayoutContext) -> i32 {
+    fn solve(value: f32, context: &FormattingInfo) -> i32 {
         todo!()
     }
 }
@@ -90,7 +90,7 @@ impl<Solver: PercentSolver, const POSITIVE_ONLY: bool> CSSPercentage<Solver, POS
         }
     }
 
-    fn solve(&self, context: &LayoutContext) -> i32 {
+    fn solve(&self, context: &FormattingInfo) -> i32 {
         Solver::solve(self.value, context)
     }
 }
@@ -109,7 +109,7 @@ pub enum CSSLengthPercentage<Solver: PercentSolver, const POSITIVE_ONLY: bool = 
 }
 
 impl<Solver: PercentSolver, const POSITIVE_ONLY: bool> CSSLengthPercentage<Solver, POSITIVE_ONLY> {
-    fn solve(&self, context: &LayoutContext) -> i32 {
+    fn solve(&self, context: &FormattingInfo) -> i32 {
         match self {
             Self::Length(length) => length.solve(context),
             Self::Percentage(percent) => percent.solve(context),
@@ -172,7 +172,7 @@ impl CSSMargin {
         Self::Auto
     }
 
-    pub fn solve_or_auto(&self, context: &LayoutContext) -> Option<i32> {
+    pub fn solve_or_auto(&self, context: &FormattingInfo) -> Option<i32> {
         match self {
             Self::LengthPercentage(value) => Some(value.solve(context)),
             _ => None
@@ -181,11 +181,11 @@ impl CSSMargin {
 }
 
 impl Sides<CSSMargin> {
-    pub fn get_total_height(&self, context: &LayoutContext) -> i32 {
+    pub fn get_total_height(&self, context: &FormattingInfo) -> i32 {
         self.top.solve_or_auto(context).unwrap() + self.bottom.solve_or_auto(context).unwrap()
     }
 
-    pub fn get_total_width(&self, context: &LayoutContext) -> i32 {
+    pub fn get_total_width(&self, context: &FormattingInfo) -> i32 {
         self.left.solve_or_auto(context).unwrap() + self.right.solve_or_auto(context).unwrap()
     }
 
@@ -239,7 +239,7 @@ impl CSSPadding {
         }
     }
 
-    pub fn solve(&self, context: &LayoutContext) -> i32 {
+    pub fn solve(&self, context: &FormattingInfo) -> i32 {
         self.value.solve(context)
     }
 
@@ -253,11 +253,11 @@ impl CSSPadding {
 }
 
 impl Sides<CSSPadding> {
-    pub fn get_total_height(&self, context: &LayoutContext) -> i32 {
+    pub fn get_total_height(&self, context: &FormattingInfo) -> i32 {
         self.top.solve(context) + self.bottom.solve(context)
     }
 
-    pub fn get_total_width(&self, context: &LayoutContext) -> i32 {
+    pub fn get_total_width(&self, context: &FormattingInfo) -> i32 {
         self.left.solve(context) + self.right.solve(context)
     }
 
@@ -347,7 +347,7 @@ enum CSSColor {
 }
 
 impl CSSColor {
-    fn get_color(&self, context: &LayoutContext) -> Pixel {
+    fn get_color(&self, context: &FormattingInfo) -> Pixel {
         match self {
             Self::ColorBase(pixel) => *pixel,
             Self::CurrentColor => todo!(),
@@ -373,7 +373,7 @@ pub enum CSSLineWidth {
 }
 
 impl CSSLineWidth {
-    pub fn solve(&self, context: &LayoutContext) -> i32 {
+    pub fn solve(&self, context: &FormattingInfo) -> i32 {
         match self {
             Self::Length(length) => length.solve(context),
             Self::Thin => 1,
@@ -417,7 +417,7 @@ impl CSSBorderWidth {
         }
     }
 
-    pub fn solve(&self, context: &LayoutContext) -> i32 {
+    pub fn solve(&self, context: &FormattingInfo) -> i32 {
         self.value.solve(context)
     }
 }
@@ -471,7 +471,7 @@ pub struct CSSBorder {
 }
 
 impl CSSBorder {
-    pub fn solve(&self, context: &LayoutContext) -> i32 {
+    pub fn solve(&self, context: &FormattingInfo) -> i32 {
         match self.line_style.value {
             CSSLineStyle::None | CSSLineStyle::Hidden => 0,
             _ => self.line_width.solve(context)
@@ -480,11 +480,11 @@ impl CSSBorder {
 }
 
 impl Sides<CSSBorder> {
-    pub fn get_total_height(&self, context: &LayoutContext) -> i32 {
+    pub fn get_total_height(&self, context: &FormattingInfo) -> i32 {
         self.top.solve(context) + self.bottom.solve(context)
     }
 
-    pub fn get_total_width(&self, context: &LayoutContext) -> i32 {
+    pub fn get_total_width(&self, context: &FormattingInfo) -> i32 {
         self.left.solve(context) + self.right.solve(context)
     }
 
@@ -525,7 +525,7 @@ pub enum CSSSize<Solver: PercentSolver> {
 }
 
 impl<Solver: PercentSolver> CSSSize<Solver> {
-    pub fn solve(&self, context: &LayoutContext) -> Option<i32> {
+    pub fn solve(&self, context: &FormattingInfo) -> Option<i32> {
         match self {
             Self::LengthPercentage(value) => Some(value.solve(context)),
             Self::MinContent => todo!(),
@@ -622,7 +622,7 @@ impl CSSBackgroundColor {
         self.color = CSSColor::ColorBase(color);
     }
 
-    pub fn solve(&self, context: &LayoutContext) -> Pixel {
+    pub fn solve(&self, context: &FormattingInfo) -> Pixel {
         self.color.get_color(context)
     }
 }
@@ -664,19 +664,7 @@ impl Style {
     //     inner_height + self.get_total_bounding_height(context)
     // }
 
-    pub fn get_total_bounding_height(&self, context: &LayoutContext) -> i32 {
-        self.margin.get_total_height(context) 
-            + self.padding.get_total_height(context) 
-            + self.border.get_total_height(context) 
-    }
-
-    pub fn get_total_bounding_width(&self, context: &LayoutContext) -> i32 {
-        self.margin.get_total_width(context) 
-            + self.padding.get_total_width(context) 
-            + self.border.get_total_width(context) 
-    }
-
-    pub fn get_computed_padding(&self, context: &LayoutContext) -> Sides {
+    pub fn get_computed_padding(&self, context: &FormattingInfo) -> Sides {
         Sides {
             top: self.padding.top.solve(context),
             right: self.padding.right.solve(context),
@@ -685,7 +673,7 @@ impl Style {
         }
     }
 
-    pub fn get_computed_border(&self, context: &LayoutContext) -> Sides {
+    pub fn get_computed_border(&self, context: &FormattingInfo) -> Sides {
         Sides {
             top: self.border.top.solve(context),
             right: self.border.right.solve(context),
@@ -694,7 +682,7 @@ impl Style {
         }
     }
 
-    pub fn get_computed_margin(&self, context: &LayoutContext) -> Sides {
+    pub fn get_computed_margin(&self, context: &FormattingInfo) -> Sides {
         Sides {
             top: self.margin.top.solve_or_auto(context).unwrap_or(0),
             right: self.margin.right.solve_or_auto(context).unwrap_or(0),
@@ -703,8 +691,28 @@ impl Style {
         }
     }
 
-    pub fn get_total_computed_boudning(&self, context: &LayoutContext) -> Sides {
+    pub fn get_total_computed_boudning(&self, context: &FormattingInfo) -> Sides {
         self.get_computed_margin(context) + self.get_computed_padding(context) + self.get_computed_border(context)
+    }
+
+    pub fn get_height_constrains(&self, context: &FormattingInfo) -> IndefRange {
+        if let Some(height) = self.height.solve(context) {
+            return IndefRange::new_definite(height)
+        }
+
+        IndefRange::new_option(self.min_height.solve(context), self.max_height.solve(context))
+    }
+
+    pub fn get_width_constrains(&self, context: &FormattingInfo) -> IndefRange {
+        if let Some(width) = self.width.solve(context) {
+            return IndefRange::new_definite(width)
+        }
+
+        IndefRange::new_option(self.min_width.solve(context), self.max_width.solve(context))
+    }
+
+    pub fn get_size_contraint(&self, context: &FormattingInfo) -> Vec2<IndefRange> {
+        Vec2::new(self.get_width_constrains(context), self.get_height_constrains(context))
     }
 
     // pub fn get_min_max_margin_area(&self, target: &Ref<'_, dyn DomElement>, context: &LayoutContext) -> Vec2<IndefRange> {

@@ -1,5 +1,7 @@
 use std::{iter::Sum, ops::{Add, AddAssign}};
 
+use super::Vec2;
+
 /// Garanteed to have a valid range (min <= max)
 #[derive(Debug, Default, Clone)]
 pub struct Range<T: std::cmp::PartialOrd + Copy = i32> {
@@ -321,5 +323,11 @@ impl<T: PartialOrd + Copy + Add<Output = T>> AddAssign<T> for IndefRange<T> {
         if let Some(max) = self.max {
             self.max = Some(max + rhs);
         }
+    }
+}
+
+impl Vec2<IndefRange> {
+    pub fn constrain(&self, value: Vec2<i32>) -> Vec2<i32> {
+        Vec2::new(self.x.constrain(value.x), self.y.constrain(value.y))
     }
 }

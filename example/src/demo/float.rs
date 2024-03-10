@@ -1,6 +1,7 @@
 use tekenen::shapes::rect::Rect;
-use tekenen::ui::elements::{BlockFormattingContext, Div, DomElement, P};
+use tekenen::ui::elements::{BlockBlockFormattingContext, BlockFormattingContext, Div, DomElement, FormattingContext, P};
 
+use tekenen::ui::style::FormattingInfo;
 use tekenen::{colors, Draw, Tekenen};
 use tekenen::platform::{PlatformTrait, IntervalDecision, Event, KeyDownEvent};
 
@@ -71,9 +72,12 @@ impl super::Demo for FloatDemo {
         let layout = self.div.get_layout_box();
 
         // 3. Do Layouting and get Paint Tree
-        let context = BlockFormattingContext::new();
+        let context = BlockBlockFormattingContext::new();
+        let info = FormattingInfo {
+            containing_block: Rect::new(0, 0, 800, 600),
+        };
 
-        let painter = context.get_painter(&layout, Rect::new(0, 0, 800, 600));
+        let painter = context.run(&layout, &info);
 
 
         // 4. Draw the Paint Tree

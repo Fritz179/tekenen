@@ -1,19 +1,26 @@
 use std::{borrow::Borrow, cell::{Ref}};
 
 use super::{DomElement, LayoutBox, LayoutNode, PaintElement, Stylable, TextFragment};
-use crate::{colors, math::{IndefRange, Vec2}, platform::Event, shapes::rect::Rect, tekenen::Font, ui::style::{LayoutContext, Style}, Draw, Tekenen, Wrapper};
+use crate::{colors, math::{IndefRange, Vec2}, platform::Event, shapes::rect::Rect, tekenen::Font, ui::style::{FormattingInfo, Style}, Draw, Tekenen, Wrapper};
 
 #[derive(Debug)]
 enum Component {
-    Fragment(TextFragment),
+    Fragment(Box<TextFragment>),
     Element(Box<dyn DomElement>)
+}
+
+impl Component {
+    fn get_layout_box(&self) -> LayoutNode {
+        match self {
+            Component::Fragment(fragment) => fragment.get_layout_box(),
+            Component::Element(element) => element.get_layout_box()
+        }
+    }
 }
 
 #[derive(Debug)]
 pub struct InnerP {
     pub style: Style,
-
-    text: String,
 
     components: Vec<Component>
 }
@@ -29,13 +36,10 @@ impl P {
 
         let p = Wrapper::wrap(InnerP {
             style,
-            components: vec![],
-            text: text.to_string()
+            components: vec![]
         });
 
-        let clone = p.clone() as Box<dyn DomElement>;
-
-        p.borrow_mut().components.push(Component::Fragment(TextFragment::new(text, clone)));
+        p.borrow_mut().components.push(Component::Fragment(TextFragment::new(text, p.clone())));
 
         p
     }
@@ -49,7 +53,6 @@ impl P {
         let mut inner = InnerP {
             style,
             components: vec![],
-            text: text.to_string()
         };
 
         fun(&mut inner);
@@ -84,7 +87,13 @@ impl DomElement for P {
     }
 
     fn get_layout_box(&self) -> LayoutNode {
-        LayoutNode::new(self.clone())
+        let mut node = LayoutNode::new(self.clone());
+
+        for child in self.borrow().components.iter() {
+            node.add_node(child.get_layout_box())
+        }
+
+        node
     }
 
     // fn draw(&self, target: &mut Tekenen, context: &LayoutContext, space: Vec2) {
@@ -109,33 +118,37 @@ impl DomElement for P {
 }
 
 impl LayoutBox for P {
-    fn get_height_from_width(&self, width: i32, context: &LayoutContext) -> i32 {
+    fn get_height_from_width(&self, width: i32, context: &FormattingInfo) -> i32 {
+        16
+    }
+
+    fn get_width_from_height(&self, height: i32, context: &FormattingInfo) -> i32 {
         todo!()
     }
 
-    fn get_width_from_height(&self, height: i32, context: &LayoutContext) -> i32 {
+    fn get_inner_min_max_content(&self, context: &FormattingInfo) -> Vec2<IndefRange> {
         todo!()
     }
 
-    fn get_inner_min_max_content(&self, context: &LayoutContext) -> Vec2<IndefRange> {
+    fn get_min_max_content(&self, context: FormattingInfo) -> Vec2<IndefRange> {
         todo!()
     }
 
-    fn get_min_max_content(&self, context: LayoutContext) -> Vec2<IndefRange> {
-        todo!()
-    }
-
-    fn get_painter(&self, content_box: Rect, context: &LayoutContext) -> Box<dyn PaintElement> {
+    fn get_painter(&self, content_box: Rect, context: &FormattingInfo) -> Box<dyn PaintElement> {
         self.clone()
     }
 
     fn is_inline(&self) -> bool {
         false
     }
+
+    fn go_inline_yourself(&self, formatter: &mut super::InlineFormattingContext, context: &dyn super::FormattingContext, info: &FormattingInfo) -> Vec<(Box<super::LineBox>, Box<dyn LayoutBox>)> {
+        todo!()
+    }
 }
 
 impl PaintElement for P {
-    fn draw(&self, target: &mut Tekenen, context: &LayoutContext, space: Vec2) {
-        target.text_vec(&self.borrow().text, Vec2::zero(), Font::new(16, colors::BLUE));
+    fn draw(&self, target: &mut Tekenen, context: &FormattingInfo, space: Vec2) {
+        // target.text_vec(&self.borrow().text, Vec2::zero(), Font::new(16, colors::MAGENTA));
     }
 }

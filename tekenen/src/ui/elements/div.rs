@@ -1,6 +1,6 @@
 use std::cell::Ref;
 
-use crate::{math::{IndefRange, Vec2}, shapes::rect::Rect, ui::style::{CSSDisplay, LayoutContext}, Draw, Tekenen, Wrapper};
+use crate::{math::{IndefRange, Vec2}, shapes::rect::Rect, ui::style::{CSSDisplay, FormattingInfo}, Draw, Tekenen, Wrapper};
 
 use super::{BlockLayoutBox, DomElement, LayoutBox, LayoutNode, PaintElement, Stylable, Style};
 
@@ -176,28 +176,32 @@ impl DomElement for Div {
 }
 
 impl LayoutBox for Div {
-    fn get_height_from_width(&self, width: i32, context: &LayoutContext) -> i32 {
+    fn get_height_from_width(&self, width: i32, context: &FormattingInfo) -> i32 {
         todo!()
     }
 
-    fn get_width_from_height(&self, height: i32, context: &LayoutContext) -> i32 {
+    fn get_width_from_height(&self, height: i32, context: &FormattingInfo) -> i32 {
         todo!()
     }
 
-    fn get_inner_min_max_content(&self, context: &LayoutContext) -> Vec2<IndefRange> {
+    fn get_inner_min_max_content(&self, context: &FormattingInfo) -> Vec2<IndefRange> {
         todo!()
     }
 
-    fn get_min_max_content(&self, context: LayoutContext) -> Vec2<IndefRange> {
+    fn get_min_max_content(&self, context: FormattingInfo) -> Vec2<IndefRange> {
         todo!()
     }
 
-    fn get_painter(&self, content_box: Rect, context: &LayoutContext) -> Box<dyn PaintElement> {
+    fn get_painter(&self, content_box: Rect, context: &FormattingInfo) -> Box<dyn PaintElement> {
         self.clone()
     }
 
     fn is_inline(&self) -> bool {
         false
+    }
+
+    fn go_inline_yourself(&self, formatter: &mut super::InlineFormattingContext, context: &dyn super::FormattingContext, info: &FormattingInfo) -> Vec<(Box<super::LineBox>, Box<dyn LayoutBox>)> {
+        todo!()
     }
 }
 
@@ -206,7 +210,7 @@ impl BlockLayoutBox for Div {
 }
 
 impl PaintElement for Div {
-    fn draw(&self, target: &mut Tekenen, context: &LayoutContext, space: Vec2) {
+    fn draw(&self, target: &mut Tekenen, context: &FormattingInfo, space: Vec2) {
         let color = self.get_style().background_color.solve(context);
 
         if color[3] > 0 {
@@ -405,46 +409,46 @@ impl Div {
 }
 
 impl Div {
-    fn determine_width(&self, context: &LayoutContext) -> i32 {
-        let style = self.get_style();
+    // fn determine_width(&self, context: &LayoutContext) -> i32 {
+    //     let style = self.get_style();
 
-        // Determine the available main and cross space for the flex items. For
-        // each dimension, if that dimension of the flex container’s content box
-        // is a definite size, use that; if that dimension of the flex container
-        // is being sized under a min or max-content constraint, the available
-        // space in that dimension is that constraint; otherwise, subtract the
-        // flex container’s margin, border, and padding from the space available
-        // to the flex container in that dimension and use that value.
+    //     // Determine the available main and cross space for the flex items. For
+    //     // each dimension, if that dimension of the flex container’s content box
+    //     // is a definite size, use that; if that dimension of the flex container
+    //     // is being sized under a min or max-content constraint, the available
+    //     // space in that dimension is that constraint; otherwise, subtract the
+    //     // flex container’s margin, border, and padding from the space available
+    //     // to the flex container in that dimension and use that value.
 
-        // 1. is definite
-        if let Some(value) = style.width.solve(context) {
-            return value
-        }
+    //     // 1. is definite
+    //     if let Some(value) = style.width.solve(context) {
+    //         return value
+    //     }
 
-        // 2. is under min/max constraint
-        let min = style.min_width.solve(context);
-        let max = style.max_width.solve(context);
+    //     // 2. is under min/max constraint
+    //     let min = style.min_width.solve(context);
+    //     let max = style.max_width.solve(context);
 
-        if min.is_some() || max.is_some() {
-            return IndefRange::new_min_priority(min, max).constrain(context.containing_block.size.x)
-        }
+    //     if min.is_some() || max.is_some() {
+    //         return IndefRange::new_min_priority(min, max).constrain(context.containing_block.size.x)
+    //     }
         
-        // 3. margin, border and padding
-        context.containing_block.size.x - style.get_total_bounding_width(context)
-    }
+    //     // 3. margin, border and padding
+    //     context.containing_block.size.x - style.get_total_bounding_width(context)
+    // }
 
-    fn determine_height_range(&self, context: &LayoutContext) -> IndefRange {
-        let style = self.get_style();
+    // fn determine_height_range(&self, context: &LayoutContext) -> IndefRange {
+    //     let style = self.get_style();
 
-        // 1. is definite
-        if let Some(value) = style.height.solve(context) {
-            return IndefRange::new_definite(value)
-        }
+    //     // 1. is definite
+    //     if let Some(value) = style.height.solve(context) {
+    //         return IndefRange::new_definite(value)
+    //     }
 
-        // 2. is under min/max constraint
-        let min = style.min_height.solve(context);
-        let max = style.max_height.solve(context);
+    //     // 2. is under min/max constraint
+    //     let min = style.min_height.solve(context);
+    //     let max = style.max_height.solve(context);
 
-        IndefRange::new_option(min, max)
-    }
+    //     IndefRange::new_option(min, max)
+    // }
 }
