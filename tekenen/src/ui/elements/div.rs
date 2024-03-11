@@ -71,6 +71,10 @@ impl Stylable for Div {
     fn get_style(&self) -> Ref<'_, Style> {
         Ref::map(self.0.as_ref().borrow(), |borrow| &borrow.style)
     }
+
+    fn get_name(&self) -> String {
+        "div".to_owned()
+    }
 }
 
 impl DomElement for Div {
@@ -97,10 +101,9 @@ impl DomElement for Div {
         node
     }
 
-    fn get_dom_children(&self) -> &Vec<Box<dyn DomElement>> {
-        todo!()
+    fn get_dom_children(&self) -> Option<Ref<'_, Vec<Box<dyn DomElement>>>> {
+        Some(Ref::map(self.0.as_ref().borrow(), |borrow| &borrow.children))
     }
-
 
     // fn get_width_from_height(&self, height: i32, context: &LayoutContext) -> i32 {
     //     let child_context = LayoutContext {

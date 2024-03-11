@@ -53,6 +53,10 @@ impl Stylable for TextFragment {
     fn get_style(&self) -> Ref<'_, Style> {
         todo!()
     }
+
+    fn get_name(&self) -> String {
+        format!("TextFragment: {}", self.borrow().text)
+    }
 }
 
 impl TextFragment {
@@ -96,7 +100,6 @@ impl LayoutBox for TextFragment {
 impl PaintElement for TextFragment {
     fn draw(&self, target: &mut Tekenen, context: &FormattingInfo, space: Vec2) {
         for (i, line) in self.split_text(space.x, context).iter().enumerate() {
-            println!("{line}");
             target.text(&line, 0, i as i32 * 16, Font::new(16, colors::MAGENTA));
         }
     }

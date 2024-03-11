@@ -1,5 +1,5 @@
 use tekenen::shapes::rect::Rect;
-use tekenen::ui::elements::{BlockBlockFormattingContext, BlockFormattingContext, Div, DomElement, FormattingContext, P};
+use tekenen::ui::elements::{BlockBlockFormattingContext, BlockFormattingContext, Div, DomElement, P};
 
 use tekenen::ui::style::FormattingInfo;
 use tekenen::{colors, Draw, Tekenen};
@@ -8,6 +8,8 @@ use tekenen::platform::{PlatformTrait, IntervalDecision, Event, KeyDownEvent};
 pub struct FloatDemo {
     tek: Tekenen,
     div: Box<Div>,
+    print_layout: bool,
+    print_painter: bool,
 }
 
 impl FloatDemo {
@@ -32,14 +34,18 @@ impl FloatDemo {
         // P::new("Am I in the correct place? Also I am a very long text and I probably should wrap at some point")
         // ]);
 
-        let div = Div::new(vec![
+        let div = Div::new_fn(vec![
             P::new("hello"),
             P::new("world!"),
-        ]);
+        ], |div| {
+            div.style.background_color.set(colors::CYAN);
+        });
 
         Self {
             tek: Tekenen::new(800, 600),
-            div
+            div,
+            print_layout: false,
+            print_painter: false,
         }
     }
 }
@@ -51,7 +57,12 @@ impl super::Demo for FloatDemo {
                 return IntervalDecision::Stop
             },
             Event::KeyDown(KeyDownEvent { char: Some(char), .. }) => {
-                println!("{char}")
+                match char {
+                    'd' => println!("{}", self.div),
+                    'l' => self.print_layout = true,
+                    'p' => self.print_painter = true,
+                    _ => { }
+                }
             },
             _ => { }
         };
@@ -60,8 +71,6 @@ impl super::Demo for FloatDemo {
     }
 
     fn draw(&mut self, window: &mut tekenen::platform::Platform) {
-        println!();
-        println!("Drawing");
 
         // 1. Clear canvas
         let tekenen = &mut self.tek;
@@ -79,11 +88,18 @@ impl super::Demo for FloatDemo {
 
         let painter = context.run(&layout, &info);
 
+        if self.print_painter {
+            println!("{painter}");
+        }
 
         // 4. Draw the Paint Tree
         painter.paint(tekenen);
 
         // 5. Display the pixels
         window.display_pixels(tekenen.get_pixels());
+
+        
+        self.print_layout = false;
+        self.print_painter = false;
     }
 }

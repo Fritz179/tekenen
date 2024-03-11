@@ -71,6 +71,10 @@ impl Stylable for P {
     fn get_style(&self) -> Ref<'_, Style> {
         Ref::map(self.0.as_ref().borrow(), |borrow| &borrow.style)
     }
+
+    fn get_name(&self) -> String {
+        "p".to_owned()
+    }
 }
 
 impl DomElement for P {
@@ -82,8 +86,8 @@ impl DomElement for P {
         
     }
 
-    fn get_dom_children(&self) -> &Vec<Box<dyn DomElement>> {
-        todo!()
+    fn get_dom_children(&self) -> Option<Ref<'_, Vec<Box<dyn DomElement>>>> {
+        None
     }
 
     fn get_layout_box(&self) -> LayoutNode {

@@ -1,5 +1,5 @@
 pub mod div;
-use std::{cell::{Ref}, fmt::Debug};
+use std::{cell::Ref, fmt::{Debug, Display}};
 
 pub use div::Div;
 
@@ -19,10 +19,11 @@ use super::style::{FormattingInfo, Style};
 
 pub trait Stylable: Debug {
     fn get_style(&self) -> Ref<'_, Style>;
+    fn get_name(&self) -> String;
 }
 
 // Every HTML element has to implement this Trait
-pub trait DomElement: Stylable {
+pub trait DomElement: Stylable + Display {
     // React to event
     fn event(&mut self, event: Event);
 
@@ -30,10 +31,27 @@ pub trait DomElement: Stylable {
     fn update(&mut self);
 
     // Implement for default behavior
-    fn get_dom_children(&self) -> &Vec<Box<dyn DomElement>>;
+    fn get_dom_children(&self) -> Option<Ref<'_, Vec<Box<dyn DomElement>>>>;
 
     // Implement to get a Layout/Box Tree
     fn get_layout_box(&self) -> LayoutNode;
+}
+
+impl<T> Display for Wrapper<T> where Wrapper<T>: DomElement {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let width = f.width().unwrap_or(0);
+
+        writeln!(f, "{:width$}{}", "", self.get_name())?;
+
+        let width = width + 4;
+        if let Some(children) = self.get_dom_children() {
+            for child in children.iter() {
+                write!(f, "{:width$}", child)?;
+            }
+        }
+
+        Ok(())
+    }
 }
 
 // Every entry in the Layout/Box tree has to implemnet this 
@@ -61,6 +79,7 @@ pub trait LayoutBox: Stylable {
     fn go_inline_yourself(&self, formatter: &mut InlineFormattingContext, context: &dyn FormattingContext, info: &FormattingInfo) -> Vec<(Box<LineBox>, Box<dyn LayoutBox>)>;
 }
 
+
 // A block-level box is a box that participates in a block formatting context
 pub trait BlockLayoutBox: LayoutBox {
 
@@ -71,21 +90,30 @@ pub trait InlineLayoutBox: LayoutBox {
     fn split_into_line(&self, formatter: InlineFormattingContext);
 }
 
+#[derive(Debug)]
+enum ContextDecision {
+    BlockContext,
+    InlineContext,
+    InlineElement,
+    FlexContext,
+}
+
 // This is what the tree is made of
-// Each sub_context initiates a new context type
 // Each children can either be a Block or Inline level box
 // Formatting Context are not limited to this two (Flex, Grid, Table...)
 #[derive(Debug)]
 pub struct LayoutNode {
     element: Box<dyn LayoutBox>,
-    children: Vec<LayoutNode>
+    children: Vec<LayoutNode>,
+    context: Option<ContextDecision>
 }
 
 impl LayoutNode {
     pub fn new(node: Box<dyn LayoutBox>) -> Self {
         Self {
             element: node,
-            children: vec![]
+            children: vec![],
+            context: None
         }
     }
 }
@@ -403,6 +431,24 @@ pub struct PainterTree {
     pub element: Box<dyn PaintElement>,
     pub context: FormattingInfo,
     pub children: Vec<PainterTree>
+}
+
+
+impl Display for PainterTree {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let width = f.width().unwrap_or(0);
+
+        writeln!(f, "{:width$}{}", "", self.element.get_name())?;
+        let width = width + 2;
+        writeln!(f, "{:width$}content: {}", "", self.content_box)?;
+
+        let width = width + 4;
+        for child in self.children.iter() {
+            write!(f, "{:width$}", child)?;
+        }
+
+        Ok(())
+    }
 }
 
 impl PainterTree {

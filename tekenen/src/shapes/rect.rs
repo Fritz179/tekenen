@@ -1,4 +1,4 @@
-use std::ops::{Add, AddAssign, Sub};
+use std::{fmt::Display, ops::{Add, AddAssign, Sub}};
 
 use crate::math::Vec2;
 
@@ -8,6 +8,12 @@ use super::{BitShaping, Circle, Intersect, Point, Shape, Sides, Triangle};
 pub struct Rect {
     pub position: Vec2,
     pub size: Vec2,
+}
+
+impl Display for Rect {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Rect: [x: {}, y: {}, w: {}, h: {}]", self.position.x, self.position.y, self.size.x, self.size.y)
+    }
 }
 
 impl Rect {
