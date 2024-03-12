@@ -7,7 +7,7 @@ pub use div::Div;
 // pub use slider::Slider;
 
 pub mod textFragment;
-pub use textFragment::TextFragment;
+pub use textFragment::TextNode;
 
 pub mod p;
 pub use p::P;
@@ -67,11 +67,18 @@ pub trait LayoutBox: Stylable {
 
     fn get_painter(&self, content_box: Rect, context: &FormattingInfo) -> Box<dyn PaintElement>;
 
-    fn is_inline(&self) -> bool;
+    fn is_inline(&self) -> bool {
+        todo!();
+        self.get_style().display == super::style::CSSDisplay::Inline
+    }
 
-    fn create_formatting_context_if_needed(&self) -> Option<Box<dyn BlockFormattingContext>> {
+    fn create_formatting_context_if_needed(&self) -> Option<ContextDecision> {
+        if self.is_inline() {
+            return None;
+        }
+
         match self.get_style().display {
-            super::style::CSSDisplay::Flex => Some(Box::new(FlexFormattingContext::new())),
+            super::style::CSSDisplay::Flex => Some(ContextDecision::FlexContext),
             _ => None   
         }
     }
@@ -90,12 +97,23 @@ pub trait InlineLayoutBox: LayoutBox {
     fn split_into_line(&self, formatter: InlineFormattingContext);
 }
 
-#[derive(Debug)]
-enum ContextDecision {
+#[derive(Debug, PartialEq)]
+pub enum ContextDecision {
     BlockContext,
     InlineContext,
     InlineElement,
     FlexContext,
+    None
+}
+
+impl ContextDecision {
+    fn create_formatting_context_if_needed(&self) -> Option<Box<dyn BlockFormattingContext>> {
+        match self {
+            Self::BlockContext => Some(Box::new(BlockBlockFormattingContext::new())),
+            Self::FlexContext => todo!(),
+            Self::None | Self::InlineContext | Self:: InlineElement => None
+        }
+    }
 }
 
 // This is what the tree is made of
@@ -105,21 +123,74 @@ enum ContextDecision {
 pub struct LayoutNode {
     element: Box<dyn LayoutBox>,
     children: Vec<LayoutNode>,
-    context: Option<ContextDecision>
+    context: ContextDecision
+}
+
+/*
+
+div
+    BlockContext
+        p
+            InlineContext
+                Text
+                Bold
+                Text
+            block
+        div
+            el 
+            el2
+
+*/
+
+impl Display for LayoutNode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut width = f.width().unwrap_or(0);
+
+        writeln!(f, "{:width$}{}", "", self.element.get_name())?;
+
+        width += 4;
+        for child in self.children.iter() {
+            if child.context == ContextDecision::InlineContext {
+                writeln!(f, "{:width$}InlineContext", "",)?;
+            }
+    
+            if child.context == ContextDecision::InlineContext || child.context == ContextDecision::InlineElement {
+                write!(f, "{:width$}", child, width = width + 4)?;
+            } else {
+                write!(f, "{:width$}", child)?;
+            }
+        }
+
+        Ok(())
+    }
 }
 
 impl LayoutNode {
     pub fn new(node: Box<dyn LayoutBox>) -> Self {
+        let context = node.create_formatting_context_if_needed();
+
         Self {
             element: node,
             children: vec![],
-            context: None
+            context: context.unwrap_or(ContextDecision::None)
         }
     }
 }
 
 impl LayoutNode {
-    fn add_node(&mut self, node: LayoutNode) {
+    fn add_node(&mut self, mut node: LayoutNode) {
+        if node.element.is_inline() {
+            node.context = if let Some(last) = self.children.last() {
+                if last.context != ContextDecision::InlineElement && last.context != ContextDecision::InlineContext {
+                    ContextDecision::InlineContext
+                } else {
+                    ContextDecision::InlineElement
+                }
+            } else {
+                ContextDecision::InlineContext
+            };
+        }
+
         self.children.push(node)
     }
 }
@@ -170,45 +241,56 @@ impl BlockBlockFormattingContext {
 
         // Get inner size for children
         let bounding = node.element.get_style().get_total_computed_boudning(&info);
-        let available_content_rect = info.containing_block - bounding.clone();
+        let available_content_rect = available_size - bounding.clone();
 
         // Walk through all children
         let mut inline = None;
         let mut children = vec![];
 
-        let mut child_info = FormattingInfo {
-            containing_block: available_content_rect
-        };
+        let start_y = available_content_rect.position.y;
+        let mut current_y = start_y;
 
         for child in node.children.iter() {
-            if child.element.is_inline() {
+            let child_info = FormattingInfo {
+                containing_block: Rect::new_vec(Vec2::new(available_content_rect.position.x, current_y), available_content_rect.size)
+            };
+
+            // TODO: Can be better
+            if child.context == ContextDecision::InlineElement || child.context == ContextDecision::InlineContext {
                 let inline = inline.get_or_insert(InlineFormattingContext::new());
 
-                inline.add_inline(child, self, info)
+                inline.add_inline(child, self, info);
+                // println!("Inlining: {child:?}");
             } else {
                 if let Some(inline) = inline {
-                    let mut child = inline.run( self, &child_info);
-                    // child_info.containing_block.position.y += child.margin_box.size.y;
+                    let (mut child, height) = inline.run( self, &child_info);
+                    current_y += height;
                     children.append(&mut child);
                 }
 
                 inline = None;
 
                 let child = self.run(child, &child_info);
-                child_info.containing_block.position.y += child.margin_box.size.y;
+                current_y += child.margin_box.size.y;
                 children.push(child);
             }
         }
 
         if let Some(inline) = inline {
-            let mut child = inline.run( self, &child_info);
-            // child_info.containing_block.position.y += child.margin_box.size.y;
+            let child_info = FormattingInfo {
+                containing_block: Rect::new_vec(Vec2::new(available_content_rect.position.x, current_y), available_content_rect.size)
+            };
+
+            let (mut child, height) = inline.run( self, &child_info);
+            current_y += height;
             children.append(&mut child);
         }
 
-        let inner_height = child_info.containing_block.position.y - info.containing_block.position.y;
+        let inner_height = current_y - start_y;
         let outer_height = inner_height + bounding.top + bounding.bottom;
-        let outer_width = info.containing_block.size.x;
+        let outer_width = available_size.size.x;
+
+        // println!("Inner: {}, Top: {}, Bottom: {}", inner_height, bounding.top, bounding.bottom);
 
         let margin_box = Rect::new_vec(info.containing_block.position, Vec2::new(outer_width, outer_height));
         let content_box = margin_box - bounding;
@@ -216,7 +298,7 @@ impl BlockBlockFormattingContext {
         let element = node.element.get_painter(content_box, &info);
 
         PainterTree {
-            margin_box: content_box,
+            margin_box: margin_box,
             border_box: content_box,
             padding_box: content_box,
             content_box,
@@ -229,7 +311,7 @@ impl BlockBlockFormattingContext {
 
 impl BlockFormattingContext for BlockBlockFormattingContext {
     fn run(&self, node: &LayoutNode, info: &FormattingInfo) -> PainterTree {
-        if let Some(context) = node.element.create_formatting_context_if_needed() {
+        if let Some(context) = node.context.create_formatting_context_if_needed() {
             return context.run(node, info);
         }
 
@@ -273,8 +355,9 @@ impl BlockFormattingContext for BlockBlockFormattingContext {
 
 
 pub struct InlineFormattingContext<'a> {
+    /// All the lines
     pub lines: Vec<Box<LineBox>>,
-    /// parent, all its children
+    /// inline-element, Vec of each child piece Vec<containing line, piece>
     elements: Vec<(&'a LayoutNode, Vec<(Box<LineBox>, Box<dyn LayoutBox>)>)>,
 }
 
@@ -299,8 +382,10 @@ impl<'a> FormattingContext for  InlineFormattingContext<'a> {
     fn get_new_line(&mut self, context: &dyn FormattingContext, info: &FormattingInfo) -> (Box<LineBox>, bool) {
         let line = Wrapper::wrap(LineBoxInner {
             boxes: vec![],
-            width: info.containing_block.size.x,
-            height: 0
+            max_width: info.containing_block.size.x,
+            width: 0,
+            height: None,
+            y: None,
         });
 
         self.lines.push(line.clone());
@@ -310,8 +395,11 @@ impl<'a> FormattingContext for  InlineFormattingContext<'a> {
 }
 
 impl<'a> InlineFormattingContext<'a> {
-    fn run(&self, context: &dyn FormattingContext, info: &FormattingInfo) -> Vec<PainterTree> {
+    fn run(&self, context: &dyn FormattingContext, info: &FormattingInfo) -> (Vec<PainterTree>, i32) {
         // We are closing the InlineFormattingContext
+
+        let start_y = info.containing_block.position.y;
+        let mut current_y = start_y;
 
         // Calculate the height of each line
         for line in self.lines.iter() {
@@ -322,41 +410,73 @@ impl<'a> InlineFormattingContext<'a> {
 
             let box_ = &boxes[0];
             let height = box_.get_height_from_width(info.containing_block.size.x, info);
-            line.height = height;
+
+            // Update info about lines
+            line.y = Some(current_y);
+            line.height = Some(height);
+            current_y += height;
+            // println!("Line height: {}", height);
         }
 
-        self.elements.iter().map(|(node, children)| {
+        let children = self.elements.iter().map(|(node, pieces)| {
             // TODO: Everything
+            let mut inner = Vec::new();
 
-            assert!(children.len() == 1, "We only support one child per line");
-            let (line, piece) = &children[0];
+            assert!(!pieces.is_empty());
 
-            let containing_block = Rect::new_vec(
-                info.containing_block.position, 
-                Vec2::new(info.containing_block.size.x, line.borrow().height)
-            );
+            let mut min_y = 0;
+            let mut max_y = 0;
 
-            let piece = piece.get_painter(containing_block, info);
-            let element = node.element.get_painter(containing_block, &info);
+            for (line, piece) in pieces.iter() {
+                let y = line.borrow().y.unwrap();
+                let height = line.borrow().height.unwrap();
 
-            PainterTree {
-                margin_box: info.containing_block,
-                border_box: info.containing_block,
-                padding_box: info.containing_block,
-                content_box: info.containing_block,
-                element,
-                context: info.clone(),
-                children: vec![PainterTree {
-                    margin_box: info.containing_block,
-                    border_box: info.containing_block,
-                    padding_box: info.containing_block,
-                    content_box: info.containing_block,
+                if y < min_y {
+                    min_y = y;
+                }
+
+                if y + height > max_y {
+                    max_y = y + height;
+                }
+
+                let child_block = Rect::new_vec(
+                    Vec2::new(info.containing_block.position.x, y), 
+                    Vec2::new(piece.get_width_from_height(16, info), height)
+                );
+    
+                let piece = piece.get_painter(child_block, info);
+    
+                inner.push(PainterTree {
+                    margin_box: child_block,
+                    border_box: child_block,
+                    padding_box: child_block,
+                    content_box: child_block,
                     element: piece,
                     context: info.clone(),
                     children: vec![]
-                }]
+                });
             }
-        }).collect()
+
+            let element_block = Rect::new_vec(
+                Vec2::new(info.containing_block.position.x, min_y), 
+                Vec2::new(info.containing_block.size.x, max_y - min_y)
+            );
+
+            let element = node.element.get_painter(element_block, &info);
+
+
+            PainterTree {
+                margin_box: element_block,
+                border_box: element_block,
+                padding_box: element_block,
+                content_box: element_block,
+                element,
+                context: info.clone(),
+                children: inner
+            }
+        }).collect();
+
+        (children, current_y - start_y)
     }
 
     fn add_inline_parent(&mut self, node: &LayoutNode, context: &dyn FormattingContext, info: &FormattingInfo) {
@@ -405,8 +525,10 @@ impl BlockFormattingContext for FlexFormattingContext {
 #[derive(Debug)]
 pub struct LineBoxInner {
     boxes: Vec<Box<dyn LayoutBox>>,
+    max_width: i32,
     width: i32,
-    height: i32
+    height: Option<i32>,
+    y: Option<i32>
 }
 
 pub type LineBox = Wrapper<LineBoxInner>;
@@ -415,6 +537,10 @@ impl LineBox {
     pub fn add(&self, element: Box<dyn LayoutBox>) -> Box<LineBox> {
         self.borrow_mut().boxes.push(element);
         self.clone()
+    }
+
+    pub fn available_width(&self) -> i32 {
+        self.borrow().max_width - self.borrow().width
     }
 }
 
@@ -441,6 +567,9 @@ impl Display for PainterTree {
         writeln!(f, "{:width$}{}", "", self.element.get_name())?;
         let width = width + 2;
         writeln!(f, "{:width$}content: {}", "", self.content_box)?;
+        writeln!(f, "{:width$}padding: {}", "", self.padding_box)?;
+        writeln!(f, "{:width$}border: {}", "", self.border_box)?;
+        writeln!(f, "{:width$}margin: {}", "", self.margin_box)?;
 
         let width = width + 4;
         for child in self.children.iter() {
@@ -470,12 +599,5 @@ impl PainterTree {
         for element in self.children.iter() {
             element.paint(target);
         }
-    }
-
-    pub fn translate(&mut self, distance: Vec2) {
-        self.margin_box.position += distance;
-        self.border_box.position += distance;
-        self.padding_box.position += distance;
-        self.content_box.position += distance;
     }
 }

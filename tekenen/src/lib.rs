@@ -14,7 +14,7 @@ pub mod platform;
 /// - background(), rect(), draw_image()
 mod tekenen;
 
-use std::{borrow::Borrow, cell::{Ref, RefCell, RefMut}, rc::Rc};
+use std::{borrow::Borrow, cell::{Ref, RefCell, RefMut}, rc::{Rc, Weak}};
 
 pub use tekenen::{Tekenen, colors, Pixel, Draw, OverflowBehavior, Font};
 
@@ -54,5 +54,18 @@ impl<T> Wrapper<T> {
 
     pub fn clone(&self) -> Box<Wrapper<T>> {
         Box::new(Wrapper::<T>(Rc::clone(&self.0)))
+    }
+
+    pub fn downgrade(&self) -> WeakWrapper<T> {
+        WeakWrapper(Box::new(Rc::downgrade(&self.0)))
+    }
+}
+
+#[derive(Debug)]
+pub struct WeakWrapper<T: ?Sized>(Box<Weak<RefCell<T>>>);
+
+impl<T> WeakWrapper<T> {
+    pub fn upgrade(&self) -> Option<Wrapper<T>> {
+        self.0.upgrade().map(|rc| Wrapper(rc))
     }
 }

@@ -35,10 +35,18 @@ impl FloatDemo {
         // ]);
 
         let div = Div::new_fn(vec![
-            P::new("hello"),
+            P::new_fn("hello there, this text should wrap multiple times, how nice!", |p| {
+                p.style.background_color.set(colors::RED);
+            }),
+            P::new_fn("world!", |p| {
+                p.style.background_color.set(colors::GREEN);
+            }),
+            P::new("worldddddddddddddddddddd!"),
+            P::new("world!!!"),
             P::new("world!"),
         ], |div| {
-            div.style.background_color.set(colors::CYAN);
+            div.style.background_color.set(colors::MAROON);
+            div.style.width.set(250.into());
         });
 
         Self {
@@ -79,6 +87,10 @@ impl super::Demo for FloatDemo {
 
         // 2. Generate Layout Box Tree
         let layout = self.div.get_layout_box();
+        
+        if self.print_layout {
+            println!("{layout}")
+        }
 
         // 3. Do Layouting and get Paint Tree
         let context = BlockBlockFormattingContext::new();

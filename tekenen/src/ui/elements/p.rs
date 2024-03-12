@@ -1,28 +1,13 @@
 use std::{borrow::Borrow, cell::{Ref}};
 
-use super::{DomElement, LayoutBox, LayoutNode, PaintElement, Stylable, TextFragment};
+use super::{DomElement, LayoutBox, LayoutNode, PaintElement, Stylable, TextNode};
 use crate::{colors, math::{IndefRange, Vec2}, platform::Event, shapes::rect::Rect, tekenen::Font, ui::style::{FormattingInfo, Style}, Draw, Tekenen, Wrapper};
-
-#[derive(Debug)]
-enum Component {
-    Fragment(Box<TextFragment>),
-    Element(Box<dyn DomElement>)
-}
-
-impl Component {
-    fn get_layout_box(&self) -> LayoutNode {
-        match self {
-            Component::Fragment(fragment) => fragment.get_layout_box(),
-            Component::Element(element) => element.get_layout_box()
-        }
-    }
-}
 
 #[derive(Debug)]
 pub struct InnerP {
     pub style: Style,
 
-    components: Vec<Component>
+    children: Vec<Box<dyn DomElement>>
 }
 
 pub type P = Wrapper<InnerP>;
@@ -36,10 +21,15 @@ impl P {
 
         let p = Wrapper::wrap(InnerP {
             style,
-            components: vec![]
+            children: vec![]
         });
 
-        p.borrow_mut().components.push(Component::Fragment(TextFragment::new(text, p.clone())));
+        let weak = p.downgrade();
+
+        let x = p.clone();
+        
+
+        p.borrow_mut().children.push(TextNode::new(text));
 
         p
     }
@@ -52,16 +42,16 @@ impl P {
 
         let mut inner = InnerP {
             style,
-            components: vec![],
+            children: vec![],
         };
 
         fun(&mut inner);
 
         let p = Wrapper::wrap(inner);
 
-        let clone = p.clone() as Box<dyn DomElement>;
+        let clone = Box::new(p.downgrade());
 
-        p.borrow_mut().components.push(Component::Fragment(TextFragment::new(text, clone)));
+        p.borrow_mut().children.push(TextNode::new(text));
 
         p
     }
@@ -93,7 +83,7 @@ impl DomElement for P {
     fn get_layout_box(&self) -> LayoutNode {
         let mut node = LayoutNode::new(self.clone());
 
-        for child in self.borrow().components.iter() {
+        for child in self.borrow().children.iter() {
             node.add_node(child.get_layout_box())
         }
 
@@ -153,6 +143,10 @@ impl LayoutBox for P {
 
 impl PaintElement for P {
     fn draw(&self, target: &mut Tekenen, context: &FormattingInfo, space: Vec2) {
-        // target.text_vec(&self.borrow().text, Vec2::zero(), Font::new(16, colors::MAGENTA));
+        let color = self.get_style().background_color.solve(context);
+
+        if color[3] > 0 {
+            target.rect_vec(Vec2::zero(), space, color)
+        }
     }
 }

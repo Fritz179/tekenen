@@ -568,7 +568,7 @@ impl<Solver: PercentSolver> CSSSize<Solver> {
 // <display-box>      = contents | none
 // <display-legacy>   = inline-block | inline-table | inline-flex | inline-grid
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub enum CSSDisplay {
     Block,
     #[default]
