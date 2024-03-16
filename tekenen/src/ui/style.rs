@@ -568,13 +568,102 @@ impl<Solver: PercentSolver> CSSSize<Solver> {
 // <display-box>      = contents | none
 // <display-legacy>   = inline-block | inline-table | inline-flex | inline-grid
 
-#[derive(Debug, Clone, Default, PartialEq)]
-pub enum CSSDisplay {
-    Block,
-    #[default]
-    Inline,
+pub enum CSSDisplayShorthand {
     None,
-    Flex
+    Contents,
+    Block,
+    Flow,
+    FlowRoot,
+    Inline,
+    InlineBlock,
+    RunIn,
+    ListItem,
+    InlineListItem,
+    Flex,
+    InlineFlex,
+    Grid,
+    InlineGrid,
+    Ruby,
+    Table,
+    InlineTable,
+    Math,
+}
+
+impl From<CSSDisplayShorthand> for CSSDisplay {
+    fn from(value: CSSDisplayShorthand) -> Self {
+        match value {
+            CSSDisplayShorthand::None => CSSDisplay::Box(CSSDisplayBox::None),
+            CSSDisplayShorthand::Contents => CSSDisplay::Box(CSSDisplayBox::Contents),
+            CSSDisplayShorthand::Block => CSSDisplay::InsideOutside(CSSDisplayOutside::Block, CSSDisplayInside::Flow),
+            CSSDisplayShorthand::Flow => CSSDisplay::InsideOutside(CSSDisplayOutside::Block, CSSDisplayInside::Flow),
+            CSSDisplayShorthand::FlowRoot => CSSDisplay::InsideOutside(CSSDisplayOutside::Block, CSSDisplayInside::FlowRoot),
+            CSSDisplayShorthand::Inline => CSSDisplay::InsideOutside(CSSDisplayOutside::Inline, CSSDisplayInside::Flow),
+            CSSDisplayShorthand::InlineBlock => CSSDisplay::InsideOutside(CSSDisplayOutside::Inline, CSSDisplayInside::Flow),
+            CSSDisplayShorthand::RunIn => CSSDisplay::InsideOutside(CSSDisplayOutside::RunIn, CSSDisplayInside::Flow),
+            CSSDisplayShorthand::ListItem => CSSDisplay::InsideOutside(CSSDisplayOutside::Block, CSSDisplayInside::Flow),
+            CSSDisplayShorthand::InlineListItem => CSSDisplay::InsideOutside(CSSDisplayOutside::Inline, CSSDisplayInside::Flow),
+            CSSDisplayShorthand::Flex => CSSDisplay::InsideOutside(CSSDisplayOutside::Block, CSSDisplayInside::Flex),
+            CSSDisplayShorthand::InlineFlex => CSSDisplay::InsideOutside(CSSDisplayOutside::Inline, CSSDisplayInside::Flex),
+            CSSDisplayShorthand::Grid => CSSDisplay::InsideOutside(CSSDisplayOutside::Block, CSSDisplayInside::Grid),
+            CSSDisplayShorthand::InlineGrid => CSSDisplay::InsideOutside(CSSDisplayOutside::Inline, CSSDisplayInside::Grid),
+            CSSDisplayShorthand::Ruby => CSSDisplay::InsideOutside(CSSDisplayOutside::Inline, CSSDisplayInside::Ruby),
+            CSSDisplayShorthand::Table => CSSDisplay::InsideOutside(CSSDisplayOutside::Block, CSSDisplayInside::Table),
+            CSSDisplayShorthand::InlineTable => CSSDisplay::InsideOutside(CSSDisplayOutside::Inline, CSSDisplayInside::Table),
+            CSSDisplayShorthand::Math => CSSDisplay::InsideOutside(CSSDisplayOutside::Inline, CSSDisplayInside::Flow),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum CSSDisplayInside {
+    Flow,
+    FlowRoot,
+    Table,
+    Flex,
+    Grid,
+    Ruby
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum CSSDisplayOutside {
+    Block,
+    Inline,
+    RunIn
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum CSSDisplayInternal {
+    TableRowGroup,
+    TableHeaderGroup,
+    TableFooterGroup,
+    TableRow,
+    TableCell,
+    TableColumnGroup,
+    TableColumn,
+    TableCaption,
+    RubyBase,
+    RubyText,
+    RubyBaseContainer,
+    RubyTextContainer
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum CSSDisplayBox {
+    Contents,
+    None
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum CSSDisplay {
+    InsideOutside(CSSDisplayOutside, CSSDisplayInside),
+    Internal(CSSDisplayInternal),
+    Box(CSSDisplayBox),
+}
+
+impl Default for CSSDisplay {
+    fn default() -> Self {
+        Self::InsideOutside(CSSDisplayOutside::Inline, CSSDisplayInside::Flow)
+    }
 }
 
 // https://developer.mozilla.org/en-US/docs/Web/CSS/flex-direction

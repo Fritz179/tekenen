@@ -1,65 +1,56 @@
-use std::{borrow::Borrow, cell::{Ref}};
+use std::{borrow::Borrow, cell::{Ref, RefCell}, rc::Rc};
 
 use super::{DomElement, LayoutBox, LayoutNode, PaintElement, Stylable, TextNode};
-use crate::{colors, math::{IndefRange, Vec2}, platform::Event, shapes::rect::Rect, tekenen::Font, ui::style::{FormattingInfo, Style}, Draw, Tekenen, Wrapper};
+use crate::{colors, math::{IndefRange, Vec2}, platform::Event, shapes::rect::Rect, tekenen::Font, ui::style::{FormattingInfo, Style}, Draw, Tekenen};
 
 #[derive(Debug)]
-pub struct InnerP {
-    pub style: Style,
+pub struct P {
+    pub style: RefCell<Style>,
 
-    children: Vec<Box<dyn DomElement>>
+    children: RefCell<Vec<Rc<dyn DomElement>>>
 }
 
-pub type P = Wrapper<InnerP>;
-
 impl P {
-    pub fn new(text: &str) -> Box<Self> {
+    pub fn new(text: &str) -> Rc<Self> {
         let mut style = Style::default();
 
         // TODO: should be 1rem
         style.margin.set_2(16.into(), 0.into());
 
-        let p = Wrapper::wrap(InnerP {
-            style,
-            children: vec![]
+        let p = Rc::new(Self {
+            style: RefCell::new(style),
+            children: RefCell::new(vec![]),
         });
-
-        let weak = p.downgrade();
-
-        let x = p.clone();
         
-
-        p.borrow_mut().children.push(TextNode::new(text));
+        p.children.borrow_mut().push(TextNode::new(text));
 
         p
     }
 
-    pub fn new_fn(text: &str, fun: impl FnOnce(&mut InnerP)) -> Box<Self> {
+    pub fn new_fn(text: &str, fun: impl FnOnce(&mut Self)) -> Rc<Self> {
         let mut style = Style::default();
 
         // TODO: should be 1rem
         style.margin.set_2(16.into(), 0.into());
 
-        let mut inner = InnerP {
-            style,
-            children: vec![],
+        let mut inner = Self {
+            style: RefCell::new(style),
+            children: RefCell::new(vec![]),
         };
 
         fun(&mut inner);
 
-        let p = Wrapper::wrap(inner);
+        let p = Rc::new(inner);
 
-        let clone = Box::new(p.downgrade());
-
-        p.borrow_mut().children.push(TextNode::new(text));
+        p.children.borrow_mut().push(TextNode::new(text));
 
         p
     }
 }
 
 impl Stylable for P {
-    fn get_style(&self) -> Ref<'_, Style> {
-        Ref::map(self.0.as_ref().borrow(), |borrow| &borrow.style)
+    fn get_style(&self) -> &RefCell<Style> {
+        &self.style
     }
 
     fn get_name(&self) -> String {
@@ -76,15 +67,15 @@ impl DomElement for P {
         
     }
 
-    fn get_dom_children(&self) -> Option<Ref<'_, Vec<Box<dyn DomElement>>>> {
+    fn get_dom_children(&self) -> Option<&RefCell<Vec<Rc<dyn DomElement>>>> {
         None
     }
 
-    fn get_layout_box(&self) -> LayoutNode {
-        let mut node = LayoutNode::new(self.clone());
+    fn get_layout_box(self: Rc<Self>) -> LayoutNode {
+        let mut node = LayoutNode::new(Rc::clone(&self) as Rc<dyn LayoutBox>);
 
-        for child in self.borrow().children.iter() {
-            node.add_node(child.get_layout_box())
+        for child in self.children.borrow().iter() {
+            node.add_node(Rc::clone(child).get_layout_box())
         }
 
         node
@@ -128,7 +119,7 @@ impl LayoutBox for P {
         todo!()
     }
 
-    fn get_painter(&self, content_box: Rect, context: &FormattingInfo) -> Box<dyn PaintElement> {
+    fn get_painter(self: Rc<Self>, content_box: Rect, context: &FormattingInfo) -> Rc<dyn PaintElement> {
         self.clone()
     }
 
@@ -136,14 +127,15 @@ impl LayoutBox for P {
         false
     }
 
-    fn go_inline_yourself(&self, formatter: &mut super::InlineFormattingContext, context: &dyn super::FormattingContext, info: &FormattingInfo) -> Vec<(Box<super::LineBox>, Box<dyn LayoutBox>)> {
+    fn go_inline_yourself(&self, formatter: &mut super::InlineFormattingContext, context: &dyn super::FormattingContext, info: &FormattingInfo) 
+            -> Vec<(Rc<super::LineBox>, Rc<dyn LayoutBox>)> {
         todo!()
     }
 }
 
 impl PaintElement for P {
     fn draw(&self, target: &mut Tekenen, context: &FormattingInfo, space: Vec2) {
-        let color = self.get_style().background_color.solve(context);
+        let color = self.get_style().borrow().background_color.solve(context);
 
         if color[3] > 0 {
             target.rect_vec(Vec2::zero(), space, color)

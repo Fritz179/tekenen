@@ -1,45 +1,43 @@
 
 
-use std::cell::Ref;
+use std::{cell::{Ref, RefCell}, rc::Rc};
 
-use crate::{colors, math::{IndefRange, Vec2}, shapes::rect::Rect, ui::style::{FormattingInfo, Style}, Draw, Font, Tekenen, WeakWrapper, Wrapper};
+use crate::{colors, math::{IndefRange, Vec2}, shapes::rect::Rect, ui::style::{FormattingInfo, Style}, Draw, Font, Tekenen};
 
 use super::{DomElement, FormattingContext, InlineFormattingContext, LayoutBox, LayoutNode, LineBox, PaintElement, PainterTree, Stylable};
 
 #[derive(Debug)]
-pub struct InnerTextFragment {
-    pub text: String,
-    // pub owner: Box<WeakWrapper<dyn DomElement>>
+pub struct TextFragment {
+    pub text: RefCell<String>,
 }
 
-pub type TextFragement = Wrapper<InnerTextFragment>;
 
-impl TextFragement {
-    pub fn new(text: &str) -> Box<Self> {
-        Wrapper::wrap(InnerTextFragment {
-            text: text.to_owned(),
+impl TextFragment {
+    pub fn new(text: &str) -> Rc<Self> {
+        Rc::new(Self {
+            text: RefCell::new(text.to_owned()),
             // owner
         })
     }
 }
 
-impl Stylable for TextFragement {
-    fn get_style(&self) -> Ref<'_, Style> {
+impl Stylable for TextFragment {
+    fn get_style(&self) -> &std::cell::RefCell<Style> {
         todo!()
     }
 
     fn get_name(&self) -> String {
-        format!("TextFragment: {}", self.borrow().text)
+        format!("TextFragment: {}", self.text.borrow())
     }
 }
 
-impl LayoutBox for TextFragement {
+impl LayoutBox for TextFragment {
     fn get_height_from_width(&self, width: i32, context: &FormattingInfo) -> i32 {
         16
     }
 
     fn get_width_from_height(&self, height: i32, context: &FormattingInfo) -> i32 {
-        self.borrow().text.len() as i32 * 16
+        self.text.borrow().len() as i32 * 16
     }
 
     fn get_inner_min_max_content(&self, context: &FormattingInfo) -> Vec2<IndefRange> {
@@ -50,37 +48,36 @@ impl LayoutBox for TextFragement {
         todo!()
     }
 
-    fn get_painter(&self, content_box: Rect, context: &FormattingInfo) -> Box<dyn PaintElement> {
-        self.clone()
+    fn get_painter(self: Rc<Self>, content_box: Rect, context: &FormattingInfo) -> Rc<dyn PaintElement> {
+        self
     }
 
     fn is_inline(&self) -> bool {
         todo!()
     }
 
-    fn go_inline_yourself(&self, formatter: &mut InlineFormattingContext, context: &dyn super::FormattingContext, info: &FormattingInfo) -> Vec<(Box<LineBox>, Box<dyn LayoutBox>)> {
+    fn go_inline_yourself(&self, formatter: &mut InlineFormattingContext, context: &dyn FormattingContext, info: &FormattingInfo) 
+            -> Vec<(Rc<LineBox>, Rc<dyn LayoutBox>)> {
         todo!()
     }
 
 }
 
-impl PaintElement for TextFragement {
+impl PaintElement for TextFragment {
     fn draw(&self, target: &mut Tekenen, context: &FormattingInfo, space: Vec2) {
-        target.text(&self.borrow().text, 0, 0, Font::new(16, colors::WHITE));
+        target.text(&self.text.borrow(), 0, 0, Font::new(16, colors::WHITE));
     }
 }
 
 #[derive(Debug)]
-pub struct InnerTextNode {
+pub struct TextNode {
     pub text: String,
     // pub owner: Box<WeakWrapper<dyn DomElement>>
 }
 
-pub type TextNode = Wrapper<InnerTextNode>;
-
 impl TextNode {
-    pub fn new(text: &str) -> Box<Self> {
-        Wrapper::wrap(InnerTextNode {
+    pub fn new(text: &str) -> Rc<Self> {
+        Rc::new(Self {
             text: text.to_owned(),
             // owner
         })
@@ -114,12 +111,12 @@ impl TextNode {
 }
 
 impl Stylable for TextNode {
-    fn get_style(&self) -> Ref<'_, Style> {
+    fn get_style(&self) -> &RefCell<Style> {
         todo!()
     }
 
     fn get_name(&self) -> String {
-        format!("TextNode: {}", self.borrow().text)
+        format!("TextNode: {}", self.text)
     }
 }
 
@@ -128,12 +125,12 @@ impl DomElement for TextNode {
         todo!()
     }
 
-    fn get_dom_children(&self) -> Option<Ref<'_, Vec<Box<dyn DomElement>>>> {
-        todo!()
+    fn get_dom_children(&self) -> Option<&RefCell<Vec<Rc<dyn DomElement>>>> {
+        None
     }
 
-    fn get_layout_box(&self) -> LayoutNode {
-        LayoutNode::new(self.clone())
+    fn get_layout_box(self: Rc<Self>) -> LayoutNode {
+        LayoutNode::new(self)
     }
 
     fn update(&mut self) {
@@ -158,28 +155,29 @@ impl LayoutBox for TextNode {
         todo!()
     }
 
-    fn get_painter(&self, content_box: Rect, context: &FormattingInfo) -> Box<dyn PaintElement> {
-        self.clone()
+    fn get_painter(self: Rc<Self>, content_box: Rect, context: &FormattingInfo) -> Rc<dyn PaintElement> {
+        self
     }
 
     fn is_inline(&self) -> bool {
         true
     }
 
-    fn go_inline_yourself(&self, formatter: &mut InlineFormattingContext, context: &dyn super::FormattingContext, info: &FormattingInfo) -> Vec<(Box<LineBox>, Box<dyn LayoutBox>)> {
+    fn go_inline_yourself(&self, formatter: &mut InlineFormattingContext, context: &dyn super::FormattingContext, info: &FormattingInfo) -> Vec<(Rc<LineBox>, Rc<dyn LayoutBox>)> {
         let mut current_line = formatter.get_line(context, info).0;
-        let mut lines: Vec<(Box<_>, Box<dyn LayoutBox>)> = Vec::new();
+        let mut lines: Vec<(Rc<LineBox>, Rc<dyn LayoutBox>)> = Vec::new();
 
         let mut current_string = String::new();
         let mut current_width = 0;
 
-        for token in self.borrow().text.split_whitespace() {
+        for token in self.text.split_whitespace() {
             let token_width = token.chars().count() as i32 * 16;
 
             // Dispatch line if the token does not fit
             if current_width + token_width > current_line.available_width() && !current_string.is_empty() {
-                let fragment = TextFragement::new(&current_string);
-                lines.push((current_line.add(fragment.clone()), fragment.clone()));
+                let fragment = TextFragment::new(&current_string) as Rc<dyn LayoutBox>;
+                current_line.add(Rc::clone(&fragment));
+                lines.push((Rc::clone(&current_line), Rc::clone(&fragment)));
 
                 // Reset
                 current_line = formatter.get_new_line(context, info).0;
@@ -194,8 +192,9 @@ impl LayoutBox for TextNode {
 
         // Dispatch the last line
         if !current_string.is_empty() {
-            let fragment = TextFragement::new(&current_string);
-            lines.push((current_line.add(fragment.clone()), fragment.clone()));
+            let fragment = TextFragment::new(&current_string);
+            current_line.add(fragment.clone());
+            lines.push((Rc::clone(&current_line), fragment.clone()));
         }
 
         lines

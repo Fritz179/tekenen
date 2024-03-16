@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use tekenen::shapes::rect::Rect;
 use tekenen::ui::elements::{BlockBlockFormattingContext, BlockFormattingContext, Div, DomElement, P};
 
@@ -7,7 +9,7 @@ use tekenen::platform::{PlatformTrait, IntervalDecision, Event, KeyDownEvent};
 
 pub struct FloatDemo {
     tek: Tekenen,
-    div: Box<Div>,
+    div: Rc<Div>,
     print_layout: bool,
     print_painter: bool,
 }
@@ -36,17 +38,17 @@ impl FloatDemo {
 
         let div = Div::new_fn(vec![
             P::new_fn("hello there, this text should wrap multiple times, how nice!", |p| {
-                p.style.background_color.set(colors::RED);
+                p.style.borrow_mut().background_color.set(colors::RED);
             }),
             P::new_fn("world!", |p| {
-                p.style.background_color.set(colors::GREEN);
+                p.style.borrow_mut().background_color.set(colors::GREEN);
             }),
             P::new("worldddddddddddddddddddd!"),
             P::new("world!!!"),
             P::new("world!"),
         ], |div| {
-            div.style.background_color.set(colors::MAROON);
-            div.style.width.set(250.into());
+            div.style.borrow_mut().background_color.set(colors::MAROON);
+            div.style.borrow_mut().width.set(250.into());
         });
 
         Self {
@@ -66,7 +68,7 @@ impl super::Demo for FloatDemo {
             },
             Event::KeyDown(KeyDownEvent { char: Some(char), .. }) => {
                 match char {
-                    'd' => println!("{}", self.div),
+                    'd' => println!("{}", self.div.clone() as Rc<dyn DomElement>),
                     'l' => self.print_layout = true,
                     'p' => self.print_painter = true,
                     _ => { }
@@ -86,7 +88,7 @@ impl super::Demo for FloatDemo {
         tekenen.background(colors::FRITZ_GRAY);
 
         // 2. Generate Layout Box Tree
-        let layout = self.div.get_layout_box();
+        let layout = self.div.clone().get_layout_box();
         
         if self.print_layout {
             println!("{layout}")

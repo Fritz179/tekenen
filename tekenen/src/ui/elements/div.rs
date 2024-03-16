@@ -1,6 +1,6 @@
-use std::cell::Ref;
+use std::{cell::{Ref, RefCell}, rc::Rc};
 
-use crate::{math::{IndefRange, Vec2}, shapes::rect::Rect, ui::style::{CSSDisplay, FormattingInfo}, Draw, Tekenen, Wrapper};
+use crate::{math::{IndefRange, Vec2}, shapes::rect::Rect, ui::style::{CSSDisplay, CSSDisplayShorthand, FormattingInfo}, Draw, Tekenen};
 
 use super::{BlockLayoutBox, DomElement, LayoutBox, LayoutNode, PaintElement, Stylable, Style};
 
@@ -8,38 +8,36 @@ use super::{BlockLayoutBox, DomElement, LayoutBox, LayoutNode, PaintElement, Sty
 /// A div is a flexbox
 /// A div with a single element is a flexbox with a single element
 #[derive(Debug)]
-pub struct InnerDiv {
-    pub style: Style,
-    children: Vec<Box<dyn DomElement>>,
+pub struct Div {
+    pub style: RefCell<Style>,
+    children: RefCell<Vec<Rc<dyn DomElement>>,>
 }
 
-pub type Div = Wrapper<InnerDiv>;
-
 impl Div {
-    pub fn new(children: Vec<Box<dyn DomElement>>) -> Box<Self> {
+    pub fn new(children: Vec<Rc<dyn DomElement>>) -> Rc<Self> {
         let mut style = Style::default();
 
-        style.display = CSSDisplay::Block;
+        style.display = CSSDisplayShorthand::Block.into();
 
-        Wrapper::wrap(InnerDiv {
-            style,
-            children
+        Rc::new(Self {
+            style: RefCell::new(style),
+            children: RefCell::new(children)
         })
     }
 
-    pub fn new_fn(children: Vec<Box<dyn DomElement>>, fun: impl FnOnce(&mut InnerDiv)) -> Box<Self> {
+    pub fn new_fn(children: Vec<Rc<dyn DomElement>>, fun: impl FnOnce(&mut Div)) -> Rc<Self> {
         let mut style = Style::default();
 
-        style.display = CSSDisplay::Block;
+        style.display = CSSDisplayShorthand::Block.into();
 
-        let mut div = InnerDiv {
-            style,
-            children
+        let mut div = Self {
+            style: RefCell::new(style),
+            children: RefCell::new(children)
         };
 
         fun(&mut div);
 
-        Wrapper::wrap(div)
+        Rc::new(div)
     }
 
     // pub fn new_vertical_flex(children: Vec<RcRefCell<dyn DomElement>>) -> RcRefCell<Self> {
@@ -68,8 +66,8 @@ impl Div {
 }
 
 impl Stylable for Div {
-    fn get_style(&self) -> Ref<'_, Style> {
-        Ref::map(self.0.as_ref().borrow(), |borrow| &borrow.style)
+    fn get_style(&self) -> &RefCell<Style> {
+        &self.style
     }
 
     fn get_name(&self) -> String {
@@ -86,23 +84,25 @@ impl DomElement for Div {
         
     }
 
-    fn get_layout_box(&self) -> LayoutNode {
-        let mut node = match self.borrow().style.display {
-            CSSDisplay::Block => LayoutNode::new(self.clone()),
-            CSSDisplay::Inline => todo!(),
-            CSSDisplay::Flex => todo!(),
-            CSSDisplay::None => todo!(),
-        };
+    fn get_layout_box(self: Rc<Self>) -> LayoutNode {
+        // let mut node = match self.style.borrow().display {
+        //     CSSDisplay::Block => LayoutNode::new(self.clone()),
+        //     CSSDisplay::Inline => todo!(),
+        //     CSSDisplay::Flex => todo!(),
+        //     CSSDisplay::None => todo!(),
+        // };
 
-        for child in self.borrow().children.iter() {
-            node.add_node(child.get_layout_box())
+        let mut node = LayoutNode::new(self.clone());
+
+        for child in self.children.borrow().iter() {
+            node.add_node(child.clone().get_layout_box())
         }
 
         node
     }
 
-    fn get_dom_children(&self) -> Option<Ref<'_, Vec<Box<dyn DomElement>>>> {
-        Some(Ref::map(self.0.as_ref().borrow(), |borrow| &borrow.children))
+    fn get_dom_children(&self) -> Option<&RefCell<Vec<Rc<dyn DomElement>>>> {
+        Some(&self.children)
     }
 
     // fn get_width_from_height(&self, height: i32, context: &LayoutContext) -> i32 {
@@ -195,15 +195,16 @@ impl LayoutBox for Div {
         todo!()
     }
 
-    fn get_painter(&self, content_box: Rect, context: &FormattingInfo) -> Box<dyn PaintElement> {
-        self.clone()
+    fn get_painter(self: Rc<Self>, content_box: Rect, context: &FormattingInfo) -> Rc<dyn PaintElement> {
+        self
     }
 
     fn is_inline(&self) -> bool {
         false
     }
 
-    fn go_inline_yourself(&self, formatter: &mut super::InlineFormattingContext, context: &dyn super::FormattingContext, info: &FormattingInfo) -> Vec<(Box<super::LineBox>, Box<dyn LayoutBox>)> {
+    fn go_inline_yourself(&self, formatter: &mut super::InlineFormattingContext, context: &dyn super::FormattingContext, info: &FormattingInfo) 
+            -> Vec<(Rc<super::LineBox>, Rc<dyn LayoutBox>)> {
         todo!()
     }
 }
@@ -214,7 +215,7 @@ impl BlockLayoutBox for Div {
 
 impl PaintElement for Div {
     fn draw(&self, target: &mut Tekenen, context: &FormattingInfo, space: Vec2) {
-        let color = self.get_style().background_color.solve(context);
+        let color = self.get_style().borrow().background_color.solve(context);
 
         if color[3] > 0 {
             target.rect_vec(Vec2::zero(), space, color)

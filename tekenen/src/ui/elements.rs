@@ -1,5 +1,5 @@
 pub mod div;
-use std::{cell::Ref, fmt::{Debug, Display}};
+use std::{cell::{Ref, RefCell}, fmt::{Debug, Display}, rc::Rc};
 
 pub use div::Div;
 
@@ -12,18 +12,18 @@ pub use textFragment::TextNode;
 pub mod p;
 pub use p::P;
 
-use crate::{math::{IndefRange, Vec2}, platform::Event, shapes::rect::Rect, Draw, Tekenen, Wrapper};
+use crate::{math::{IndefRange, Vec2}, platform::Event, shapes::rect::Rect, Draw, Tekenen};
 
 
 use super::style::{FormattingInfo, Style};
 
 pub trait Stylable: Debug {
-    fn get_style(&self) -> Ref<'_, Style>;
+    fn get_style(&self) -> &RefCell<Style>;
     fn get_name(&self) -> String;
 }
 
 // Every HTML element has to implement this Trait
-pub trait DomElement: Stylable + Display {
+pub trait DomElement: Stylable {
     // React to event
     fn event(&mut self, event: Event);
 
@@ -31,13 +31,13 @@ pub trait DomElement: Stylable + Display {
     fn update(&mut self);
 
     // Implement for default behavior
-    fn get_dom_children(&self) -> Option<Ref<'_, Vec<Box<dyn DomElement>>>>;
+    fn get_dom_children(&self) -> Option<&RefCell<Vec<Rc<dyn DomElement>>>>;
 
     // Implement to get a Layout/Box Tree
-    fn get_layout_box(&self) -> LayoutNode;
+    fn get_layout_box(self: Rc<Self>) -> LayoutNode;
 }
 
-impl<T> Display for Wrapper<T> where Wrapper<T>: DomElement {
+impl Display for dyn DomElement {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let width = f.width().unwrap_or(0);
 
@@ -45,7 +45,7 @@ impl<T> Display for Wrapper<T> where Wrapper<T>: DomElement {
 
         let width = width + 4;
         if let Some(children) = self.get_dom_children() {
-            for child in children.iter() {
+            for child in children.borrow().iter() {
                 write!(f, "{:width$}", child)?;
             }
         }
@@ -65,11 +65,10 @@ pub trait LayoutBox: Stylable {
     fn get_width_from_height(&self, height: i32, context: &FormattingInfo) -> i32;
     fn get_height_from_width(&self, width: i32, context: &FormattingInfo) -> i32;
 
-    fn get_painter(&self, content_box: Rect, context: &FormattingInfo) -> Box<dyn PaintElement>;
+    fn get_painter(self: Rc<Self>, content_box: Rect, context: &FormattingInfo) -> Rc<dyn PaintElement>;
 
     fn is_inline(&self) -> bool {
         todo!();
-        self.get_style().display == super::style::CSSDisplay::Inline
     }
 
     fn create_formatting_context_if_needed(&self) -> Option<ContextDecision> {
@@ -77,13 +76,13 @@ pub trait LayoutBox: Stylable {
             return None;
         }
 
-        match self.get_style().display {
-            super::style::CSSDisplay::Flex => Some(ContextDecision::FlexContext),
+        match self.get_style().borrow().display {
             _ => None   
         }
     }
 
-    fn go_inline_yourself(&self, formatter: &mut InlineFormattingContext, context: &dyn FormattingContext, info: &FormattingInfo) -> Vec<(Box<LineBox>, Box<dyn LayoutBox>)>;
+    fn go_inline_yourself(&self, formatter: &mut InlineFormattingContext, context: &dyn FormattingContext, info: &FormattingInfo) 
+        -> Vec<(Rc<LineBox>, Rc<dyn LayoutBox>)>;
 }
 
 
@@ -121,7 +120,7 @@ impl ContextDecision {
 // Formatting Context are not limited to this two (Flex, Grid, Table...)
 #[derive(Debug)]
 pub struct LayoutNode {
-    element: Box<dyn LayoutBox>,
+    element: Rc<dyn LayoutBox>,
     children: Vec<LayoutNode>,
     context: ContextDecision
 }
@@ -166,7 +165,7 @@ impl Display for LayoutNode {
 }
 
 impl LayoutNode {
-    pub fn new(node: Box<dyn LayoutBox>) -> Self {
+    pub fn new(node: Rc<dyn LayoutBox>) -> Self {
         let context = node.create_formatting_context_if_needed();
 
         Self {
@@ -196,8 +195,8 @@ impl LayoutNode {
 }
 
 pub trait FormattingContext {
-    fn get_line(&mut self, context: &dyn FormattingContext, info: &FormattingInfo) -> (Box<LineBox>, bool);
-    fn get_new_line(&mut self, context: &dyn FormattingContext, info: &FormattingInfo) -> (Box<LineBox>, bool);
+    fn get_line(&mut self, context: &dyn FormattingContext, info: &FormattingInfo) -> (Rc<LineBox>, bool);
+    fn get_new_line(&mut self, context: &dyn FormattingContext, info: &FormattingInfo) -> (Rc<LineBox>, bool);
 }
 
 pub trait BlockFormattingContext: FormattingContext {
@@ -217,11 +216,11 @@ impl BlockBlockFormattingContext {
 }
 
 impl FormattingContext for BlockBlockFormattingContext {
-    fn get_line(&mut self, context: &dyn FormattingContext, info: &FormattingInfo) -> (Box<LineBox>, bool) {
+    fn get_line(&mut self, context: &dyn FormattingContext, info: &FormattingInfo) -> (Rc<LineBox>, bool) {
         todo!()
     }
 
-    fn get_new_line(&mut self, context: &dyn FormattingContext, info: &FormattingInfo) -> (Box<LineBox>, bool) {
+    fn get_new_line(&mut self, context: &dyn FormattingContext, info: &FormattingInfo) -> (Rc<LineBox>, bool) {
         todo!()
     }
 }
@@ -231,16 +230,16 @@ impl BlockBlockFormattingContext {
         // Apply CSS Definite sizes
         let mut available_size = info.containing_block;
 
-        if let Some(width) = node.element.get_style().width.solve(info) {
+        if let Some(width) = node.element.get_style().borrow().width.solve(info) {
             available_size.size.x = width;
         }
 
-        if let Some(height) = node.element.get_style().height.solve(info) {
+        if let Some(height) = node.element.get_style().borrow().height.solve(info) {
             available_size.size.y = height;
         }
 
         // Get inner size for children
-        let bounding = node.element.get_style().get_total_computed_boudning(&info);
+        let bounding = node.element.get_style().borrow().get_total_computed_boudning(&info);
         let available_content_rect = available_size - bounding.clone();
 
         // Walk through all children
@@ -295,7 +294,7 @@ impl BlockBlockFormattingContext {
         let margin_box = Rect::new_vec(info.containing_block.position, Vec2::new(outer_width, outer_height));
         let content_box = margin_box - bounding;
 
-        let element = node.element.get_painter(content_box, &info);
+        let element = node.element.clone().get_painter(content_box, &info);
 
         PainterTree {
             margin_box: margin_box,
@@ -322,10 +321,10 @@ impl BlockFormattingContext for BlockBlockFormattingContext {
         // We are a leaf node!
 
         // get CSS restrictions
-        let size_constraint = node.element.get_style().get_size_contraint(&info);
+        let size_constraint = node.element.get_style().borrow().get_size_contraint(&info);
 
         // Get inner width
-        let boudning = node.element.get_style().get_total_computed_boudning(&info);
+        let boudning = node.element.get_style().borrow().get_total_computed_boudning(&info);
         let outer_width = info.containing_block.size.x;
         let inner_width = outer_width - boudning.left - boudning.right;
 
@@ -337,7 +336,7 @@ impl BlockFormattingContext for BlockBlockFormattingContext {
         let margin_box = Rect::new_vec(info.containing_block.position, Vec2::new(outer_width, outer_height));
         let content_box = margin_box - boudning;
 
-        let element = node.element.get_painter(content_box, &info);
+        let element = node.element.clone().get_painter(content_box, &info);
 
         dbg!(content_box);
 
@@ -356,9 +355,9 @@ impl BlockFormattingContext for BlockBlockFormattingContext {
 
 pub struct InlineFormattingContext<'a> {
     /// All the lines
-    pub lines: Vec<Box<LineBox>>,
+    pub lines: Vec<Rc<LineBox>>,
     /// inline-element, Vec of each child piece Vec<containing line, piece>
-    elements: Vec<(&'a LayoutNode, Vec<(Box<LineBox>, Box<dyn LayoutBox>)>)>,
+    elements: Vec<(&'a LayoutNode, Vec<(Rc<LineBox>, Rc<dyn LayoutBox>)>)>,
 }
 
 impl<'a> InlineFormattingContext<'a> {
@@ -371,21 +370,21 @@ impl<'a> InlineFormattingContext<'a> {
 }
 
 impl<'a> FormattingContext for  InlineFormattingContext<'a> {
-    fn get_line(&mut self, context: &dyn FormattingContext, info: &FormattingInfo) -> (Box<LineBox>, bool) {
+    fn get_line(&mut self, context: &dyn FormattingContext, info: &FormattingInfo) -> (Rc<LineBox>, bool) {
         if self.lines.is_empty() {
             return self.get_new_line(context, info);
         }
 
-        return (self.lines.last().unwrap().as_ref().clone(), false);
+        return (self.lines.last().unwrap().clone(), false);
     }
 
-    fn get_new_line(&mut self, context: &dyn FormattingContext, info: &FormattingInfo) -> (Box<LineBox>, bool) {
-        let line = Wrapper::wrap(LineBoxInner {
-            boxes: vec![],
+    fn get_new_line(&mut self, context: &dyn FormattingContext, info: &FormattingInfo) -> (Rc<LineBox>, bool) {
+        let line = Rc::new(LineBox {
+            boxes: RefCell::new(Vec::new()),
             max_width: info.containing_block.size.x,
             width: 0,
-            height: None,
-            y: None,
+            height: RefCell::new(None),
+            y: RefCell::new(None),
         });
 
         self.lines.push(line.clone());
@@ -403,8 +402,7 @@ impl<'a> InlineFormattingContext<'a> {
 
         // Calculate the height of each line
         for line in self.lines.iter() {
-            let mut line = line.borrow_mut();
-            let boxes = &line.boxes;
+            let boxes = &line.boxes.borrow();
 
             assert!(boxes.len() == 1, "We only support one box per line");
 
@@ -412,8 +410,8 @@ impl<'a> InlineFormattingContext<'a> {
             let height = box_.get_height_from_width(info.containing_block.size.x, info);
 
             // Update info about lines
-            line.y = Some(current_y);
-            line.height = Some(height);
+            *line.y.borrow_mut() = Some(current_y);
+            *line.height.borrow_mut() = Some(height);
             current_y += height;
             // println!("Line height: {}", height);
         }
@@ -428,8 +426,8 @@ impl<'a> InlineFormattingContext<'a> {
             let mut max_y = 0;
 
             for (line, piece) in pieces.iter() {
-                let y = line.borrow().y.unwrap();
-                let height = line.borrow().height.unwrap();
+                let y = line.y.borrow().unwrap();
+                let height = line.height.borrow().unwrap();
 
                 if y < min_y {
                     min_y = y;
@@ -444,7 +442,7 @@ impl<'a> InlineFormattingContext<'a> {
                     Vec2::new(piece.get_width_from_height(16, info), height)
                 );
     
-                let piece = piece.get_painter(child_block, info);
+                let piece = piece.clone().get_painter(child_block, info);
     
                 inner.push(PainterTree {
                     margin_box: child_block,
@@ -462,7 +460,7 @@ impl<'a> InlineFormattingContext<'a> {
                 Vec2::new(info.containing_block.size.x, max_y - min_y)
             );
 
-            let element = node.element.get_painter(element_block, &info);
+            let element = node.element.clone().get_painter(element_block, &info);
 
 
             PainterTree {
@@ -506,11 +504,11 @@ impl FlexFormattingContext {
 }
 
 impl FormattingContext for FlexFormattingContext {
-    fn get_line(&mut self, context: &dyn FormattingContext, info: &FormattingInfo) -> (Box<LineBox>, bool) {
+    fn get_line(&mut self, context: &dyn FormattingContext, info: &FormattingInfo) -> (Rc<LineBox>, bool) {
         todo!()
     }
 
-    fn get_new_line(&mut self, context: &dyn FormattingContext, info: &FormattingInfo) -> (Box<LineBox>, bool) {
+    fn get_new_line(&mut self, context: &dyn FormattingContext, info: &FormattingInfo) -> (Rc<LineBox>, bool) {
         todo!()
     }
 }
@@ -523,24 +521,21 @@ impl BlockFormattingContext for FlexFormattingContext {
 
 // The line box is a horizontal stack of inline-level boxes
 #[derive(Debug)]
-pub struct LineBoxInner {
-    boxes: Vec<Box<dyn LayoutBox>>,
+pub struct LineBox {
+    boxes: RefCell<Vec<Rc<dyn LayoutBox>>>,
     max_width: i32,
     width: i32,
-    height: Option<i32>,
-    y: Option<i32>
+    height: RefCell<Option<i32>>,
+    y: RefCell<Option<i32>>
 }
 
-pub type LineBox = Wrapper<LineBoxInner>;
-
 impl LineBox {
-    pub fn add(&self, element: Box<dyn LayoutBox>) -> Box<LineBox> {
-        self.borrow_mut().boxes.push(element);
-        self.clone()
+    pub fn add(&self, element: Rc<dyn LayoutBox>) {
+        self.boxes.borrow_mut().push(element);
     }
 
     pub fn available_width(&self) -> i32 {
-        self.borrow().max_width - self.borrow().width
+        self.max_width - self.width
     }
 }
 
@@ -554,7 +549,7 @@ pub struct PainterTree {
     pub border_box: Rect,
     pub padding_box: Rect,
     pub content_box: Rect,
-    pub element: Box<dyn PaintElement>,
+    pub element: Rc<dyn PaintElement>,
     pub context: FormattingInfo,
     pub children: Vec<PainterTree>
 }
