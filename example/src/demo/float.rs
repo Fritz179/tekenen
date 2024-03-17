@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use tekenen::shapes::rect::Rect;
-use tekenen::ui::elements::{BlockBlockFormattingContext, BlockFormattingContext, Div, DomElement, P};
+use tekenen::ui::elements::{BlockBlockFormattingContext, BlockFormattingContext, Div, DomElement, LayoutNode, P};
 
 use tekenen::ui::style::FormattingInfo;
 use tekenen::{colors, Draw, Tekenen};
@@ -88,7 +88,7 @@ impl super::Demo for FloatDemo {
         tekenen.background(colors::FRITZ_GRAY);
 
         // 2. Generate Layout Box Tree
-        let layout = self.div.clone().get_layout_box();
+        let layout = LayoutNode::new(self.div.clone(), None);
         
         if self.print_layout {
             println!("{layout}")
@@ -100,7 +100,7 @@ impl super::Demo for FloatDemo {
             containing_block: Rect::new(0, 0, 800, 600),
         };
 
-        let painter = context.run(&layout, &info);
+        let painter = context.run(&layout, &info).unwrap();
 
         if self.print_painter {
             println!("{painter}");

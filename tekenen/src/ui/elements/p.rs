@@ -68,38 +68,12 @@ impl DomElement for P {
     }
 
     fn get_dom_children(&self) -> Option<&RefCell<Vec<Rc<dyn DomElement>>>> {
-        None
+        Some(&self.children)
     }
 
-    fn get_layout_box(self: Rc<Self>) -> LayoutNode {
-        let mut node = LayoutNode::new(Rc::clone(&self) as Rc<dyn LayoutBox>);
-
-        for child in self.children.borrow().iter() {
-            node.add_node(Rc::clone(child).get_layout_box())
-        }
-
-        node
+    fn get_layout_box(self: Rc<Self>) -> Rc<dyn LayoutBox> {
+        self
     }
-
-    // fn draw(&self, target: &mut Tekenen, context: &LayoutContext, space: Vec2) {
-    //     // for (i, line) in self.split_text(space.x, context).iter().enumerate() {
-    //     //     println!("{line}");
-    //     //     target.text(&line, 0, i as i32 * self.height, Font::new(self.height as i32, colors::BLACK));
-    //     // }
-    // }
-
-    // fn get_height_from_width(&self, width: i32, context: &LayoutContext) -> i32 {
-    //     self.split_text(width, context).len() as i32 * 16
-    // }
-
-    // fn get_width_from_height(&self, height: i32, context: &LayoutContext) -> i32 {
-    //     self.text.len() as i32 * 16
-    // }
-
-    // fn get_inner_min_max_content(&self, context: &LayoutContext) -> Vec2<IndefRange> {
-    //     // TODO: Get the actual size of the text
-    //     Vec2::new(IndefRange::new(16, self.text.len() as i32 * 16), IndefRange::new(16, 16))
-    // }
 }
 
 impl LayoutBox for P {

@@ -666,6 +666,13 @@ impl Default for CSSDisplay {
     }
 }
 
+impl CSSDisplay {
+    pub fn is_block_outside(&self) -> bool { matches!(self, Self::InsideOutside(CSSDisplayOutside::Block, _)) }
+    pub fn is_inline_outside(&self) -> bool { matches!(self, Self::InsideOutside(CSSDisplayOutside::Inline, _)) }
+
+    pub fn is_flow_inside(&self) -> bool { matches!(self, Self::InsideOutside(_, CSSDisplayInside::Flow)) }
+}
+
 // https://developer.mozilla.org/en-US/docs/Web/CSS/flex-direction
 // https://drafts.csswg.org/css-flexbox/#flex-direction-property
 

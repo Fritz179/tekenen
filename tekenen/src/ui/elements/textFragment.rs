@@ -129,8 +129,8 @@ impl DomElement for TextNode {
         None
     }
 
-    fn get_layout_box(self: Rc<Self>) -> LayoutNode {
-        LayoutNode::new(self)
+    fn get_layout_box(self: Rc<Self>) -> Rc<dyn LayoutBox> {
+        self
     }
 
     fn update(&mut self) {

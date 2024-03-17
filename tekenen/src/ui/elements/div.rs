@@ -84,21 +84,8 @@ impl DomElement for Div {
         
     }
 
-    fn get_layout_box(self: Rc<Self>) -> LayoutNode {
-        // let mut node = match self.style.borrow().display {
-        //     CSSDisplay::Block => LayoutNode::new(self.clone()),
-        //     CSSDisplay::Inline => todo!(),
-        //     CSSDisplay::Flex => todo!(),
-        //     CSSDisplay::None => todo!(),
-        // };
-
-        let mut node = LayoutNode::new(self.clone());
-
-        for child in self.children.borrow().iter() {
-            node.add_node(child.clone().get_layout_box())
-        }
-
-        node
+    fn get_layout_box(self: Rc<Self>) -> Rc<dyn LayoutBox> {
+        self
     }
 
     fn get_dom_children(&self) -> Option<&RefCell<Vec<Rc<dyn DomElement>>>> {
