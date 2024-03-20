@@ -15,7 +15,7 @@ pub use p::P;
 use crate::{math::{IndefRange, Vec2}, platform::Event, shapes::rect::Rect, Draw, Tekenen};
 
 
-use super::style::{CSSDisplay, FormattingInfo, Style};
+use super::{style::{CSSDisplay, CSSDisplayInside, FormattingInfo, Style}, tree::{Tree, TreeData}};
 
 pub trait Stylable: Debug {
     fn get_style(&self) -> &RefCell<Style>;
@@ -55,6 +55,16 @@ impl Display for dyn DomElement {
 }
 
 // Every entry in the Layout/Box tree has to implemnet this 
+#[derive(Debug, PartialEq)]
+pub enum FormattingContextType {
+    Block,
+    Inline,
+    Flex,
+    Grid,
+    Table,
+    None
+}
+
 pub trait LayoutBox: Stylable {
     fn get_min_max_content(&self, context: FormattingInfo) -> Vec2<IndefRange>;
 
@@ -71,14 +81,23 @@ pub trait LayoutBox: Stylable {
         todo!();
     }
 
-    fn create_formatting_context_if_needed(&self) -> Option<ContextDecision> {
-        if self.is_inline() {
-            return None;
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_display/Block_formatting_context
+    fn creates_block_formatting_context(&self) -> bool {
+        false
+    }
+
+    fn type_of_formatting_context_to_generate(&self) -> Option<FormattingContextType> {
+        let display = &self.get_style().borrow().display;
+
+        if display.is_flex_inside() {
+            return Some(FormattingContextType::Flex)
         }
 
-        match self.get_style().borrow().display {
-            _ => None   
-        }
+        None
+    }
+
+    fn create_formatting_context_if_needed(&self) -> Option<ContextDecision> {
+        None
     }
 
     fn go_inline_yourself(&self, formatter: &mut InlineFormattingContext, context: &dyn FormattingContext, info: &FormattingInfo) 
@@ -122,25 +141,30 @@ impl ContextDecision {
 pub struct LayoutNode {
     /// Anonyous nodes don't have a LayoutBox
     element: Option<Rc<dyn LayoutBox>>,
-    children: RefCell<Vec<Rc<LayoutNode>>>,
     context: RefCell<ContextDecision>,
     children_are_inline: RefCell<bool>,
-    anchestor: Option<Weak<LayoutNode>>
+
+    tree_data: TreeData<LayoutNode>,
+}
+
+impl Tree for LayoutNode {
+    fn get_data(&self) -> &TreeData<Self> {
+        &self.tree_data
+    }
 }
 
 impl LayoutNode {
-    pub fn new(element: Rc<dyn DomElement>, anchestor: Option<Weak<LayoutNode>>) -> Rc<LayoutNode> {
+    pub fn new(element: Rc<dyn DomElement>) -> Rc<LayoutNode> {
         let node = Rc::new(Self {
             element: Some(element.clone().get_layout_box()),
-            children: RefCell::new(Vec::new()),
             context: RefCell::new(ContextDecision::None),
             children_are_inline: RefCell::new(false),
-            anchestor
+            tree_data: TreeData::new()
         });
 
         element.get_dom_children().map(|children| {
             for child in children.borrow().iter() {
-                node.clone().insert_node_into_inline_or_block_ancestor(LayoutNode::new(child.clone(), Some(Rc::downgrade(&node))));
+                node.clone().insert_node_into_inline_or_block_ancestor(LayoutNode::new(child.clone()));
             }
         });
 
@@ -171,7 +195,7 @@ impl Display for LayoutNode {
         writeln!(f, "{:width$}{}", "", self.element.as_ref().map(|element| element.get_name()).unwrap_or("Anon".to_string()))?;
 
         width += 4;
-        for child in self.children.borrow().iter() {
+        for child in self.tree_data.iter() {
             if *child.context.borrow() == ContextDecision::InlineContext {
                 writeln!(f, "{:width$}InlineContext", "",)?;
             }
@@ -215,15 +239,15 @@ impl LayoutNode {
         // if display.is_inline_outside() {
         if node.element.as_ref().unwrap().is_inline() {
             let insertion = self.clone().insertion_parent_for_inline_node();
-            insertion.children.borrow_mut().push(node.clone());
+            insertion.append_child(node.clone());
             insertion.children_are_inline.replace(true);
         } else {
             let insertion = self.clone().insertion_parent_for_block_node();
-            insertion.children.borrow_mut().push(node.clone());
+            insertion.append_child(node.clone());
             insertion.children_are_inline.replace(false);
         }
         if node.element.as_ref().unwrap().is_inline() {
-            *node.context.borrow_mut() = if let Some(last) = self.children.borrow().last() {
+            *node.context.borrow_mut() = if let Some(last) = self.last_child() {
                 if *last.context.borrow() != ContextDecision::InlineElement && *last.context.borrow() != ContextDecision::InlineContext {
                     ContextDecision::InlineContext
                 } else {
@@ -291,8 +315,7 @@ impl BlockBlockFormattingContext {
         let start_y = available_content_rect.position.y;
         let mut current_y = start_y;
 
-        let children_borrow = node.children.borrow();
-        for child in children_borrow.iter() {
+        for child in node.tree_data.iter() {
             let child_info = FormattingInfo {
                 containing_block: Rect::new_vec(Vec2::new(available_content_rect.position.x, current_y), available_content_rect.size)
             };
@@ -312,7 +335,7 @@ impl BlockBlockFormattingContext {
 
                 inline = None;
 
-                let child = self.run(child, &child_info).unwrap();
+                let child = self.run(child.as_ref(), &child_info).unwrap();
                 current_y += child.margin_box.size.y;
                 children.push(child);
             }
@@ -390,7 +413,7 @@ impl BlockFormattingContext for BlockBlockFormattingContext {
             return context.run(node, info);
         }
 
-        if !node.children.borrow().is_empty() {
+        if node.has_children() {
             return self.run_parent(node, info)
         }
 
@@ -404,14 +427,14 @@ impl BlockFormattingContext for BlockBlockFormattingContext {
 }
 
 
-pub struct InlineFormattingContext<'a> {
+pub struct InlineFormattingContext {
     /// All the lines
     pub lines: Vec<Rc<LineBox>>,
     /// inline-element, Vec of each child piece Vec<containing line, piece>
-    elements: Vec<(&'a LayoutNode, Vec<(Rc<LineBox>, Rc<dyn LayoutBox>)>)>,
+    elements: Vec<(Rc<LayoutNode>, Vec<(Rc<LineBox>, Rc<dyn LayoutBox>)>)>,
 }
 
-impl<'a> InlineFormattingContext<'a> {
+impl InlineFormattingContext {
     pub fn new() -> Self {
         Self {
             lines: vec![],
@@ -420,7 +443,7 @@ impl<'a> InlineFormattingContext<'a> {
     }
 }
 
-impl<'a> FormattingContext for  InlineFormattingContext<'a> {
+impl FormattingContext for  InlineFormattingContext {
     fn get_line(&mut self, context: &dyn FormattingContext, info: &FormattingInfo) -> (Rc<LineBox>, bool) {
         if self.lines.is_empty() {
             return self.get_new_line(context, info);
@@ -444,7 +467,7 @@ impl<'a> FormattingContext for  InlineFormattingContext<'a> {
     }
 }
 
-impl<'a> InlineFormattingContext<'a> {
+impl InlineFormattingContext {
     fn run(&self, context: &dyn FormattingContext, info: &FormattingInfo) -> (Vec<PainterTree>, i32) {
         // We are closing the InlineFormattingContext
 
@@ -528,12 +551,12 @@ impl<'a> InlineFormattingContext<'a> {
         (children, current_y - start_y)
     }
 
-    fn add_inline_parent(&mut self, node: &LayoutNode, context: &dyn FormattingContext, info: &FormattingInfo) {
+    fn add_inline_parent(&mut self, node: Rc<LayoutNode>, context: &dyn FormattingContext, info: &FormattingInfo) {
         todo!()
     }
     
-    fn add_inline(&mut self, node: &'a LayoutNode, context: &dyn FormattingContext, info: &FormattingInfo) {
-        if !node.children.borrow().is_empty() {
+    fn add_inline(&mut self, node: Rc<LayoutNode>, context: &dyn FormattingContext, info: &FormattingInfo) {
+        if node.has_children() {
             return self.add_inline_parent(node, context, info)
         }
 

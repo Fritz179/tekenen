@@ -88,7 +88,7 @@ impl super::Demo for FloatDemo {
         tekenen.background(colors::FRITZ_GRAY);
 
         // 2. Generate Layout Box Tree
-        let layout = LayoutNode::new(self.div.clone(), None);
+        let layout = LayoutNode::new(self.div.clone());
         
         if self.print_layout {
             println!("{layout}")

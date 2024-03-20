@@ -1,3 +1,6 @@
+use std::cell::{Ref, RefCell, RefMut};
+use std::rc::{Rc, Weak};
+
 use demo::Demo;
 use tekenen::platform::{Platform, PlatformTrait, IntervalDecision, Event, KeyDownEvent};
 
@@ -15,16 +18,14 @@ impl DynRustEmbed for Asset {
 }
 
 mod demo;
-
-// Demo ideas:
-//  1) Font rendering
-//  2) CSS style rendering
-//  3) Physics demo
-//  4) SubCanvas
+mod test;
 
 static mut DEBUG_MODE: bool = false;
 
+
 fn main() {
+    test::run();
+
     Platform::set_assets(Asset);
 
     let mut window = Box::new(Platform::new(800, 600).unwrap());
