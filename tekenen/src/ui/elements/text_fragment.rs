@@ -1,10 +1,10 @@
 
 
-use std::{cell::{Ref, RefCell}, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 
 use crate::{colors, math::{IndefRange, Vec2}, shapes::rect::Rect, ui::style::{FormattingInfo, Style}, Draw, Font, Tekenen};
 
-use super::{DomElement, FormattingContext, InlineFormattingContext, LayoutBox, LayoutNode, LineBox, PaintElement, PainterTree, Stylable};
+use super::{DomElement, FormattingContext, InlineFormattingContext, LayoutBox, LineBox, PaintElement, Stylable};
 
 #[derive(Debug)]
 pub struct TextFragment {

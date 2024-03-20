@@ -61,6 +61,12 @@ impl<T: Tree + Display> Display for TreeData<T> {
     }
 }
 
+impl<T: Tree> Default for TreeData<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T: Tree> TreeData<T> {
     pub fn new() -> Self {
         Self {
@@ -104,7 +110,7 @@ pub trait Tree: Sized {
 
         // Child cannot already have a parent
         assert!(child_data.is_orphan());
-        child_data.parent.replace(Rc::downgrade(&self));
+        child_data.parent.replace(Rc::downgrade(self));
 
         // last sibling new next sibling
         if let Some(last_sibling) = self_data.last_child.borrow().upgrade() {

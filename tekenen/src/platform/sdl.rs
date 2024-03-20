@@ -234,8 +234,8 @@ impl PlatformTrait for SDLPlatform {
         #[cfg(not(feature = "rust-embed"))]
         {
             let path = std::path::Path::new(path);
-            let img = image::io::Reader::open(path).map_err(|err| ImageLoadingError::IOError(err))?;
-            let img = img.decode().map_err(|err| ImageLoadingError::ImageError(err))?;
+            let img = image::io::Reader::open(path).map_err(ImageLoadingError::IOError)?;
+            let img = img.decode().map_err(ImageLoadingError::ImageError)?;
             Ok(image_to_tekenen(img))
         }
 

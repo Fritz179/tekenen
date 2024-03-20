@@ -1,13 +1,13 @@
 pub mod div;
-use std::{borrow::Borrow, cell::{Ref, RefCell}, fmt::{Debug, Display}, ops::Deref, rc::{Rc, Weak}};
+use std::{cell::{Ref, RefCell}, fmt::{Debug, Display}, rc::Rc};
 
 pub use div::Div;
 
 // pub mod slider;
 // pub use slider::Slider;
 
-pub mod textFragment;
-pub use textFragment::TextNode;
+pub mod text_fragment;
+pub use text_fragment::TextNode;
 
 pub mod p;
 pub use p::P;
@@ -15,7 +15,7 @@ pub use p::P;
 use crate::{math::{IndefRange, Vec2}, platform::Event, shapes::rect::Rect, Draw, Tekenen};
 
 
-use super::{style::{CSSDisplay, CSSDisplayInside, FormattingInfo, Style}, tree::{Tree, TreeData}};
+use super::{style::{CSSDisplay, FormattingInfo, Style}, tree::{Tree, TreeData}};
 
 pub trait Stylable: Debug {
     fn get_style(&self) -> &RefCell<Style>;
@@ -162,11 +162,11 @@ impl LayoutNode {
             tree_data: TreeData::new()
         });
 
-        element.get_dom_children().map(|children| {
+        if let Some(children) = element.get_dom_children() {
             for child in children.borrow().iter() {
                 node.clone().insert_node_into_inline_or_block_ancestor(LayoutNode::new(child.clone()));
             }
-        });
+        }
 
         node
     }
@@ -273,6 +273,12 @@ pub struct BlockBlockFormattingContext {
     
 }
 
+impl Default for BlockBlockFormattingContext {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl BlockBlockFormattingContext {
     pub fn new() -> Self {
         Self {
@@ -305,7 +311,7 @@ impl BlockBlockFormattingContext {
         }
 
         // Get inner size for children
-        let bounding = node.element.as_ref().unwrap().get_style().borrow().get_total_computed_boudning(&info);
+        let bounding = node.element.as_ref().unwrap().get_style().borrow().get_total_computed_boudning(info);
         let available_content_rect = available_size - bounding.clone();
 
         // Walk through all children
@@ -360,10 +366,10 @@ impl BlockBlockFormattingContext {
         let margin_box = Rect::new_vec(info.containing_block.position, Vec2::new(outer_width, outer_height));
         let content_box = margin_box - bounding;
 
-        let element = node.element.clone().unwrap().get_painter(content_box, &info);
+        let element = node.element.clone().unwrap().get_painter(content_box, info);
 
         Some(PainterTree {
-            margin_box: margin_box,
+            margin_box,
             border_box: content_box,
             padding_box: content_box,
             content_box,
@@ -376,22 +382,22 @@ impl BlockBlockFormattingContext {
     fn run_leaf(&self, node: &LayoutNode, element: Rc<dyn LayoutBox>, info: &FormattingInfo) -> PainterTree {
 
         // get CSS restrictions
-        let size_constraint = element.get_style().borrow().get_size_contraint(&info);
+        let size_constraint = element.get_style().borrow().get_size_contraint(info);
 
         // Get inner width
-        let boudning = element.get_style().borrow().get_total_computed_boudning(&info);
+        let boudning = element.get_style().borrow().get_total_computed_boudning(info);
         let outer_width = info.containing_block.size.x;
         let inner_width = outer_width - boudning.left - boudning.right;
 
         // Get inner height
-        let inner_height = element.get_height_from_width(inner_width, &info);
+        let inner_height = element.get_height_from_width(inner_width, info);
         
         // Get outer dimensions
         let outer_height = inner_height + boudning.top + boudning.bottom;
         let margin_box = Rect::new_vec(info.containing_block.position, Vec2::new(outer_width, outer_height));
         let content_box = margin_box - boudning;
 
-        let element = element.clone().get_painter(content_box, &info);
+        let element = element.clone().get_painter(content_box, info);
 
         dbg!(content_box);
 
@@ -434,6 +440,12 @@ pub struct InlineFormattingContext {
     elements: Vec<(Rc<LayoutNode>, Vec<(Rc<LineBox>, Rc<dyn LayoutBox>)>)>,
 }
 
+impl Default for InlineFormattingContext {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl InlineFormattingContext {
     pub fn new() -> Self {
         Self {
@@ -463,7 +475,7 @@ impl FormattingContext for  InlineFormattingContext {
 
         self.lines.push(line.clone());
 
-        return (line, true);
+        (line, true)
     }
 }
 
@@ -534,7 +546,7 @@ impl InlineFormattingContext {
                 Vec2::new(info.containing_block.size.x, max_y - min_y)
             );
 
-            let element = node.element.as_ref().unwrap().clone().get_painter(element_block, &info);
+            let element = node.element.as_ref().unwrap().clone().get_painter(element_block, info);
 
 
             PainterTree {

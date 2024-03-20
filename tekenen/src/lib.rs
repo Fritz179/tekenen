@@ -14,7 +14,7 @@ pub mod platform;
 /// - background(), rect(), draw_image()
 mod tekenen;
 
-use std::{borrow::Borrow, cell::{Ref, RefCell, RefMut}, rc::{Rc, Weak}};
+
 
 pub use tekenen::{Tekenen, colors, Pixel, Draw, OverflowBehavior, Font};
 

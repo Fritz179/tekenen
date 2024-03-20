@@ -1,4 +1,4 @@
-use std::{marker::PhantomData};
+use std::marker::PhantomData;
 
 use crate::{colors, math::{clamp, IndefRange, Vec2}, shapes::{rect::Rect, Sides}, Pixel};
 
