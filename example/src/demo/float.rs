@@ -1,9 +1,9 @@
 use std::rc::Rc;
 
 use tekenen::shapes::rect::Rect;
-use tekenen::ui::elements::{BlockBlockFormattingContext, BlockFormattingContext, Div, DomElement, LayoutNode, P};
+use tekenen::ui::elements::{BlockBlockFormattingContext, FormattingContext, Div, DomElement, LayoutNode, P};
 
-use tekenen::ui::style::FormattingInfo;
+use tekenen::ui::style::{CSSDisplayShorthand, FormattingInfo};
 use tekenen::{colors, Draw, Tekenen};
 use tekenen::platform::{PlatformTrait, IntervalDecision, Event, KeyDownEvent};
 
@@ -16,26 +16,7 @@ pub struct FloatDemo {
 
 impl FloatDemo {
     pub fn new() -> Self {
-        // let div = Div::new_vertical_flex(vec![Div::new_horizontal_flex(vec![
-        //     Div::new_horizontal_flex(vec![
-        //         P::new("hello"),
-        //         P::new("world"),
-        //     ]),
-        //     Div::new_vertical_flex(vec![
-        //         P::new("I"),
-        //         P::new_fn("Am", |el| { 
-        //             el.style.padding.set(50.into());
-        //             el.style.margin.set(50.into());
-        //             el.style.background_color.set(colors::CYAN);
-        //          }),
-        //         P::new("A"),
-        //         P::new_fn("Column", |el| el.style.background_color.set(colors::RED)),
-        //         P::new("!"),
-        //     ]),
-        // ]),
-        // P::new("Am I in the correct place? Also I am a very long text and I probably should wrap at some point")
-        // ]);
-
+        // Text
         let div = Div::new_fn(vec![
             P::new_fn("hello there, this text should wrap multiple times, how nice!", |p| {
                 p.style.borrow_mut().background_color.set(colors::RED);
@@ -50,6 +31,23 @@ impl FloatDemo {
             div.style.borrow_mut().background_color.set(colors::MAROON);
             div.style.borrow_mut().width.set(250.into());
         });
+
+        // Flex
+        // let div = Div::new_fn(vec![
+        //     P::new_fn("hello there, this text should wrap multiple times, how nice!", |p| {
+        //         p.style.borrow_mut().background_color.set(colors::RED);
+        //     }),
+        //     P::new_fn("world!", |p| {
+        //         p.style.borrow_mut().background_color.set(colors::GREEN);
+        //     }),
+        //     P::new("worldddddddddddddddddddd!"),
+        //     P::new("world!!!"),
+        //     P::new("world!"),
+        // ], |div| {
+        //     div.style.borrow_mut().background_color.set(colors::MAROON);
+        //     div.style.borrow_mut().display = CSSDisplayShorthand::Flex.into();
+        // });
+
 
         Self {
             tek: Tekenen::new(800, 600),
@@ -88,7 +86,7 @@ impl super::Demo for FloatDemo {
         tekenen.background(colors::FRITZ_GRAY);
 
         // 2. Generate Layout Box Tree
-        let layout = LayoutNode::new(self.div.clone());
+        let layout = LayoutNode::new(Some(self.div.clone()));
         
         if self.print_layout {
             println!("{layout}")

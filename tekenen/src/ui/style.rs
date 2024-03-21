@@ -1,7 +1,6 @@
 use std::marker::PhantomData;
 
-use crate::{colors, math::{clamp, IndefRange, Vec2}, shapes::{rect::Rect, Sides}, Pixel};
-
+use crate::{colors, math::{clamp, IndefRange, RangeTrait, Vec2}, shapes::{rect::Rect, Sides}, Pixel};
 
 #[derive(Debug, Clone)]
 pub struct FormattingInfo {
@@ -669,8 +668,10 @@ impl Default for CSSDisplay {
 impl CSSDisplay {
     pub fn is_block_outside(&self) -> bool { matches!(self, Self::InsideOutside(CSSDisplayOutside::Block, _)) }
     pub fn is_inline_outside(&self) -> bool { matches!(self, Self::InsideOutside(CSSDisplayOutside::Inline, _)) }
+    
     pub fn is_flex_inside(&self) -> bool { matches!(self, Self::InsideOutside(_, CSSDisplayInside::Flex)) }
-
+    pub fn is_grid_inside(&self) -> bool { matches!(self, Self::InsideOutside(_, CSSDisplayInside::Grid)) }
+    pub fn is_table_inside(&self) -> bool { matches!(self, Self::InsideOutside(_, CSSDisplayInside::Table)) }
     pub fn is_flow_inside(&self) -> bool { matches!(self, Self::InsideOutside(_, CSSDisplayInside::Flow)) }
 }
 
@@ -732,6 +733,41 @@ impl Default for CSSBackgroundColor {
     }
 }
 
+// https://developer.mozilla.org/en-US/docs/Web/CSS/float
+// https://www.w3.org/TR/css-page-floats-3/#float-property
+
+// Name:	float
+// Value:	block-start | block-end | inline-start | inline-end | snap-block | snap-inline | left | right | top | bottom | none
+// Initial:	none
+// Applies to:	all elements.
+// Inherited:	no
+// Percentages:	N/A
+// Media:	visual
+// Computed value:	as specified.
+// Animatable:	no
+
+#[derive(Debug, Clone, Default)]
+pub enum CSSFloat {
+    BlockStart,
+    BlockEnd,
+    InlineStart,
+    InlineEnd,
+    SnapBlock,
+    SnapInline,
+    Left,
+    Right,
+    Top,
+    Bottom,
+    #[default]
+    None
+}
+
+impl CSSFloat {
+    pub fn is_none(&self) -> bool { matches!(self, Self::None) }
+}
+
+// All the style properties
+
 #[derive(Debug, Clone, Default)]
 pub struct Style {
     pub margin: Sides<CSSMargin>,
@@ -745,7 +781,8 @@ pub struct Style {
     pub max_height: CSSSize<HeightOfContainingBlock>,
     pub display: CSSDisplay,
     pub flex_direction: CSSFlexDirection,
-    pub background_color: CSSBackgroundColor
+    pub background_color: CSSBackgroundColor,
+    pub float: CSSFloat,
 }
 
 impl Style {

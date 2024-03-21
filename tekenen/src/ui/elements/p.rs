@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use super::{DomElement, LayoutBox, PaintElement, Stylable, TextNode};
+use super::{DomElement, InlineFormattingContext, LayoutBox, PaintElement, Stylable, TextNode};
 use crate::{math::{IndefRange, Vec2}, platform::Event, shapes::rect::Rect, ui::style::{FormattingInfo, Style}, Draw, Tekenen};
 
 #[derive(Debug)]
@@ -89,7 +89,7 @@ impl LayoutBox for P {
         todo!()
     }
 
-    fn get_min_max_content(&self, context: FormattingInfo) -> Vec2<IndefRange> {
+    fn get_min_max_content(&self, context: &FormattingInfo) -> Vec2<IndefRange> {
         todo!()
     }
 
@@ -101,8 +101,7 @@ impl LayoutBox for P {
         false
     }
 
-    fn go_inline_yourself(&self, formatter: &mut super::InlineFormattingContext, context: &dyn super::FormattingContext, info: &FormattingInfo) 
-            -> Vec<(Rc<super::LineBox>, Rc<dyn LayoutBox>)> {
+    fn go_inline_yourself(&self, inline: &InlineFormattingContext, info: &FormattingInfo) -> Vec<(Rc<super::LineBox>, Rc<dyn LayoutBox>)> {
         todo!()
     }
 }

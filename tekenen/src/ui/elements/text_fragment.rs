@@ -44,7 +44,7 @@ impl LayoutBox for TextFragment {
         todo!()
     }
 
-    fn get_min_max_content(&self, context: FormattingInfo) -> Vec2<IndefRange> {
+    fn get_min_max_content(&self, context: &FormattingInfo) -> Vec2<IndefRange> {
         todo!()
     }
 
@@ -56,8 +56,7 @@ impl LayoutBox for TextFragment {
         todo!()
     }
 
-    fn go_inline_yourself(&self, formatter: &mut InlineFormattingContext, context: &dyn FormattingContext, info: &FormattingInfo) 
-            -> Vec<(Rc<LineBox>, Rc<dyn LayoutBox>)> {
+    fn go_inline_yourself(&self, inline: &InlineFormattingContext, info: &FormattingInfo) -> Vec<(Rc<LineBox>, Rc<dyn LayoutBox>)> {
         todo!()
     }
 
@@ -151,7 +150,7 @@ impl LayoutBox for TextNode {
         todo!()
     }
 
-    fn get_min_max_content(&self, context: FormattingInfo) -> Vec2<IndefRange> {
+    fn get_min_max_content(&self, context: &FormattingInfo) -> Vec2<IndefRange> {
         todo!()
     }
 
@@ -163,8 +162,8 @@ impl LayoutBox for TextNode {
         true
     }
 
-    fn go_inline_yourself(&self, formatter: &mut InlineFormattingContext, context: &dyn super::FormattingContext, info: &FormattingInfo) -> Vec<(Rc<LineBox>, Rc<dyn LayoutBox>)> {
-        let mut current_line = formatter.get_line(context, info).0;
+    fn go_inline_yourself(&self, inline: &InlineFormattingContext, info: &FormattingInfo) -> Vec<(Rc<LineBox>, Rc<dyn LayoutBox>)> {
+        let mut current_line = inline.get_line(info).0;
         let mut lines: Vec<(Rc<LineBox>, Rc<dyn LayoutBox>)> = Vec::new();
 
         let mut current_string = String::new();
@@ -180,7 +179,7 @@ impl LayoutBox for TextNode {
                 lines.push((Rc::clone(&current_line), Rc::clone(&fragment)));
 
                 // Reset
-                current_line = formatter.get_new_line(context, info).0;
+                current_line = inline.get_new_line(info).0;
                 current_string = String::new();
                 current_width = 0;
             }

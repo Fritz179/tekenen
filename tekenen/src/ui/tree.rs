@@ -84,13 +84,17 @@ impl<T: Tree> TreeData<T> {
             && self.previous_sibling.borrow().upgrade().is_none() 
     }
 
-    pub fn iter(&self) -> &TreeData<T> {
-        self
+    pub fn iter(&self) -> TreeIterator<T> {
+        TreeIterator(self.first_child.borrow().clone())
     }
 }
 
 pub trait Tree: Sized {
     fn get_data(&self) -> &TreeData<Self>;
+
+    fn get_parent(&self) -> Option<Rc<Self>> {
+        self.get_data().parent.borrow().upgrade()
+    }
 
     fn first_child(&self) -> Option<Rc<Self>> {
         self.get_data().first_child.borrow().clone()
