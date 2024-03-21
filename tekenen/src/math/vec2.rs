@@ -1,18 +1,11 @@
 use std::ops::{AddAssign, Add, SubAssign, Sub, Mul, MulAssign, Div, DivAssign};
 
+use super::Zero;
+
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
 pub struct Vec2<T = i32> {
     pub x: T,
     pub y: T
-}
-
-impl Vec2<i32> {
-    pub fn zero() -> Self {
-        Self {
-            x: 0,
-            y: 0
-        }
-    }
 }
 
 // Modify
@@ -31,6 +24,19 @@ impl<T> Vec2<T> {
 
     pub fn tuple(self) -> (T, T) {
         (self.x, self.y)
+    }
+}
+
+impl<T: Zero> Zero for Vec2<T> {
+    fn zero() -> Self {
+        Self {
+            x: T::zero(),
+            y: T::zero()
+        }
+    }
+
+    fn is_zero(&self) -> bool {
+        self.x.is_zero() && self.y.is_zero()
     }
 }
 

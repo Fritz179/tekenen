@@ -1,10 +1,9 @@
 use std::{iter::Sum, ops::{Add, AddAssign}};
 
-use super::Vec2;
+use super::{Vec2, Zero};
 
 // TODO: Add Add, Sub
-pub trait RangeTrait<OuterT, InnerT> 
-{
+pub trait RangeTrait<OuterT, InnerT> {
     fn new(min: InnerT, max: InnerT) -> Self;
     fn new_definite(value: InnerT) -> Self;
     fn new_min_priority(min: OuterT, max: OuterT) -> Self;
@@ -23,6 +22,19 @@ pub trait RangeTrait<OuterT, InnerT>
 pub struct Range<T: PartialOrd + Copy = i32> {
     min: T,
     max: T,
+}
+
+impl<T: Zero + PartialOrd + Copy> Zero for Range<T> {
+    fn zero() -> Self {
+        Self {
+            min: T::zero(),
+            max: T::zero()
+        }
+    }
+
+    fn is_zero(&self) -> bool {
+        self.min.is_zero() && self.max.is_zero()
+    }
 }
 
 impl<T: PartialOrd + Copy> RangeTrait<T, T> for Range<T> {
@@ -145,6 +157,25 @@ impl<T: PartialOrd + Copy> From<Range<T>> for IndefRange<T> {
 pub struct IndefRange<T: PartialOrd + Copy = i32> {
     min: Option<T>,
     max: Option<T>,
+}
+
+impl<T: Zero + PartialOrd + Copy> Zero for IndefRange<T> {
+    fn zero() -> Self {
+        Self {
+            min: Some(T::zero()),
+            max: Some(T::zero())
+        }
+    }
+
+    fn is_zero(&self) -> bool {
+        if let Some(min) = self.min {
+            if let Some(max) = self.max {
+                return min.is_zero() && max.is_zero()
+            }
+        }
+
+        false
+    }
 }
 
 impl<T: PartialOrd + Copy> IndefRange<T> {
