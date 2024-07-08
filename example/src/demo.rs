@@ -3,7 +3,6 @@ use tekenen::platform::{Event, Platform, IntervalDecision};
 pub mod image;
 // pub mod text;
 pub mod canvas;
-pub mod float;
 
 pub trait Demo {
     fn update(&mut self, event: &Event) -> IntervalDecision;

@@ -18,14 +18,11 @@ impl DynRustEmbed for Asset {
 }
 
 mod demo;
-mod test;
 
 static mut DEBUG_MODE: bool = false;
 
 
 fn main() {
-    test::run();
-
     Platform::set_assets(Asset);
 
     let mut window = Box::new(Platform::new(800, 600).unwrap());
@@ -33,8 +30,6 @@ fn main() {
     let mut demos: Vec<Box<dyn Demo>> = vec![
         Box::new(demo::image::ImageDemo::new()),
         Box::new(demo::canvas::CanvasDemo::new()),
-        Box::new(demo::float::FloatDemo::new()),
-        // Box::new(demo::text::TextDemo::new()),
     ];
 
     let mut current_demo = 0;

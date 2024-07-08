@@ -1,5 +1,6 @@
 use sdl2;
 
+#[cfg(feature = "rust-embed")]
 use std::cell::RefCell;
 use std::time::{Duration, Instant};
 

@@ -1,5 +1,5 @@
 pub mod div;
-use std::{borrow::Borrow, cell::{Ref, RefCell}, fmt::{Debug, Display}, ops::Deref, rc::Rc};
+use std::{cell::{Ref, RefCell}, fmt::{Debug, Display}, rc::Rc};
 
 pub use div::Div;
 
@@ -12,7 +12,7 @@ pub use text_fragment::TextNode;
 pub mod p;
 pub use p::P;
 
-use crate::{math::{IndefRange, Vec2}, platform::Event, shapes::rect::Rect, ui::style::CSSFlexDirection, Draw, Tekenen};
+use crate::{math::{IndefRange, Vec2}, platform::Event, shapes::rect::Rect, Draw, Tekenen};
 
 
 use super::{style::{CSSDisplay, FormattingInfo, Style}, tree::{Tree, TreeData}};
@@ -149,7 +149,7 @@ impl LayoutNode {
     // https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_display/Block_formatting_context
 
     fn creates_block_formatting_context(&self) -> bool {
-        let style = self.element.as_ref().borrow().unwrap().get_style().borrow();
+        let style = self.element.as_ref().unwrap().get_style().borrow();
 
         // TODO: The root element of the document (<html>).
     

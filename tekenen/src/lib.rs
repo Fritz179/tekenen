@@ -19,7 +19,7 @@ mod tekenen;
 pub use tekenen::{Tekenen, colors, Pixel, Draw, OverflowBehavior, Font};
 
 /// UI, Describe layout in a 'css' manner
-pub mod ui;
+pub mod html;
 
 /// Rust-embed
 /// - emded files in executable

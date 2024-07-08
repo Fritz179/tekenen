@@ -2,7 +2,7 @@
 
 use std::{cell::RefCell, rc::Rc};
 
-use crate::{colors, math::{IndefRange, Vec2}, shapes::rect::Rect, ui::style::{FormattingInfo, Style}, Draw, Font, Tekenen};
+use crate::{colors, math::{IndefRange, Vec2}, shapes::rect::Rect, html::style::{FormattingInfo, Style}, Draw, Font, Tekenen};
 
 use super::{DomElement, FormattingContext, InlineFormattingContext, LayoutBox, LineBox, PaintElement, Stylable};
 

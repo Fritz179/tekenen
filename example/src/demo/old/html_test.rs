@@ -1,9 +1,9 @@
 use std::rc::Rc;
 
 use tekenen::shapes::rect::Rect;
-use tekenen::ui::elements::{BlockBlockFormattingContext, FormattingContext, Div, DomElement, LayoutNode, P};
+use tekenen::html::elements::{BlockBlockFormattingContext, FormattingContext, Div, DomElement, LayoutNode, P};
 
-use tekenen::ui::style::{CSSDisplayShorthand, FormattingInfo};
+use tekenen::html::style::FormattingInfo;
 use tekenen::{colors, Draw, Tekenen};
 use tekenen::platform::{PlatformTrait, IntervalDecision, Event, KeyDownEvent};
 
