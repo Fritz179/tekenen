@@ -1,7 +1,7 @@
 use std::{cell::RefCell, rc::Rc};
 
 use super::{DomElement, InlineFormattingContext, LayoutBox, PaintElement, Stylable, TextNode};
-use crate::{math::{IndefRange, Vec2}, platform::Event, shapes::rect::Rect, ui::style::{FormattingInfo, Style}, Draw, Tekenen};
+use crate::{math::{IndefRange, Vec2, Zero}, platform::Event, shapes::rect::Rect, ui::style::{FormattingInfo, Style}, Draw, Tekenen};
 
 #[derive(Debug)]
 pub struct P {

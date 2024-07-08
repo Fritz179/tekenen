@@ -1,6 +1,6 @@
-use std::{cell::{RefCell}, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 
-use crate::{math::{IndefRange, Vec2}, shapes::rect::Rect, ui::style::{CSSDisplayShorthand, FormattingInfo}, Draw, Tekenen};
+use crate::{math::{IndefRange, Vec2, Zero}, shapes::rect::Rect, ui::style::{CSSDisplayShorthand, FormattingInfo}, Draw, Tekenen};
 
 use super::{BlockLayoutBox, DomElement, InlineFormattingContext, LayoutBox, PaintElement, Stylable, Style};
 
