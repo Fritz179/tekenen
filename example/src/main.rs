@@ -1,6 +1,3 @@
-
-
-
 use demo::Demo;
 use tekenen::platform::{Platform, PlatformTrait, IntervalDecision, Event, KeyDownEvent};
 

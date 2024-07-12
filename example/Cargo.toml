@@ -4,10 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-tekenen = { path = "../tekenen",  features = ["image", "rust-embed"] }
+tekenen = { path = "../tekenen", features = ["image", "rust-embed", "native"] }
 
 [build-dependencies]
-tekenen = { path = "../tekenen", features = ["preloader"] }
+tekenen = { path = "../tekenen", features = ["preloader", "native"] }
 
 [profile.release]
 debug = true

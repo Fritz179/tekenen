@@ -13,11 +13,20 @@ sdl2 = { version ="0.35", optional = true }
 image = { version = "0.24.6", optional = true }
 rust-embed = { version = "8.0.0", optional = true }
 
+
 [features]
-default = ["sdl"]
 
-sdl = ["sdl2"]
+# binary creates window with sdl2
+native = ["dep:sdl2"]
+
+# output html with js + wasm
+wasm = []
+
+# Also serve the wasm file with a simple http server
+server = ["wasm"]
+
+# Run directy in the console, this disables some functionalities
+console = []
+
+# Preparse images and generate assets at compile time
 preloader = ["image"]
-
-# TODO: add wasm support
-# web = ["rocket"] 
