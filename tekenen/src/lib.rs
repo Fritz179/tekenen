@@ -21,17 +21,6 @@ pub use tekenen::{Tekenen, colors, Pixel, Draw, OverflowBehavior, Font};
 /// UI, Describe layout in a 'css' manner
 pub mod html;
 
-/// Rust-embed
-/// - emded files in executable
-#[cfg(feature = "rust-embed")]
-pub mod rust_embed {
-    pub use rust_embed::*;
-
-    pub trait DynRustEmbed {
-        fn dyn_get(&self, file_path: &str) -> Option<EmbeddedFile>;
-    }
-}
-
 pub mod shapes;
 
 pub mod math;

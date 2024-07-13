@@ -1,12 +1,16 @@
-use std::process::Command;
+use tekenen::{colors, platform::{Event, IntervalDecision, KeyDownEvent, Platform, PlatformTrait}, Draw, Tekenen};
 
-use demo::Demo;
-use tekenen::platform::{Platform, PlatformTrait, IntervalDecision, Event, KeyDownEvent};
+use wasm_bindgen::prelude::*;
 
 mod demo;
-use rouille::Response;
+use demo::Demo;
 
-fn main() {
+#[wasm_bindgen]
+pub fn wasm_start() {
+    main()
+}
+
+pub fn main() {
     let mut window = Box::new(Platform::new(800, 600).unwrap());
 
     let mut demos: Vec<Box<dyn Demo>> = vec![
@@ -43,36 +47,5 @@ fn main() {
         demos[current_demo].draw(&mut window);
 
         IntervalDecision::Repeat
-    }, 60);
-
-    Command::new("wasm-pack")
-        // .args(["build", "../../wasm", "--target", "web"])
-        .args([
-            "build",
-            "./example",
-            "--target",
-            "web",
-            "--out-dir",
-            "./home/wasm",
-        ])
-        // .args(["build", "../wasm", "--target", "web", "--out-dir", ])
-        .status()
-        .expect("failed to build wasm");
-
-    #[cfg(not(target_family = "wasm"))]
-    println!("Visit `http://localhost:8000/index.html`");
-
-    #[cfg(not(target_family = "wasm"))]
-    rouille::start_server("localhost:8000", move |request| {
-        let response = rouille::match_assets(request, "./example/home");
-
-        if response.is_success() {
-            return response;
-        }
-
-        Response::html(
-            "404 error: The requested page could not be found",
-        )
-        .with_status_code(404)
-    });
+    }, 60)
 }

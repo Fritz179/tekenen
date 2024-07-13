@@ -1,5 +1,15 @@
+#[cfg(feature = "native")]
 mod sdl;
+#[cfg(feature = "native")]
 pub use sdl::SDLPlatform as Platform;
+
+#[cfg(feature = "wasm")]
+mod wasm;
+#[cfg(feature = "wasm")]
+pub use wasm::WASMPlatform as Platform;
+
+#[cfg(feature = "image")]
+use image::GenericImageView;
 
 use crate::{Tekenen, tekenen};
 
@@ -83,6 +93,9 @@ pub enum ImageLoadingError {
     MissingAssetError
 }
 
+// Fritz Preloaded Image Asset
+const FPIA_MAGIC: [u8; 4] = [b'F', b'P', b'I', b'A'];
+
 pub trait PlatformTrait {
     fn new(width: u32, height: u32) -> Result<Self, PlatformError>
     where
@@ -92,14 +105,50 @@ pub trait PlatformTrait {
     fn set_interval(callback: impl FnMut() -> IntervalDecision + 'static, fps: u32);
     fn get_remaining_time() -> Duration;
 
-    #[cfg(feature = "rust-embed")]
-    fn set_assets<Asset: crate::rust_embed::DynRustEmbed + 'static>(asset: Asset);
-
     #[cfg(feature = "image")]
-    fn load_image(path: &str) -> Result<Tekenen, ImageLoadingError>;
+    fn parse_image(data: &[u8]) -> Result<Tekenen, ImageLoadingError> {
+        fn image_to_tekenen(img: image::DynamicImage) -> Tekenen {
+            let mut pixels = vec![];
 
-    #[cfg(feature = "image")]
-    fn save_image(path: &str, image: &Tekenen) -> Result<(), image::ImageError> ;
+            for y in 0..img.height() {
+                for x in 0..img.width() {
+                    let color = img.get_pixel(x, y);
+                    pixels.push(color[0]);
+                    pixels.push(color[1]);
+                    pixels.push(color[2]);
+                    pixels.push(color[3]);
+                }
+            };
+        
+            let width = img.width() as usize;
+            let height = img.height() as usize;
+        
+            Tekenen::from_pixels(width, height, pixels)
+        }
+
+        if data[0..4] == FPIA_MAGIC {
+            let data = data;
+            let (_magic, data) = data.split_at(4);
+
+            assert!(data.len() >= 8);
+
+            let (width, data) = data.split_at(4);
+            let (height, data) = data.split_at(4);
+
+            let width = u32::from_be_bytes(width.to_owned().try_into().unwrap()) as usize;
+            let height = u32::from_be_bytes(height.to_owned().try_into().unwrap()) as usize;
+
+            assert_eq!(data.len(), width * height * 4);
+
+            Ok(Tekenen::from_pixels(width, height, data.to_owned()))
+        } else {
+            let img = image::load_from_memory(&data).map_err(ImageLoadingError::ImageError)?;
+            Ok(image_to_tekenen(img))
+        }
+    }
+
+    // #[cfg(feature = "image")]
+    // fn save_image(path: &str, image: &Tekenen) -> Result<(), image::ImageError>;
 }
 
 use std::{error::Error, fmt, time::Duration};

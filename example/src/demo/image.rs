@@ -15,8 +15,8 @@ impl ImageDemo {
         Self {
             tek: Tekenen::new(800, 600),
             // slider: slider::Slider::new(300, 500, 50),
-            img8_png: Platform::load_image("8.png").unwrap(),
-            img8_fpia: Platform::load_image("8.fpia").unwrap(),
+            img8_png: Platform::parse_image(include_bytes!("../../src/img/8.png")).unwrap(),
+            img8_fpia: Platform::parse_image(include_bytes!("../../src/img/8.fpia")).unwrap(),
             tick: 0,
         }
     }

@@ -5,6 +5,7 @@ members = [
     "example",
     "tekenen",
     "preloader",
+    # "wasm"
 ]
 
 [profile.release]

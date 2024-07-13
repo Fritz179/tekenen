@@ -1,7 +1,5 @@
 use sdl2;
 
-#[cfg(feature = "rust-embed")]
-use std::cell::RefCell;
 use std::time::{Duration, Instant};
 
 use sdl2::rect::Rect;
@@ -11,25 +9,8 @@ use sdl2::EventPump;
 
 use sdl2::keyboard;
 
-use crate::Tekenen;
-
 use crate::tekenen::Pixels;
 use super::{PlatformTrait, PlatformError, Event, KeyDownEvent, Keycode, Keymod, IntervalDecision, time_manager::{TimeAction, TimeManager}};
-#[cfg(feature = "image")]
-use super::ImageLoadingError;
-#[cfg(feature = "image")]
-use image::GenericImageView;
-
-#[cfg(feature = "rust-embed")]
-use crate::rust_embed::DynRustEmbed;
-
-// Fritz Preloaded Image Asset
-const FPIA_MAGIC: [u8; 4] = [b'F', b'P', b'I', b'A'];
-
-thread_local! {
-    #[cfg(feature = "rust-embed")]
-    static EMBEDDED_ASSETS: RefCell<Option<Box<dyn DynRustEmbed>>> = RefCell::new(None);
-}
 
 pub struct SDLPlatform {
     canvas: Canvas<Window>,
@@ -202,93 +183,18 @@ impl PlatformTrait for SDLPlatform {
         TimeManager::get_remaining_time()
     }
 
-    #[cfg(feature = "rust-embed")]
-    fn set_assets<Asset: DynRustEmbed + 'static>(asset: Asset) {
-        EMBEDDED_ASSETS.with(|e| {
-            *e.borrow_mut() = Some(Box::new(asset))
-        })
-    }
+    // #[cfg(feature = "image")]
+    // fn save_image(path: &str, image: &Tekenen) -> Result<(), image::ImageError> {
 
-    #[cfg(feature = "image")]
-    fn load_image(path: &str) -> Result<Tekenen, ImageLoadingError> {
-        println!("Loading image: {path}");
-
-        fn image_to_tekenen(img: image::DynamicImage) -> Tekenen {
-            let mut pixels = vec![];
-
-            for y in 0..img.height() {
-                for x in 0..img.width() {
-                    let color = img.get_pixel(x, y);
-                    pixels.push(color[0]);
-                    pixels.push(color[1]);
-                    pixels.push(color[2]);
-                    pixels.push(color[3]);
-                }
-            };
-        
-            let width = img.width() as usize;
-            let height = img.height() as usize;
-        
-            Tekenen::from_pixels(width, height, pixels)
-        }
-
-        #[cfg(not(feature = "rust-embed"))]
-        {
-            let path = std::path::Path::new(path);
-            let img = image::io::Reader::open(path).map_err(ImageLoadingError::IOError)?;
-            let img = img.decode().map_err(ImageLoadingError::ImageError)?;
-            Ok(image_to_tekenen(img))
-        }
-
-        #[cfg(feature = "rust-embed")]
-        EMBEDDED_ASSETS.with(|e| -> Result<Tekenen, ImageLoadingError> {
-            match e.borrow().as_ref() {
-                None => {
-                    let path = std::path::Path::new(path);
-                    let img = image::io::Reader::open(path).map_err(ImageLoadingError::IOError)?;
-                    let img = img.decode().map_err(ImageLoadingError::ImageError)?;
-                    Ok(image_to_tekenen(img))
-                },
-                Some(asset) => {
-                    let source = asset.dyn_get(path).ok_or_else(|| ImageLoadingError::MissingAssetError)?;
-    
-                    
-                    if source.data[0..4] == FPIA_MAGIC {
-                        let data = source.data;
-                        let (_magic, data) = data.split_at(4);
-    
-                        assert!(data.len() >= 8);
-    
-                        let (width, data) = data.split_at(4);
-                        let (height, data) = data.split_at(4);
-    
-                        let width = u32::from_be_bytes(width.to_owned().try_into().unwrap()) as usize;
-                        let height = u32::from_be_bytes(height.to_owned().try_into().unwrap()) as usize;
-    
-                        assert_eq!(data.len(), width * height * 4);
-    
-                        Ok(Tekenen::from_pixels(width, height, data.to_owned()))
-                    } else {
-                        let img = image::load_from_memory(&source.data).map_err(ImageLoadingError::ImageError)?;
-                        Ok(image_to_tekenen(img))
-                    }
-                }
-            }
-        })
-    }
-
-    #[cfg(feature = "image")]
-    fn save_image(path: &str, image: &Tekenen) -> Result<(), image::ImageError> {
-
-        let buffer: &[u8] = image.get_pixels();   
+    //     let buffer: &[u8] = image.get_pixels();   
 
     
-        let path = std::path::Path::new(&path);
+    //     let path = std::path::Path::new(&path);
 
-        image::save_buffer(path, buffer, image.width() as u32, image.height() as u32, image::ColorType::Rgba8)?;
+    //     image::save_buffer(path, buffer, image.width() as u32, image.height() as u32, image::ColorType::Rgba8)?;
 
-        println!("Saved image: {:?}", path);
+    //     println!("Saved image: {:?}", path);
 
-        Ok(())
-    }
+    //     Ok(())
+    // }
 }
