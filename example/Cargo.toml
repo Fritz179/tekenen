@@ -5,14 +5,10 @@ edition = "2021"
 
 [dependencies]
 tekenen = { path = "../tekenen", features = ["image", "server", "native"] }
-rouille = "3.6.2"
 wasm-bindgen = "0.2.73"
 
 [build-dependencies]
-tekenen = { path = "../tekenen", features = ["preloader"] }
-
-[profile.release]
-debug = true
+tekenen = { path = "../tekenen", features = ["preloader", "wasm"] }
 
 [lib]
 crate-type = ["cdylib", "rlib"]

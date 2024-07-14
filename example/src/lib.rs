@@ -1,4 +1,5 @@
 
+use tekenen::platform::PlatformTrait;
 use wasm_bindgen::prelude::*;
 
 mod demo;
@@ -9,5 +10,6 @@ pub fn wasm_start() {
 }
 
 fn main() {
+    tekenen::platform::Platform::log(77);
     demo::main();
 }
