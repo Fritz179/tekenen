@@ -30,13 +30,16 @@
                 const clamped = new Uint8ClampedArray(pixels)
                 const data = new ImageData(clamped, canvas.width)
                 ctx.putImageData(data, 0, 0)
-                // console.log(clamped)
             }
 
             window.js_set_interval = fps => {
                 window.setInterval(() => {
                     wasm_run_callback()
                 }, 1000 / fps)
+            }
+
+            window.js_log = (msg) => {
+                console.log(msg);
             }
 
             window.addEventListener('keydown', e => {

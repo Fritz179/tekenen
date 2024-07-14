@@ -46,6 +46,10 @@ impl PlatformTrait for SDLPlatform {
         Ok(io_manger)
     }
 
+    fn log(value: u32) {
+        println!("{}", value);
+    }
+
     fn display_pixels(&mut self, pixels: &Pixels) {
         let (width, height) = self.canvas.output_size().expect("Cannot get canvas size");
 

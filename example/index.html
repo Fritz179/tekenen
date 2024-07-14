@@ -39,6 +39,10 @@
                 }, 1000 / fps)
             }
 
+            window.js_log = (msg) => {
+                console.log(msg);
+            }
+
             window.addEventListener('keydown', e => {
                 if (e.key.length == 1) {
                     wasm_key_down(e.key)

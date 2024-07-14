@@ -1,11 +1,16 @@
-#[cfg(feature = "native")]
+#[cfg(all(feature = "native", not(target_family = "wasm")))]
 mod sdl;
-#[cfg(feature = "native")]
+#[cfg(all(feature = "native", not(target_family = "wasm")))]
 pub use sdl::SDLPlatform as Platform;
 
-#[cfg(feature = "wasm")]
+#[cfg(all(not(feature = "native"), not(target_family = "wasm")))]
+mod mock;
+#[cfg(all(not(feature = "native"), not(target_family = "wasm")))]
+pub use mock::MockPlatform as Platform;
+
+#[cfg(target_family = "wasm")]
 mod wasm;
-#[cfg(feature = "wasm")]
+#[cfg(target_family = "wasm")]
 pub use wasm::WASMPlatform as Platform;
 
 #[cfg(feature = "image")]
@@ -97,9 +102,10 @@ pub enum ImageLoadingError {
 const FPIA_MAGIC: [u8; 4] = [b'F', b'P', b'I', b'A'];
 
 pub trait PlatformTrait {
-    fn new(width: u32, height: u32) -> Result<Self, PlatformError>
-    where
-        Self: Sized;
+    fn new(width: u32, height: u32) -> Result<Self, PlatformError> where Self: Sized;
+
+    fn log(value: u32);
+    
     fn display_pixels(&mut self, pixels: &tekenen::Pixels);
     fn read_events(&mut self) -> Option<Event>;
     fn set_interval(callback: impl FnMut() -> IntervalDecision + 'static, fps: u32);
@@ -127,7 +133,6 @@ pub trait PlatformTrait {
         }
 
         if data[0..4] == FPIA_MAGIC {
-            let data = data;
             let (_magic, data) = data.split_at(4);
 
             assert!(data.len() >= 8);

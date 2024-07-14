@@ -8,14 +8,18 @@ license = "MIT"
 repository = "https://github.com/Fritz179/tekenen"
 documentation = "https://docs.rs/tekenen"
 
+# General dependecies
 [dependencies]
 image = { version = "0.24.6", optional = true }
 
-# For native features
-sdl2 = { version ="0.35", optional = true }
-
-# For wasm features
+# WASM target
+[target.'cfg(target_family = "wasm")'.dependencies]
 wasm-bindgen = { version = "0.2.73", optional = true }
+
+# Native target
+[target.'cfg(not(target_family = "wasm"))'.dependencies]
+sdl2 = { version ="0.35", optional = true}
+
 
 [features]
 
@@ -23,10 +27,11 @@ wasm-bindgen = { version = "0.2.73", optional = true }
 native = ["sdl2"]
 
 # output html with js + wasm
+# wasm-pack build ./example/ --target web --out-dir ./home/wasm
 wasm = ["wasm-bindgen"]
 
-# Also serve the wasm file with a simple http server
-server = ["wasm"]
+# Serve the wasm file with a simple http server, this also compiles the wasm file
+server = ["wasm-bindgen"]
 
 # Run directy in the console, this disables some functionalities
 console = []

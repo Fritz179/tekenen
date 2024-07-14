@@ -65,6 +65,10 @@ impl PlatformTrait for WASMPlatform {
     fn get_remaining_time() -> std::time::Duration {
         todo!()
     }
+
+    fn log(value: u32) {
+        js_log(value)
+    }
 }
 
 #[wasm_bindgen]
@@ -93,6 +97,9 @@ pub fn wasm_run_callback() {
 
 #[wasm_bindgen]
 extern "C" {
+    #[wasm_bindgen]
+    fn js_log(value: u32);
+
     #[wasm_bindgen]
     fn js_set_size(width: u32, height: u32);
 
