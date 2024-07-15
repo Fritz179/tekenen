@@ -1,7 +1,7 @@
-mod demo;
+use example;
 
 fn main() {
-    demo::main();
+    example::main();
 
     tekenen::server();
 }

@@ -9,7 +9,9 @@ pub fn wasm_start() {
     main()
 }
 
-fn main() {
+pub fn main() {
+    println!();
+
     tekenen::platform::Platform::log(77);
     demo::main();
 }
