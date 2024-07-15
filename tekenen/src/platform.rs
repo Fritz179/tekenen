@@ -16,7 +16,7 @@ pub use wasm::WASMPlatform as Platform;
 #[cfg(feature = "image")]
 use image::GenericImageView;
 
-use crate::{Tekenen, tekenen};
+use crate::{tekenen};
 
 #[derive(Debug)]
 pub enum Keycode {
@@ -106,30 +106,30 @@ pub trait PlatformTrait {
 
     fn log(value: u32);
     
-    fn display_pixels(&mut self, pixels: &tekenen::Pixels);
+    fn display_surface(&mut self, surface: Ref<tekenen::Surface>);
     fn read_events(&mut self) -> Option<Event>;
     fn set_interval(callback: impl FnMut() -> IntervalDecision + 'static, fps: u32);
     fn get_remaining_time() -> Duration;
 
     #[cfg(feature = "image")]
-    fn parse_image(data: &[u8]) -> Result<Tekenen, ImageLoadingError> {
-        fn image_to_tekenen(img: image::DynamicImage) -> Tekenen {
+    fn parse_image(data: &[u8]) -> Result<tekenen::Surface, ImageLoadingError> {
+        use crate::tekenen::Surface;
+
+
+        fn image_to_tekenen(img: image::DynamicImage) -> tekenen::Surface {
             let mut pixels = vec![];
 
             for y in 0..img.height() {
                 for x in 0..img.width() {
                     let color = img.get_pixel(x, y);
-                    pixels.push(color[0]);
-                    pixels.push(color[1]);
-                    pixels.push(color[2]);
-                    pixels.push(color[3]);
+                    pixels.push([color[0], color[1], color[2], color[3]]);
                 }
             };
         
             let width = img.width() as usize;
             let height = img.height() as usize;
         
-            Tekenen::from_pixels(width, height, pixels)
+            Surface::from_pixels(width, height, pixels)
         }
 
         if data[0..4] == FPIA_MAGIC {
@@ -143,9 +143,12 @@ pub trait PlatformTrait {
             let width = u32::from_be_bytes(width.to_owned().try_into().unwrap()) as usize;
             let height = u32::from_be_bytes(height.to_owned().try_into().unwrap()) as usize;
 
-            assert_eq!(data.len(), width * height * 4);
+            unsafe {
+                assert_eq!(data.len(), width * height * 4);
 
-            Ok(Tekenen::from_pixels(width, height, data.to_owned()))
+                let data: &[[u8; 4]] = std::slice::from_raw_parts(data.as_ptr() as *const [u8; 4], data.len() / 4);
+                return Ok(Surface::from_pixels(width, height, data.to_owned()));
+            }
         } else {
             let img = image::load_from_memory(&data).map_err(ImageLoadingError::ImageError)?;
             Ok(image_to_tekenen(img))
@@ -156,7 +159,7 @@ pub trait PlatformTrait {
     // fn save_image(path: &str, image: &Tekenen) -> Result<(), image::ImageError>;
 }
 
-use std::{error::Error, fmt, time::Duration};
+use std::{cell::Ref, error::Error, fmt, time::Duration};
 
 #[derive(Debug)]
 pub enum PlatformError {

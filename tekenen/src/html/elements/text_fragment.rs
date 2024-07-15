@@ -2,7 +2,7 @@
 
 use std::{cell::RefCell, rc::Rc};
 
-use crate::{colors, math::{IndefRange, Vec2}, shapes::rect::Rect, html::style::{FormattingInfo, Style}, Draw, Font, Tekenen};
+use crate::{colors, math::{IndefRange, Vec2}, shapes::rect::Rect, html::style::{FormattingInfo, Style}, DrawableSurface, Font, SurfaceView};
 
 use super::{DomElement, FormattingContext, InlineFormattingContext, LayoutBox, LineBox, PaintElement, Stylable};
 
@@ -63,7 +63,7 @@ impl LayoutBox for TextFragment {
 }
 
 impl PaintElement for TextFragment {
-    fn draw(&self, target: &mut Tekenen, context: &FormattingInfo, space: Vec2) {
+    fn draw(&self, target: &mut SurfaceView, context: &FormattingInfo, space: Vec2) {
         target.text(&self.text.borrow(), 0, 0, Font::new(16, colors::WHITE));
     }
 }
@@ -201,7 +201,7 @@ impl LayoutBox for TextNode {
 }
 
 impl PaintElement for TextNode {
-    fn draw(&self, target: &mut Tekenen, context: &FormattingInfo, space: Vec2) {
+    fn draw(&self, target: &mut SurfaceView, context: &FormattingInfo, space: Vec2) {
         // for (i, line) in self.split_text(space.x, context).iter().enumerate() {
         //     target.text(&line, 0, i as i32 * 16, Font::new(16, colors::MAGENTA));
         // }

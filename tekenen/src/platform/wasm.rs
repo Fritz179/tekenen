@@ -1,7 +1,8 @@
-use std::{cell::RefCell, collections::VecDeque};
+use std::{cell::{Ref, RefCell}, collections::VecDeque};
 
 
-use crate::tekenen::Pixels;
+use crate::Surface;
+
 use super::{PlatformTrait, PlatformError, Event, KeyDownEvent, Keycode, Keymod, IntervalDecision, time_manager::{TimeAction, TimeManager}};
 
 use wasm_bindgen::prelude::*;
@@ -24,9 +25,9 @@ impl PlatformTrait for WASMPlatform {
         Ok(WASMPlatform {})
     }
 
-    fn display_pixels(&mut self, pixels: &Pixels) {
+    fn display_surface(&mut self, surface: Ref<Surface>) {
         // TODO: Use shared array buffers!!
-        js_display_pixels(pixels.clone().into_boxed_slice())
+        js_display_pixels(surface.pixels.clone().flatten().to_vec().into_boxed_slice())
     }
 
     fn read_events(&mut self) -> Option<Event> {

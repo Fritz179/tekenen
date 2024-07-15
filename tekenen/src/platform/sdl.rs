@@ -1,5 +1,7 @@
 use sdl2;
 
+use std::borrow::Borrow;
+use std::cell::Ref;
 use std::time::{Duration, Instant};
 
 use sdl2::rect::Rect;
@@ -9,7 +11,8 @@ use sdl2::EventPump;
 
 use sdl2::keyboard;
 
-use crate::tekenen::Pixels;
+use crate::Surface;
+
 use super::{PlatformTrait, PlatformError, Event, KeyDownEvent, Keycode, Keymod, IntervalDecision, time_manager::{TimeAction, TimeManager}};
 
 pub struct SDLPlatform {
@@ -50,14 +53,16 @@ impl PlatformTrait for SDLPlatform {
         println!("{}", value);
     }
 
-    fn display_pixels(&mut self, pixels: &Pixels) {
+    fn display_surface(&mut self, surface: Ref<Surface>) {
         let (width, height) = self.canvas.output_size().expect("Cannot get canvas size");
 
+        let pixels = surface;
+
         assert!(
-            width * height * 4 == pixels.len() as u32,
-            "Cannot render pixels!, Expected: {}, found: {}",
-            width * height * 4,
-            pixels.len()
+            width == pixels.width() as u32 && height == pixels.height() as u32,
+            "Cannot render pixels!, Expected: {}x{}, found: {}x{}",
+            width, height,
+            pixels.width(), pixels.height()
         );
 
         let creator = self.canvas.texture_creator();
@@ -72,7 +77,7 @@ impl PlatformTrait for SDLPlatform {
             )
             .unwrap();
 
-        texture.update(sprite, pixels, (800 * 4) as usize).unwrap();
+        texture.update(sprite, pixels.as_slice().flatten(), (800 * 4) as usize).unwrap();
 
         let sprite = Rect::new(0, 0, width, height);
         self.canvas

@@ -1,4 +1,4 @@
-use crate::math::Vec2;
+use crate::{math::Vec2, DrawableSurface};
 
 use super::{Point, Rect, Triangle, Shape, Intersect, BitShaping};
 
@@ -88,6 +88,10 @@ impl BitShaping for Circle {
 }
 
 impl Shape for Circle {
+    fn draw_yourself(&self, target: &crate::tekenen::SurfaceDrawer) {
+        target.circle(self.position.x, self.position.y, self.radius);
+    }
+
     fn get_bounding_box(&self) -> Rect {
         let Vec2 {x, y} = self.position;
         let r = self.radius;

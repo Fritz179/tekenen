@@ -1,7 +1,7 @@
 use std::{cell::RefCell, rc::Rc};
 
 use super::{DomElement, InlineFormattingContext, LayoutBox, PaintElement, Stylable, TextNode};
-use crate::{math::{IndefRange, Vec2, Zero}, platform::Event, shapes::rect::Rect, html::style::{FormattingInfo, Style}, Draw, Tekenen};
+use crate::{math::{IndefRange, Vec2, Zero}, platform::Event, shapes::rect::Rect, html::style::{FormattingInfo, Style}, DrawableSurface, SurfaceView};
 
 #[derive(Debug)]
 pub struct P {
@@ -107,7 +107,7 @@ impl LayoutBox for P {
 }
 
 impl PaintElement for P {
-    fn draw(&self, target: &mut Tekenen, context: &FormattingInfo, space: Vec2) {
+    fn draw(&self, target: &mut SurfaceView, context: &FormattingInfo, space: Vec2) {
         let color = self.get_style().borrow().background_color.solve(context);
 
         if color[3] > 0 {

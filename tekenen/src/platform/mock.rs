@@ -7,7 +7,7 @@ impl PlatformTrait for MockPlatform {
         unreachable!()
     }
 
-    fn display_pixels(&mut self, pixels: &crate::tekenen::Pixels) {
+    fn display_surface(&mut self, pixels: std::cell::Ref<crate::tekenen::Surface>) {
         unreachable!()
     }
 
@@ -16,10 +16,6 @@ impl PlatformTrait for MockPlatform {
     }
 
     fn log(value: u32) {
-        unreachable!()
-    }
-
-    fn parse_image(data: &[u8]) -> Result<crate::Tekenen, super::ImageLoadingError> {
         unreachable!()
     }
 

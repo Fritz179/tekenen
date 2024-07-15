@@ -12,7 +12,7 @@ pub use text_fragment::TextNode;
 pub mod p;
 pub use p::P;
 
-use crate::{math::{IndefRange, Vec2}, platform::Event, shapes::rect::Rect, Draw, Tekenen};
+use crate::{math::{IndefRange, Vec2}, platform::Event, shapes::rect::Rect, DrawableSurface, SurfaceView};
 
 
 use super::{style::{CSSDisplay, FormattingInfo, Style}, tree::{Tree, TreeData}};
@@ -895,7 +895,7 @@ impl LineBox {
 }
 
 pub trait PaintElement: Stylable {
-    fn draw(&self, target: &mut Tekenen, context: &FormattingInfo, space: Vec2);
+    fn draw(&self, target: &mut SurfaceView, context: &FormattingInfo, space: Vec2);
 }
 
 #[derive(Debug)]
@@ -931,7 +931,7 @@ impl Display for PainterTree {
 }
 
 impl PainterTree {
-    pub fn paint(&self, target: &mut Tekenen) {
+    pub fn paint(&self, target: &mut SurfaceView) {
         // let element = self.element.borrow();
         // let style = element.get_style();
 
@@ -942,7 +942,8 @@ impl PainterTree {
         //     target.rect_vec(Vec2::zero(), self.border_box.size, bg_color);
         // }
 
-        target.set_translation_vec(self.content_box.position);
+        todo!("Read next line");
+        // target.set_translation_vec(self.content_box.position);
 
         if let Some(element) = self.element.as_ref() {
             element.draw(target, &self.context, self.content_box.size);

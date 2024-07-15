@@ -1,7 +1,10 @@
-pub mod point;
 use std::ops::{Add};
 
+pub mod point;
 use point::Point;
+
+pub mod line;
+use line::Line;
 
 pub mod rect;
 use rect::Rect;
@@ -15,11 +18,13 @@ use triangle::Triangle;
 mod composed_shape;
 pub use self::composed_shape::ComposedShape;
 
-use crate::math::Vec2;
+use crate::{math::Vec2, tekenen::SurfaceDrawer};
 
 pub trait Shape: Intersect + BitShaping + std::fmt::Debug {
     fn tranlsate(&mut self, offset: Vec2);
     fn scale(&mut self, zoom: f32);
+
+    fn draw_yourself(&self, target: &SurfaceDrawer);
 
     fn get_bounding_box(&self) -> Rect;
     fn dyn_clone(&self) -> Box<dyn Shape>;

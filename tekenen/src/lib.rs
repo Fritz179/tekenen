@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
+#![feature(slice_flatten)]
+#![feature(array_chunks)]
 
 #[cfg(feature = "preloader")]
 pub mod preloader;
@@ -16,10 +18,10 @@ mod tekenen;
 
 
 
-pub use tekenen::{Tekenen, colors, Pixel, Draw, OverflowBehavior, Font};
+pub use tekenen::{SurfaceView, Surface, colors, Pixel, DrawableSurface, OverflowBehavior};
 
 /// UI, Describe layout in a 'css' manner
-pub mod html;
+// pub mod html;
 
 pub mod shapes;
 
@@ -56,7 +58,7 @@ macro_rules! BUILD_WASM {
         } else {
             println!("cargo:warning=Building wasm");
     
-            std::process::Command::new("wasm-pack")
+            let status = std::process::Command::new("wasm-pack")
                 .args([
                     "build",
                     "./",
@@ -65,8 +67,11 @@ macro_rules! BUILD_WASM {
                     "--out-dir",
                     "./home/wasm",
                 ])
-                .status()
-                .expect("failed to build wasm");
+                .output();
+
+            // if !status.as_ref().unwrap().stderr.is_empty() {
+            //     panic!("{}", std::str::from_utf8(&status.unwrap().stderr).unwrap());
+            // } 
         }
     };
 }

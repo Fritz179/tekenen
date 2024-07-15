@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use crate::{math::{IndefRange, Vec2, Zero}, shapes::rect::Rect, html::style::{CSSDisplayShorthand, FormattingInfo}, Draw, Tekenen};
+use crate::{math::{IndefRange, Vec2, Zero}, shapes::rect::Rect, html::style::{CSSDisplayShorthand, FormattingInfo}, DrawableSurface, SurfaceView};
 
 use super::{BlockLayoutBox, DomElement, InlineFormattingContext, LayoutBox, PaintElement, Stylable, Style};
 
@@ -104,7 +104,7 @@ impl BlockLayoutBox for Div {
 }
 
 impl PaintElement for Div {
-    fn draw(&self, target: &mut Tekenen, context: &FormattingInfo, space: Vec2) {
+    fn draw(&self, target: &mut SurfaceView, context: &FormattingInfo, space: Vec2) {
         let color = self.get_style().borrow().background_color.solve(context);
 
         if color[3] > 0 {

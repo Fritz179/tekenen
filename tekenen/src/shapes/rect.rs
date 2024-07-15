@@ -1,6 +1,6 @@
 use std::{fmt::Display, ops::{Add, AddAssign, Sub}};
 
-use crate::math::Vec2;
+use crate::{math::Vec2, DrawableSurface};
 
 use super::{BitShaping, Circle, Intersect, Point, Shape, Sides, Triangle};
 
@@ -33,6 +33,10 @@ impl Rect {
 }
 
 impl Shape for Rect {
+    fn draw_yourself(&self, target: &crate::tekenen::SurfaceDrawer) {
+        target.rect(self.position.x, self.position.y, self.size.x, self.size.y);
+    }
+
     fn tranlsate(&mut self, offset: Vec2) {
         self.position += offset
     }

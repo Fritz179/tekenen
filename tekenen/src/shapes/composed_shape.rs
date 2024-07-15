@@ -80,6 +80,10 @@ impl Intersect for ComposedShape {
 use std::cmp::{min, max};
 
 impl Shape for ComposedShape {
+    fn draw_yourself(&self, target: &crate::tekenen::SurfaceDrawer) {
+        todo!()
+    }
+
     fn dyn_clone(&self) -> Box<dyn Shape> {
         todo!()
     }
