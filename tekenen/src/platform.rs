@@ -16,7 +16,7 @@ pub use wasm::WASMPlatform as Platform;
 #[cfg(feature = "image")]
 use image::GenericImageView;
 
-use crate::{tekenen};
+use crate::{math::Vec2, tekenen};
 
 #[derive(Debug)]
 pub enum Keycode {
@@ -73,7 +73,8 @@ pub enum Event {
         yd: i32,
     },
     MouseWheel {
-        direction: bool
+        direction: bool,
+        position: Vec2
     },
     Resize {
         w: i32,

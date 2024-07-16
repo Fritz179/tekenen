@@ -1,5 +1,5 @@
 use tekenen::{colors, DrawableSurface, Surface, SurfaceView};
-use tekenen::platform::{Platform, PlatformTrait, IntervalDecision, Event, KeyDownEvent};
+use tekenen::platform::{Platform, PlatformTrait};
 
 
 pub struct ImageDemo {
@@ -23,29 +23,6 @@ impl ImageDemo {
 }
 
 impl super::Demo for ImageDemo {
-    fn update(&mut self, event: &Event) -> tekenen::platform::IntervalDecision {
-        match event {
-            Event::Quit => {
-                return IntervalDecision::Stop
-            },
-            Event::KeyDown(KeyDownEvent { char: Some(char), .. }) => {
-                println!("{char}")
-            },
-            // Event::MouseDown { x, y } => {
-            //     self.slider.mouse_down(x, y);
-            // },
-            // Event::MouseMove { x, y } => {
-            //     self.slider.mouse_move(x, y);
-            // },
-            // Event::MouseUp { x, y } => {
-            //     self.slider.mouse_up(x, y);
-            // },
-            _ => { }
-        };
-
-        IntervalDecision::Repeat
-    }
-
     fn draw(&mut self, window: &mut tekenen::platform::Platform) {
         let tekenen = &mut self.tek;
 

@@ -1,4 +1,4 @@
-use std::ops::{Add};
+use std::ops::Add;
 
 pub mod point;
 use point::Point;

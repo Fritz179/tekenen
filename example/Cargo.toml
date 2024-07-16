@@ -13,5 +13,9 @@ tekenen = { path = "../tekenen", features = ["preloader", "wasm"] }
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[[bin]]
+name = "example"
+path = "src/lib.rs"
+
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = false

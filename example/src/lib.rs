@@ -1,5 +1,3 @@
-
-use tekenen::platform::PlatformTrait;
 use wasm_bindgen::prelude::*;
 
 mod demo;
@@ -10,8 +8,8 @@ pub fn wasm_start() {
 }
 
 pub fn main() {
-    println!();
-
-    tekenen::platform::Platform::log(77);
     demo::main();
+
+    #[cfg(not(target_family = "wasm"))]
+    tekenen::server();
 }

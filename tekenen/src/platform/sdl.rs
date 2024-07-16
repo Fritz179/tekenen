@@ -1,6 +1,5 @@
 use sdl2;
 
-use std::borrow::Borrow;
 use std::cell::Ref;
 use std::time::{Duration, Instant};
 
@@ -11,6 +10,7 @@ use sdl2::EventPump;
 
 use sdl2::keyboard;
 
+use crate::math::Vec2;
 use crate::Surface;
 
 use super::{PlatformTrait, PlatformError, Event, KeyDownEvent, Keycode, Keymod, IntervalDecision, time_manager::{TimeAction, TimeManager}};
@@ -21,6 +21,7 @@ pub struct SDLPlatform {
     start: Instant,
     last_update: Instant,
     active: bool,
+    mouse_position: Vec2,
 }
 
 impl PlatformTrait for SDLPlatform {
@@ -44,6 +45,7 @@ impl PlatformTrait for SDLPlatform {
             start: Instant::now(),
             last_update: Instant::now(),
             active: true,
+            mouse_position: Vec2::new(0, 0),
         };
 
         Ok(io_manger)
@@ -154,16 +156,19 @@ impl PlatformTrait for SDLPlatform {
                     }));
                 },
                 sdl2::event::Event::MouseButtonDown { x, y, .. } => {
+                    self.mouse_position = Vec2::new(x, y);
                     return Some(Event::MouseDown { x, y })
                 },
                 sdl2::event::Event::MouseButtonUp { x, y, .. } => {
+                    self.mouse_position = Vec2::new(x, y);
                     return Some(Event::MouseUp { x, y })
                 },
                 sdl2::event::Event::MouseMotion { x, y, xrel, yrel, .. } => {
+                    self.mouse_position = Vec2::new(x, y);
                     return Some(Event::MouseMove { x, y, xd: xrel, yd: yrel })
                 },
                 sdl2::event::Event::MouseWheel { y, ..} => {
-                    return Some(Event::MouseWheel { direction: y == 1 })
+                    return Some(Event::MouseWheel { direction: y == 1, position: self.mouse_position })
                 }
                 _ => {
                     // println!("Unhandled event: {event:?}");

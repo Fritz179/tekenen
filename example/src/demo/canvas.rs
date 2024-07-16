@@ -1,5 +1,5 @@
 use tekenen::{colors, DrawableSurface, Surface, SurfaceView};
-use tekenen::platform::{PlatformTrait, IntervalDecision, Event, KeyDownEvent};
+use tekenen::platform::PlatformTrait;
 
 pub struct CanvasDemo {
     tek: SurfaceView,
@@ -14,20 +14,6 @@ impl CanvasDemo {
 }
 
 impl super::Demo for CanvasDemo {
-    fn update(&mut self, event: &Event) -> tekenen::platform::IntervalDecision {
-        match event {
-            Event::Quit => {
-                return IntervalDecision::Stop
-            },
-            Event::KeyDown(KeyDownEvent { char: Some(char), .. }) => {
-                println!("{char}")
-            },
-            _ => { }
-        };
-
-        IntervalDecision::Repeat
-    }
-
     fn draw(&mut self, window: &mut tekenen::platform::Platform) {
         let tekenen = &mut self.tek;
         tekenen.set_translation(0, 0);
