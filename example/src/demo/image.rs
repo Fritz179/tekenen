@@ -68,7 +68,7 @@ impl super::Demo for ImageDemo {
 
         tekenen.text(&format!("Hello there, tick: {}", self.tick), 200, 200, 16);
 
-        // tekenen.draw_image(600, 200, &self.img8_png);
+        tekenen.draw_image(600, 200, &self.img8_png);
         // tekenen.draw_scaled_image(600, 25, &self.img8_fpia, 5);
 
         self.tick += 1;

@@ -15,12 +15,12 @@ use circle::Circle;
 pub mod triangle;
 use triangle::Triangle;
 
-mod composed_shape;
-pub use self::composed_shape::ComposedShape;
+// mod composed_shape;
+// pub use self::composed_shape::ComposedShape;
 
 use crate::{math::Vec2, tekenen::SurfaceDrawer};
 
-pub trait Shape: Intersect + BitShaping + std::fmt::Debug {
+pub trait Shape: Intersect + /* BitShaping + */ std::fmt::Debug {
     fn tranlsate(&mut self, offset: Vec2);
     fn scale(&mut self, zoom: f32);
 
@@ -48,28 +48,28 @@ pub trait Intersect {
     fn encloses_triangle(&self, other: &Triangle) -> bool;
 }
 
-pub trait BitShaping {
-    fn bit_dyn_clone(&self) -> Box<dyn Shape>;
+// pub trait BitShaping {
+//     fn bit_dyn_clone(&self) -> Box<dyn Shape>;
     
-    fn join_and(&self, other: &dyn BitShaping) -> ComposedShape {
-        ComposedShape::and(self.bit_dyn_clone(), other.bit_dyn_clone())
-    }
-    // fn join_point(&self, other: &Point) -> ComposedShape { todo!() }
-    // fn join_rect(&self, other: &Rect) -> ComposedShape { todo!() }
-    // fn join_circle(&self, other: &Circle) -> ComposedShape { todo!() }
-    // fn join_triangle(&self, other: &Triangle) -> ComposedShape { todo!() }
-}
+//     fn join_and(&self, other: &dyn BitShaping) -> ComposedShape {
+//         ComposedShape::and(self.bit_dyn_clone(), other.bit_dyn_clone())
+//     }
+//     // fn join_point(&self, other: &Point) -> ComposedShape { todo!() }
+//     // fn join_rect(&self, other: &Rect) -> ComposedShape { todo!() }
+//     // fn join_circle(&self, other: &Circle) -> ComposedShape { todo!() }
+//     // fn join_triangle(&self, other: &Triangle) -> ComposedShape { todo!() }
+// }
 
 // can &, |, ^, !
 // can get bounding boxes and test each pixel
 
-impl std::ops::BitAnd for &dyn BitShaping {
-    type Output = ComposedShape;
+// impl std::ops::BitAnd for &dyn BitShaping {
+//     type Output = ComposedShape;
 
-    fn bitand(self, rhs: &dyn BitShaping) -> Self::Output {
-        rhs.join_and(self)
-    }
-}
+//     fn bitand(self, rhs: &dyn BitShaping) -> Self::Output {
+//         rhs.join_and(self)
+//     }
+// }
 
 /// A helper to store all the directions
 #[derive(Debug, Clone)]

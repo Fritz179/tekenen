@@ -1,6 +1,6 @@
 use crate::{math::Vec2, DrawableSurface};
 
-use super::{BitShaping, Intersect, Shape};
+use super::{Intersect, Shape};
 
 #[derive(Debug)]
 pub struct Line {
@@ -18,11 +18,11 @@ impl Line {
     }
 }
 
-impl BitShaping for Line {
-    fn bit_dyn_clone(&self) -> Box<dyn Shape> {
-        todo!()
-    }
-}
+// impl BitShaping for Line {
+//     fn bit_dyn_clone(&self) -> Box<dyn Shape> {
+//         todo!()
+//     }
+// }
 
 impl Intersect for Line {
     fn intersect_upcast(&self) -> &dyn Intersect {
@@ -92,10 +92,12 @@ impl Shape for Line {
     }
 
     fn scale(&mut self, zoom: f32) {
-        todo!()
+        self.start *= zoom;
+        self.end *= zoom;
     }
 
     fn tranlsate(&mut self, offset: Vec2) {
-        todo!()
+        self.start += offset;
+        self.end += offset;
     }
 }

@@ -1,6 +1,6 @@
 use crate::{math::Vec2, DrawableSurface};
 
-use super::{Point, Rect, Triangle, Shape, Intersect, BitShaping};
+use super::{Point, Rect, Triangle, Shape, Intersect};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct Circle {
@@ -81,11 +81,11 @@ impl Intersect for Circle {
     }
 }
 
-impl BitShaping for Circle {
-    fn bit_dyn_clone(&self) -> Box<dyn Shape> {
-        Box::new(*self)
-    }
-}
+// impl BitShaping for Circle {
+//     fn bit_dyn_clone(&self) -> Box<dyn Shape> {
+//         Box::new(*self)
+//     }
+// }
 
 impl Shape for Circle {
     fn draw_yourself(&self, target: &crate::tekenen::SurfaceDrawer) {

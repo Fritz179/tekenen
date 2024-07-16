@@ -129,9 +129,9 @@ pub trait DrawableSurface {
 
     // fn translate_vec(&self, pos: Vec2);
 
-    // fn set_scale(&self, zoom: f32);
+    // fn set_scale(&self, scale: f32);
 
-    // fn scale(&self, zoom: f32);
+    // fn scale(&self, scale: f32);
 
     // fn get_size(&self) -> Vec2;
 
@@ -161,15 +161,14 @@ pub struct SurfaceView {
 
     /// World coordinates
     /// Transformation
-    translation: Vec2,
-    zoom: f32,
+    translation: Cell<Vec2>,
+    scaling: Cell<f32>,
 
     /// Screen coordinates
     /// clip object outside the clip area
-    clip: Rect,
     overflow_behavior: OverflowBehavior,
 
-    /// used for panning and zooming
+    /// used for panning and scaleing
     moving: bool,
 }
 
@@ -246,7 +245,7 @@ impl DrawableSurface for SurfaceDrawer {
         
         for x in 0..pixels.width() {
             for y in 0..pixels.height() {
-                pixels.set_pixel(x as i32, y as i32, color);
+                pixels.set_pixel(x, y, color);
             }
         }
     }
@@ -254,7 +253,7 @@ impl DrawableSurface for SurfaceDrawer {
     fn text(&self, text: &str, x: i32, y: i32, height: i32) -> Vec2 {
         let mut pixels = self.pixels.borrow_mut();
 
-        let mut pos = Vec2::new(x, y);
+        let pos = Vec2::new(x, y);
         let x = pos.x;
         let y = pos.y;
 
@@ -361,28 +360,38 @@ impl DrawableSurface for SurfaceDrawer {
         let mut pixels = self.pixels.borrow_mut();
         let fill_color = self.fill_color.get();
 
-        for x in 0..pixels.width() {
-            for y in 0..pixels.height() {
+        for x in x..(x + w) {
+            for y in y..(y + w) {
                 pixels.set_pixel(x as i32, y as i32, fill_color);
             }
         }
     }
 
-    fn circle(&self, x: i32, y: i32, radius: i32) {
-        // TODO: circle
-        // todo!()
+    fn circle(&self, xc: i32, yc: i32, r: i32) {
+        let mut pixels = self.pixels.borrow_mut();
+        let fill_color = self.fill_color.get();
+
+        for x in (xc - r)..(xc + r) {
+            for y in (yc - r)..(yc + r) {
+                if (xc - x)*(xc - x) + (yc - y)*(yc - y) <= r * r {
+                    pixels.set_pixel(x as i32, y as i32, fill_color);
+                }
+            }
+        }
     }
 
     fn draw_image(&self, x: i32, y: i32, image: &Surface) {
+        let mut destination = self.pixels.borrow_mut();
+        let source = image.as_slice();
+
         for xd in 0..image.width() as i32 {
             for yd in 0..image.height() as i32 {
-                todo!()
-                // let from = image.get_pixel(xd, yd).unwrap();
+                let from = source[(yd * image.width() as i32 + xd) as usize];
 
-                // // TODO: Proper color mixing
-                // if from[3] > 0 {
-                //     self.set_pixel(x + xd, y + yd, from)
-                // }
+                // TODO: Proper color mixing
+                if from[3] > 0 {
+                    destination.set_pixel(x + xd, y + yd, from)
+                }
             }
         }
     }
@@ -399,9 +408,8 @@ impl SurfaceView {
             surface: Rc::new(surface),
             width,
             height,
-            translation: Vec2::zero(),
-            zoom: 1.0,
-            clip: Rect::new(0, 0, width as i32, height as i32),
+            translation: Cell::new(Vec2::zero()),
+            scaling: Cell::new(1.0),
             overflow_behavior: OverflowBehavior::Overflow,
             moving: false
         }
@@ -444,7 +452,7 @@ impl SurfaceDestination {
 // }
 
 impl SurfaceView {
-    // pub fn handle_pan_and_zoom(&self, event: &Event) {
+    // pub fn handle_pan_and_scale(&self, event: &Event) {
     //     match *event {
     //         Event::MouseDown { x, y } => {
     //             if self.clip.encloses_point(&Point::new(x ,y)) {
@@ -460,7 +468,7 @@ impl SurfaceView {
     //             self.moving = false
     //         },
     //         Event::MouseWheel { direction } => {
-    //             self.zoom *= if direction { 0.99 } else { 1.01 }
+    //             self.scale *= if direction { 0.99 } else { 1.01 }
     //         }
     //         _ => {}
     //     }
@@ -474,45 +482,45 @@ impl SurfaceView {
     // }
 
     // pub fn world_to_screen_vec(&self, pos: Vec2) -> Vec2 {
-    //     pos * self.zoom - self.translation
+    //     pos * self.scale - self.translation
     // }
 
     // pub fn screen_to_world(&self, x: i32, y: i32) -> (i32, i32) {
-    //     let x = ((x + self.translation.x) as f32 / self.zoom) as i32;
-    //     let y = ((y + self.translation.y) as f32 / self.zoom) as i32;
+    //     let x = ((x + self.translation.x) as f32 / self.scale) as i32;
+    //     let y = ((y + self.translation.y) as f32 / self.scale) as i32;
 
     //     (x, y)
     // }
 
     // pub fn screen_to_world_vec(&self, pos: Vec2) -> Vec2 {
-    //     (pos + self.translation) / self.zoom
+    //     (pos + self.translation) / self.scale
     // }
 }
 
 impl SurfaceView {
-    // fn set_translation_vec(&self, pos: Vec2) {
-    //     self.translation = pos
-    // }
+    pub fn set_translation(&self, x: i32, y: i32) {
+        self.translation.set(Vec2::new(x, y))
+    }
 
-    // fn translate_vec(&self, pos: Vec2) {
-    //     self.translation += pos
-    // }
+    pub fn set_translation_vec(&self, pos: Vec2) {
+        self.translation.set(pos)
+    }
 
-    // fn set_scale(&self, zoom: f32) {
-    //     self.zoom = zoom
-    // }
+    pub fn translate(&self, x: i32, y: i32) {
+        self.translation.set(self.translation.get() + Vec2::new(x, y))
+    }
 
-    // fn scale(&self, zoom: f32) {
-    //     self.zoom += zoom
-    // }
+    pub fn translate_vec(&self, pos: Vec2) {
+        self.translation.set(self.translation.get() + pos)
+    }
 
-    // fn clip(&self, clip: Rect) {
-    //     self.clip = clip
-    // }
+    pub fn set_scale(&self, scale: f32) {
+        self.scaling.set(scale)
+    }
 
-    // fn reset_clip(&self) {
-    //     self.clip = Rect::new(0, 0, self.width as i32, self.height as i32)
-    // }
+    pub fn scale(&self, scale: f32) {
+        self.scaling.set(self.scaling.get() * scale)
+    }
 
     // fn get_size(&self) -> Vec2 {
     //     Vec2::new(self.width as i32, self.height as i32)
@@ -553,12 +561,12 @@ impl DrawableSurface for SurfaceView {
     }
 
     fn draw_image(&self, x: i32, y: i32, image: &Surface) {
-        todo!()
+        self.surface.draw_image(x, y, image)
     }
 
     fn shape(&self, mut shape: impl Shape) {
-        // shape.scale(self.zoom);
-        // shape.tranlsate(self.translation);
+        shape.scale(self.scaling.get());
+        shape.tranlsate(self.translation.get());
 
         self.surface.shape(shape);
         // match self.overflow_behavior {

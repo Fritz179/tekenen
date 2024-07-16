@@ -2,7 +2,7 @@ use std::{fmt::Display, ops::{Add, AddAssign, Sub}};
 
 use crate::{math::Vec2, DrawableSurface};
 
-use super::{BitShaping, Circle, Intersect, Point, Shape, Sides, Triangle};
+use super::{Circle, Intersect, Point, Shape, Sides, Triangle};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct Rect {
@@ -130,11 +130,11 @@ impl Intersect for Rect {
     }
 }
 
-impl BitShaping for Rect {
-    fn bit_dyn_clone(&self) -> Box<dyn Shape> {
-        Box::new(*self)
-    }
-}
+// impl BitShaping for Rect {
+//     fn bit_dyn_clone(&self) -> Box<dyn Shape> {
+//         Box::new(*self)
+//     }
+// }
 
 pub struct RectIter {
     start: Vec2,
