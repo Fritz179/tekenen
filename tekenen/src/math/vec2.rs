@@ -1,4 +1,4 @@
-use std::ops::{AddAssign, Add, SubAssign, Sub, Mul, MulAssign, Div, DivAssign};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 use super::Zero;
 
@@ -40,7 +40,18 @@ impl<T: Zero> Zero for Vec2<T> {
     }
 }
 
-// Function
+impl<T: Neg> Neg for Vec2<T> {
+    type Output = Vec2<T::Output>;
+
+    fn neg(self) -> Self::Output {
+        Vec2 {
+            x: -self.x,
+            y: -self.y
+        }
+    }
+}
+
+// TODO: this should be impl <> AddAssign for Vec2
 impl<T: AddAssign> Vec2<T> {
     pub fn add(&mut self, x: T, y: T) {
         self.x += x;

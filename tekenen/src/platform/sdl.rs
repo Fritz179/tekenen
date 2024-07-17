@@ -39,7 +39,7 @@ impl PlatformTrait for SDLPlatform {
         let canvas = window.into_canvas().build().map_err(|_| PlatformError::Init("Cannot create canvas".to_owned()))?;
         let event_pump = sdl_context.event_pump().map_err(|_| PlatformError::Init("Cannot create evet_pump".to_owned()))?;
 
-        let io_manger = SDLPlatform {
+        let io_manager = SDLPlatform {
             canvas,
             event_pump,
             start: Instant::now(),
@@ -48,7 +48,7 @@ impl PlatformTrait for SDLPlatform {
             mouse_position: Vec2::new(0, 0),
         };
 
-        Ok(io_manger)
+        Ok(io_manager)
     }
 
     fn log(value: u32) {

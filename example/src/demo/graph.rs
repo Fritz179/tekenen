@@ -12,7 +12,7 @@ impl GraphDemo {
     pub fn new() -> Self {
         let original = SurfaceView::new(800, 600, Surface::new(800, 600).into());
         let graph = original.clone();
-        graph.clip(Rect::new(100, 100, 700, 500));
+        // graph.clip(Rect::new(100, 0, 700, 500));
 
         Self {
             graph,
@@ -60,9 +60,12 @@ impl super::Demo for GraphDemo {
         self.graph.rect(100, 100, 10, 10);
 
         // Draw over borders
-        self.original.fill_color(colors::BLACK);
-        self.original.rect(0, 0, 100, self.original.height());
-        self.original.rect(100, self.original.height() - 100, self.original.width() - 100, 100);
+        // self.original.fill_color(colors::BLACK);
+        // self.original.rect(0, 0, 100, self.original.height());
+        // self.original.rect(100, self.original.height() - 100, self.original.width() - 100, 100);
+
+        // let rect = self.graph.get_world_screen();
+        // println!("World: {}", rect);
 
         // Diplay result
         window.display_surface(self.graph.get_surface());

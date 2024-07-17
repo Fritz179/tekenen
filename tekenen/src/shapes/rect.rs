@@ -1,6 +1,6 @@
 use std::{fmt::Display, ops::{Add, AddAssign, Sub}};
 
-use crate::{math::Vec2, DrawableSurface};
+use crate::{math::{Transform, Vec2}, DrawableSurface};
 
 use super::{Circle, Intersect, Point, Shape, Sides, Triangle};
 
@@ -32,18 +32,20 @@ impl Rect {
     }
 }
 
-impl Shape for Rect {
-    fn draw_yourself(&self, target: &crate::tekenen::SurfaceDrawer) {
-        target.rect(self.position.x, self.position.y, self.size.x, self.size.y);
-    }
-
-    fn tranlsate(&mut self, offset: Vec2) {
+impl Transform for Rect {
+    fn translate(&mut self, offset: Vec2) {
         self.position += offset
     }
 
     fn scale(&mut self, zoom: f32) {
         self.position *= zoom;
         self.size *= zoom;
+    }
+}
+
+impl Shape for Rect {
+    fn draw_yourself(&self, target: &crate::tekenen::SurfaceDrawer) {
+        target.rect(self.position.x, self.position.y, self.size.x, self.size.y);
     }
 
     fn get_bounding_box(&self) -> Rect {

@@ -1,4 +1,4 @@
-use crate::{math::Vec2, DrawableSurface};
+use crate::{math::{Transform, Vec2}, DrawableSurface};
 
 use super::{Intersect, Shape};
 
@@ -74,6 +74,18 @@ impl Intersect for Line {
     }
 }
 
+impl Transform for Line {
+    fn scale(&mut self, zoom: f32) {
+        self.start *= zoom;
+        self.end *= zoom;
+    }
+
+    fn translate(&mut self, offset: Vec2) {
+        self.start += offset;
+        self.end += offset;
+    }
+}
+
 impl Shape for Line {
     fn draw_yourself(&self, target: &crate::tekenen::SurfaceDrawer) {
         target.line(self.start.x, self.start.y, self.end.x, self.end.y);
@@ -89,15 +101,5 @@ impl Shape for Line {
 
     fn iter(&self) -> Box<dyn Iterator<Item = Vec2>> {
         todo!()
-    }
-
-    fn scale(&mut self, zoom: f32) {
-        self.start *= zoom;
-        self.end *= zoom;
-    }
-
-    fn tranlsate(&mut self, offset: Vec2) {
-        self.start += offset;
-        self.end += offset;
     }
 }

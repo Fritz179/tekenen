@@ -10,6 +10,9 @@ pub use range::*;
 mod zero;
 pub use zero::*;
 
+mod transform;
+pub use transform::*;
+
 pub fn clamp<T: PartialOrd>(value: T, min: T, max: T) -> T {
     if value > min {
         if value < max {

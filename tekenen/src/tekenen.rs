@@ -65,7 +65,7 @@ use std::{cell::{Cell, Ref, RefCell}, rc::Rc};
 use enum_dispatch::enum_dispatch;
 use font::*;
 
-use crate::{math::{Vec2, Zero}, platform::Event, shapes::{circle::Circle, line::Line, rect::Rect, Shape}};
+use crate::{math::{Transform, Vec2, Zero}, platform::Event, shapes::{circle::Circle, line::Line, point::Point, rect::Rect, Intersect, Shape}};
 
 
 pub mod colors;
@@ -159,9 +159,8 @@ pub struct SurfaceView {
     screen: Cell<Rect>,
 
     /// World coordinates
-    /// Transformation
     translation: Cell<Vec2>,
-    scaling: Cell<f32>,
+    scale: Cell<f32>,
 
     /// clip object outside the clip area
     overflow_behavior: OverflowBehavior,
@@ -406,7 +405,7 @@ impl SurfaceView {
             surface: Rc::new(surface),
             screen: Cell::new(Rect::new(0, 0, width, height)),
             translation: Cell::new(Vec2::zero()),
-            scaling: Cell::new(1.0),
+            scale: Cell::new(1.0),
             overflow_behavior: OverflowBehavior::Overflow,
             moving: Cell::new(false)
         }
@@ -434,125 +433,96 @@ impl SurfaceDestination {
     }
 }
 
-// impl SourcableSurface for SurfaceView {
-//     fn as_slice(&self) -> &[Pixel] {
-//         self.surface.as_slice()
-//     }
-
-//     fn width(&self) -> i32 {
-//         self.surface.width()
-//     }
-
-//     fn height(&self) -> i32 {
-//         self.surface.height()
-//     }
-// }
-
 impl SurfaceView {
     pub fn clip(&self, clip: Rect) {
         self.screen.set(clip)
     }
-
-    pub fn get_world_screen(&self) -> Rect {
-        let mut screen = self.screen.get();
-        screen.tranlsate(self.translation.get());
-        screen.scale(1.0 / self.scaling.get());
-        screen
-    }
-
-    pub fn world_to_screen_size(&self, size: f32) -> f32 {
-        size * self.scaling.get()
-    }
-
-    pub fn screen_to_world_size(&self, size: f32) -> f32 {
-        size / self.scaling.get()
-    }
-
-    pub fn world_to_screen(&self, x: i32, y: i32) -> Vec2 {
-        self.world_to_screen_vec(Vec2::new(x, y))
-    }
-
-    pub fn world_to_screen_vec(&self, pos: Vec2) -> Vec2 {
-        pos * self.scaling.get() - self.translation.get()
-    }
-
-    pub fn screen_to_world(&self, x: i32, y: i32) -> Vec2 {
-        self.screen_to_world_vec(Vec2::new(x, y))
-    }
-
-    pub fn screen_to_world_vec(&self, pos: Vec2) -> Vec2 {
-        (pos + self.translation.get()) / self.scaling.get()
-    }
+    
 
     pub fn handle_pan_and_zoom(&self, event: &Event) -> bool {
         match event {
-            Event::MouseDown{ .. } => {
-                self.moving.set(true);
+            Event::MouseDown{ x, y } => {
+                if self.screen.get().encloses_point(&Point::new(*x, *y)) {
+                    self.moving.set(true);
+                }
                 true
             },
             Event::MouseUp{ .. } => {
                 self.moving.set(false);
                 true
             },
-            Event::MouseWheel{ direction, position } => {
-                let value = if *direction { 1.2 } else { 1.0 / 1.2 };
-                self.scale_from(value, *position);
-                true
-            },
             Event::MouseMove{ xd, yd, .. } => {
                 if self.moving.get() {
-                    self.translate(*xd, *yd);
+                    self.translate_screen(Vec2::new(*xd, *yd));
                     true
                 } else {
                     false
                 }
             }
+            Event::MouseWheel{ direction, position } => {
+                let value = if *direction { 1.2 } else { 1.0 / 1.2 };
+                self.scale_screen(value, *position);
+                true
+            },
             _ => { false }
         }
     }
 }
 
 impl SurfaceView {
-    pub fn set_translation(&self, x: i32, y: i32) {
-        self.translation.set(Vec2::new(x, y))
-    }
-
-    pub fn set_translation_vec(&self, pos: Vec2) {
-        self.translation.set(pos)
-    }
-
-    pub fn translate(&self, x: i32, y: i32) {
-        self.translation.set(self.translation.get() + Vec2::new(x, y))
-    }
-
-    pub fn translate_vec(&self, pos: Vec2) {
-        self.translation.set(self.translation.get() + pos)
-    }
-
-    pub fn get_transaltion(&self) -> Vec2 {
-        self.translation.get()
+    // Set transformation
+    pub fn set_translation(&self, translation: Vec2) {
+        self.translation.set(translation);
     }
 
     pub fn set_scale(&self, scale: f32) {
-        self.scaling.set(scale)
+        self.scale.set(scale);
     }
 
-    pub fn scale(&self, scale: f32) {
-        self.scaling.set(self.scaling.get() * scale)
+    // Change transformation
+    pub fn translate_screen(&self, translation: Vec2) {
+        self.translation.set(self.translation.get() + translation);
     }
 
-    pub fn scale_from(&self, scale: f32, from: Vec2) {
-        self.translation.set(self.translation.get() * scale + from * (1.0 - scale));
-        self.scaling.set(self.scaling.get() * scale);
+    pub fn translate_world(&self, translation: Vec2) {
+        self.translation.set(self.translation.get() + translation * self.scale.get());
     }
 
-    pub fn get_scale(&self) -> f32 {
-        self.scaling.get()
+    pub fn scale_screen(&self, scale: f32, from: Vec2) {
+        self.translation.set(from + (self.translation.get() - from) * scale);
+        self.scale.set(self.scale.get() * scale);
     }
 
-    // fn get_size(&self) -> Vec2 {
-    //     Vec2::new(self.width as i32, self.height as i32)
-    // }
+    pub fn scale_world(&self, scale: f32, from: Vec2) {
+        todo!()
+    }
+
+    // Apply transformation
+    pub fn world_to_screen(&self, target: &mut impl Transform) {
+        target.scale(self.scale.get());
+        target.translate(self.translation.get() + self.screen.get().position);
+    }
+
+    pub fn screen_to_world(&self, target: &mut impl Transform) {
+        target.scale(1.0 / self.scale.get());
+        target.translate(-self.translation.get());
+    }
+
+    pub fn world_point_to_screen(&self, point: Vec2) -> Vec2 {
+        point * self.scale.get() + self.translation.get()
+    }
+
+    pub fn screen_point_to_world(&self, point: Vec2) -> Vec2 {
+        (point - self.translation.get()) / self.scale.get()
+    }
+
+    pub fn world_length_to_screen(&self, length: f32) -> f32 {
+        length * self.scale.get()
+    }
+
+    pub fn screen_length_to_world(&self, length: f32) -> f32 {
+        length / self.scale.get()
+    }
 }
 
 impl DrawableSurface for SurfaceView {
@@ -593,8 +563,7 @@ impl DrawableSurface for SurfaceView {
     }
 
     fn shape(&self, mut shape: impl Shape) {
-        shape.scale(self.scaling.get());
-        shape.tranlsate(self.translation.get());
+        self.world_to_screen(&mut shape);
 
         self.surface.shape(shape);
         // match self.overflow_behavior {

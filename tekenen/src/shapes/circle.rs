@@ -1,4 +1,4 @@
-use crate::{math::Vec2, DrawableSurface};
+use crate::{math::{Transform, Vec2}, DrawableSurface};
 
 use super::{Point, Rect, Triangle, Shape, Intersect};
 
@@ -87,6 +87,18 @@ impl Intersect for Circle {
 //     }
 // }
 
+impl Transform for Circle {
+    fn translate(&mut self, offset: Vec2) {
+        self.position += offset
+    }
+
+    fn scale(&mut self, zoom: f32) {
+        self.position *= zoom;
+        self.radius = (self.radius as f32 * zoom) as i32;
+    }
+
+}
+
 impl Shape for Circle {
     fn draw_yourself(&self, target: &crate::tekenen::SurfaceDrawer) {
         target.circle(self.position.x, self.position.y, self.radius);
@@ -97,15 +109,6 @@ impl Shape for Circle {
         let r = self.radius;
 
         Rect::new(x - r, y - r, r + r, r + r)
-    }
-
-    fn tranlsate(&mut self, offset: Vec2) {
-        self.position += offset
-    }
-
-    fn scale(&mut self, zoom: f32) {
-        self.position *= zoom;
-        self.radius = (self.radius as f32 * zoom) as i32;
     }
 
     fn dyn_clone(&self) -> Box<dyn Shape> {

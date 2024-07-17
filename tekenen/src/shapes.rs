@@ -18,12 +18,9 @@ use triangle::Triangle;
 // mod composed_shape;
 // pub use self::composed_shape::ComposedShape;
 
-use crate::{math::Vec2, tekenen::SurfaceDrawer};
+use crate::{math::{Transform, Vec2}, tekenen::SurfaceDrawer};
 
-pub trait Shape: Intersect + /* BitShaping + */ std::fmt::Debug {
-    fn tranlsate(&mut self, offset: Vec2);
-    fn scale(&mut self, zoom: f32);
-
+pub trait Shape: Intersect + Transform + std::fmt::Debug {
     fn draw_yourself(&self, target: &SurfaceDrawer);
 
     fn get_bounding_box(&self) -> Rect;
