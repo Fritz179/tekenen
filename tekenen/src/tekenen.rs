@@ -117,28 +117,6 @@ pub trait DrawableSurface {
 
     fn text(&self, text: &str, x: i32, y: i32, height: i32) -> Vec2;
 
-    // fn set_translation(&self, x: i32, y: i32) {
-    //     self.set_translation_vec(Vec2::new(x, y))
-    // }
-
-    // fn set_translation_vec(&self, pos: Vec2);
-
-    // fn translate(&self, x: i32, y: i32) {
-    //     self.translate_vec(Vec2::new(x, y))
-    // }
-
-    // fn translate_vec(&self, pos: Vec2);
-
-    // fn set_scale(&self, scale: f32);
-
-    // fn scale(&self, scale: f32);
-
-    // fn get_size(&self) -> Vec2;
-
-    // fn clip(&self, clip: Rect);
-
-    // fn reset_clip(&self);
-
     fn draw_image(&self, x: i32, y: i32, image: &Surface);
 }
 
@@ -437,8 +415,11 @@ impl SurfaceView {
     pub fn clip(&self, clip: Rect) {
         self.screen.set(clip)
     }
-    
 
+    pub fn reset_clip(&self) {
+        self.screen.set(Rect::new(0, 0, self.width(), self.height()))
+    }
+    
     pub fn handle_pan_and_zoom(&self, event: &Event) -> bool {
         match event {
             Event::MouseDown{ x, y } => {
@@ -479,22 +460,33 @@ impl SurfaceView {
         self.scale.set(scale);
     }
 
+    pub fn set_transformation(&self, translation: Vec2, scale: f32) {
+        self.translation.set(translation);
+        self.scale.set(scale);
+    }
+
+    pub fn reset_transformation(&self) {
+        self.translation.set(Vec2::zero());
+        self.scale.set(1.0);
+    }
+
     // Change transformation
     pub fn translate_screen(&self, translation: Vec2) {
         self.translation.set(self.translation.get() + translation);
     }
 
-    pub fn translate_world(&self, translation: Vec2) {
+    pub fn translate(&self, translation: Vec2) {
         self.translation.set(self.translation.get() + translation * self.scale.get());
     }
 
-    pub fn scale_screen(&self, scale: f32, from: Vec2) {
+    pub fn scale_screen(&self, scale: f32, mut from: Vec2) {
+        from -= self.screen.get().position;
         self.translation.set(from + (self.translation.get() - from) * scale);
         self.scale.set(self.scale.get() * scale);
     }
 
-    pub fn scale_world(&self, scale: f32, from: Vec2) {
-        todo!()
+    pub fn scale(&self, scale: f32) {
+        self.scale.set(self.scale.get() * scale);
     }
 
     // Apply transformation
@@ -504,16 +496,16 @@ impl SurfaceView {
     }
 
     pub fn screen_to_world(&self, target: &mut impl Transform) {
+        target.translate(-self.screen.get().position - self.translation.get());
         target.scale(1.0 / self.scale.get());
-        target.translate(-self.translation.get());
     }
 
     pub fn world_point_to_screen(&self, point: Vec2) -> Vec2 {
-        point * self.scale.get() + self.translation.get()
+        point * self.scale.get() + self.translation.get() + self.screen.get().position
     }
 
     pub fn screen_point_to_world(&self, point: Vec2) -> Vec2 {
-        (point - self.translation.get()) / self.scale.get()
+        (point - self.translation.get() - self.screen.get().position) / self.scale.get()
     }
 
     pub fn world_length_to_screen(&self, length: f32) -> f32 {
@@ -555,7 +547,10 @@ impl DrawableSurface for SurfaceView {
     }
 
     fn text(&self, text: &str, x: i32, y: i32, height: i32) -> Vec2 {
-        self.surface.text(text, x, y, height)
+        let pos = self.world_point_to_screen(Vec2::new(x, y));
+        let height = self.world_length_to_screen(height as f32) as i32;
+
+        self.surface.text(text, pos.x, pos.y, height)
     }
 
     fn draw_image(&self, x: i32, y: i32, image: &Surface) {

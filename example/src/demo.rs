@@ -1,8 +1,9 @@
 use tekenen::platform::{Event, IntervalDecision, KeyDownEvent, Platform, PlatformTrait};
 
-pub mod image;
-pub mod canvas;
-pub mod graph;
+mod image;
+mod canvas;
+mod graph;
+mod transformation;
 
 pub trait Demo {
     fn update(&mut self, event: &Event) -> IntervalDecision {
@@ -15,6 +16,7 @@ pub fn main() {
     let mut window = Box::new(Platform::new(800, 600).unwrap());
 
     let mut demos: Vec<Box<dyn Demo>> = vec![
+        Box::new(transformation::TransformationDemo::new()),
         Box::new(graph::GraphDemo::new()),
         Box::new(image::ImageDemo::new()),
         Box::new(canvas::CanvasDemo::new()),

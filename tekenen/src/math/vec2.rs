@@ -51,21 +51,6 @@ impl<T: Neg> Neg for Vec2<T> {
     }
 }
 
-// TODO: this should be impl <> AddAssign for Vec2
-impl<T: AddAssign> Vec2<T> {
-    pub fn add(&mut self, x: T, y: T) {
-        self.x += x;
-        self.y += y;
-    }
-}
-
-impl<T: SubAssign> Vec2<T> {
-    pub fn sub(&mut self, x: T, y: T) {
-        self.x -= x;
-        self.y -= y;
-    }
-}
-
 // Addition
 impl<T: Add<Output = T>> Add for Vec2<T> {
     type Output = Vec2<T>;
@@ -78,7 +63,7 @@ impl<T: Add<Output = T>> Add for Vec2<T> {
     }
 }
 
-impl AddAssign for Vec2 {
+impl<T: AddAssign> AddAssign for Vec2<T> {
     fn add_assign(&mut self, rhs: Self) {
         self.x += rhs.x;
         self.y += rhs.y
@@ -94,6 +79,13 @@ impl<T: Sub<Output = T>> Sub for Vec2<T> {
             x: self.x - rhs.x,
             y: self.y - rhs.y
         }
+    }
+}
+
+impl<T: SubAssign> SubAssign for Vec2<T> {
+    fn sub_assign(&mut self, rhs: Self) {
+        self.x -= rhs.x;
+        self.y -= rhs.y
     }
 }
 
