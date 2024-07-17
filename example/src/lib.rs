@@ -4,6 +4,7 @@ mod demo;
 
 #[wasm_bindgen]
 pub fn wasm_start() {
+    #[allow(clippy::main_recursion)]
     main()
 }
 

@@ -6,7 +6,7 @@ mod graph;
 mod transformation;
 
 pub trait Demo {
-    fn update(&mut self, event: &Event) -> IntervalDecision {
+    fn update(&mut self, _event: &Event) -> IntervalDecision {
         IntervalDecision::Repeat
     }
     fn draw(&mut self, window: &mut Platform);

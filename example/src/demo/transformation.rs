@@ -1,4 +1,4 @@
-use tekenen::{colors, math::{Vec2, Zero}, platform::PlatformTrait, shapes::rect::Rect, DrawableSurface, Surface, SurfaceView};
+use tekenen::{colors, math::{Vec2}, platform::PlatformTrait, shapes::rect::Rect, DrawableSurface, Surface, SurfaceView};
 
 use super::Demo;
 

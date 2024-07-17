@@ -204,11 +204,11 @@ impl DrawableSurface for SurfaceDrawer {
     }
 
     fn width(&self) -> i32 {
-        self.pixels.borrow().width() as i32
+        self.pixels.borrow().width()
     }
 
     fn height(&self) -> i32 {
-        self.pixels.borrow().height() as i32
+        self.pixels.borrow().height()
     }
 
     fn shape(&self, shape: impl Shape) {
@@ -337,7 +337,7 @@ impl DrawableSurface for SurfaceDrawer {
 
         for x in x..(x + w) {
             for y in y..(y + h) {
-                pixels.set_pixel(x as i32, y as i32, fill_color);
+                pixels.set_pixel(x, y, fill_color);
             }
         }
     }
@@ -349,7 +349,7 @@ impl DrawableSurface for SurfaceDrawer {
         for x in (xc - r)..(xc + r) {
             for y in (yc - r)..(yc + r) {
                 if (xc - x)*(xc - x) + (yc - y)*(yc - y) <= r * r {
-                    pixels.set_pixel(x as i32, y as i32, fill_color);
+                    pixels.set_pixel(x, y, fill_color);
                 }
             }
         }
@@ -359,9 +359,9 @@ impl DrawableSurface for SurfaceDrawer {
         let mut destination = self.pixels.borrow_mut();
         let source = image.as_slice();
 
-        for xd in 0..image.width() as i32 {
-            for yd in 0..image.height() as i32 {
-                let from = source[(yd * image.width() as i32 + xd) as usize];
+        for xd in 0..image.width() {
+            for yd in 0..image.height() {
+                let from = source[(yd * image.width() + xd) as usize];
 
                 // TODO: Proper color mixing
                 if from[3] > 0 {

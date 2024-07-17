@@ -45,13 +45,12 @@ pub struct KeyDownEvent {
 
 impl KeyDownEvent {
     pub fn is_arrow(&self) -> bool {
-        match self.keycode {
-            Some(Keycode::ArrowUp) => true,
-            Some(Keycode::ArrowLeft) => true,
-            Some(Keycode::ArrowDown) => true,
-            Some(Keycode::ArrowRight) => true,
-            _ => false
-        }
+        matches!(self.keycode, 
+            Some(Keycode::ArrowUp) | 
+            Some(Keycode::ArrowLeft) | 
+            Some(Keycode::ArrowDown) | 
+            Some(Keycode::ArrowRight)
+        )
     } 
 }
 
@@ -90,7 +89,6 @@ pub enum IntervalDecision {
 
 mod time_manager;
 
-#[cfg(feature = "image")]
 #[derive(Debug)]
 #[cfg(feature = "image")]
 pub enum ImageLoadingError {
@@ -148,10 +146,10 @@ pub trait PlatformTrait {
                 assert_eq!(data.len(), width * height * 4);
 
                 let data: &[[u8; 4]] = std::slice::from_raw_parts(data.as_ptr() as *const [u8; 4], data.len() / 4);
-                return Ok(Surface::from_pixels(width, height, data.to_owned()));
+                Ok(Surface::from_pixels(width, height, data.to_owned()))
             }
         } else {
-            let img = image::load_from_memory(&data).map_err(ImageLoadingError::ImageError)?;
+            let img = image::load_from_memory(data).map_err(ImageLoadingError::ImageError)?;
             Ok(image_to_tekenen(img))
         }
     }

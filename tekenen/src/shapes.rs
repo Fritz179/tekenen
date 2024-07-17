@@ -4,7 +4,6 @@ pub mod point;
 use point::Point;
 
 pub mod line;
-use line::Line;
 
 pub mod rect;
 use rect::Rect;
