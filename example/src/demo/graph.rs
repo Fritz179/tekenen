@@ -34,7 +34,7 @@ impl super::Demo for GraphDemo {
         IntervalDecision::Repeat
     }
 
-    fn draw(&mut self, window: &mut Platform) {
+    fn draw(&mut self, window: &mut Platform, _tick: i32) {
         self.graph.background(colors::FRITZ_GRAY);
 
         // Fraw function

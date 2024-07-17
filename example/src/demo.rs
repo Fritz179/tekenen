@@ -9,7 +9,7 @@ pub trait Demo {
     fn update(&mut self, _event: &Event) -> IntervalDecision {
         IntervalDecision::Repeat
     }
-    fn draw(&mut self, window: &mut Platform);
+    fn draw(&mut self, window: &mut Platform, tick: i32);
 }
 
 pub fn main() {
@@ -23,6 +23,7 @@ pub fn main() {
     ];
 
     let mut current_demo = 0;
+    let mut tick = 0;
 
     Platform::set_interval(move || {
         while let Some(event) = window.read_events() {
@@ -48,7 +49,8 @@ pub fn main() {
             }
         }
 
-        demos[current_demo].draw(&mut window);
+        demos[current_demo].draw(&mut window, tick);
+        tick += 1;
 
         IntervalDecision::Repeat
     }, 60)

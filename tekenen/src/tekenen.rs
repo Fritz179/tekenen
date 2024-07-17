@@ -117,7 +117,18 @@ pub trait DrawableSurface {
 
     fn text(&self, text: &str, x: i32, y: i32, height: i32) -> Vec2;
 
-    fn draw_image(&self, x: i32, y: i32, image: &Surface);
+    fn draw_image(&self, x: i32, y: i32, image: &Surface) {
+        self.draw_image_at(x, y, image.width(), image.height(), image)
+    }
+
+    fn draw_image_scaled(&self, x: i32, y: i32, scale: f32, image: &Surface) {
+        let w = (image.width() as f32 * scale) as i32;
+        let h = (image.height() as f32 * scale) as i32;
+
+        self.draw_image_at(x, y, w, h, image)
+    }
+
+    fn draw_image_at(&self, x: i32, y: i32, w: i32, h: i32, image: &Surface);
 }
 
 #[derive(Debug, Clone)]
@@ -355,7 +366,7 @@ impl DrawableSurface for SurfaceDrawer {
         }
     }
 
-    fn draw_image(&self, x: i32, y: i32, image: &Surface) {
+    fn draw_image(&self,x:i32,y:i32,image: &Surface) {
         let mut destination = self.pixels.borrow_mut();
         let source = image.as_slice();
 
@@ -366,6 +377,30 @@ impl DrawableSurface for SurfaceDrawer {
                 // TODO: Proper color mixing
                 if from[3] > 0 {
                     destination.set_pixel(x + xd, y + yd, from)
+                }
+            }
+        }
+    }
+
+    fn draw_image_at(&self, x: i32, y: i32, w: i32, h: i32, image: &Surface) {
+        if w == image.width() && h == image.height() {
+            self.draw_image(x, y, image);
+            return
+        }
+
+        let mut destination = self.pixels.borrow_mut();
+        let source = image.as_slice();
+
+        for xd in x..(x + w) {
+            for yd in y..(y + h) {
+                let xs = (xd - x) * image.width() / w;
+                let ys = (yd - y) * image.height() / h;
+
+                let from = source[(ys * image.width() + xs) as usize];
+
+                // TODO: Proper color mixing
+                if from[3] > 0 {
+                    destination.set_pixel(xd, yd, from)
                 }
             }
         }
@@ -508,7 +543,7 @@ impl SurfaceView {
         (point - self.translation.get() - self.screen.get().position) / self.scale.get()
     }
 
-    pub fn world_length_to_screen(&self, length: f32) -> f32 {
+    pub fn world_length_to_screen(&self, length: Vec2) -> Vec2 {
         length * self.scale.get()
     }
 
@@ -548,13 +583,18 @@ impl DrawableSurface for SurfaceView {
 
     fn text(&self, text: &str, x: i32, y: i32, height: i32) -> Vec2 {
         let pos = self.world_point_to_screen(Vec2::new(x, y));
-        let height = self.world_length_to_screen(height as f32) as i32;
 
-        self.surface.text(text, pos.x, pos.y, height)
+        // TODO: could probably be done better, very low priority
+        let height = self.world_length_to_screen(Vec2::new(0, height));
+
+        self.surface.text(text, pos.x, pos.y, height.y)
     }
 
-    fn draw_image(&self, x: i32, y: i32, image: &Surface) {
-        self.surface.draw_image(x, y, image)
+    fn draw_image_at(&self, x: i32, y: i32, w: i32, h: i32, image: &Surface) {
+        let pos = self.world_point_to_screen(Vec2::new(x, y));
+        let size = self.world_length_to_screen(Vec2::new(w, h));
+
+        self.surface.draw_image_at(pos.x, pos.y, size.x, size.y, image)
     }
 
     fn shape(&self, mut shape: impl Shape) {

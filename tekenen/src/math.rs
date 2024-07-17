@@ -10,8 +10,10 @@ pub use range::*;
 mod zero;
 pub use zero::*;
 
-mod transform;
-pub use transform::*;
+pub trait Transform {
+    fn translate(&mut self, translation: Vec2);
+    fn scale(&mut self, scale: f32);
+}
 
 pub fn clamp<T: PartialOrd>(value: T, min: T, max: T) -> T {
     if value > min {

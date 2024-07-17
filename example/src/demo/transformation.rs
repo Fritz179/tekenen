@@ -1,4 +1,4 @@
-use tekenen::{colors, math::{Vec2}, platform::PlatformTrait, shapes::rect::Rect, DrawableSurface, Surface, SurfaceView};
+use tekenen::{colors, math::Vec2, platform::{Platform, PlatformTrait}, shapes::rect::Rect, DrawableSurface, Surface, SurfaceView};
 
 use super::Demo;
 
@@ -17,7 +17,7 @@ impl TransformationDemo {
 const SPACE: i32 = 150;
 
 impl Demo for TransformationDemo {
-    fn draw(&mut self, window: &mut tekenen::platform::Platform) {
+    fn draw(&mut self, window: &mut Platform, _tick: i32) {
         let ctx = &self.screen;
 
         ctx.reset_transformation();

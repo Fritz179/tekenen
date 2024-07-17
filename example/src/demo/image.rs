@@ -4,29 +4,26 @@ use tekenen::platform::{Platform, PlatformTrait};
 
 pub struct ImageDemo {
     tek: SurfaceView,
-    // slider: slider::Slider,
     img8_png: Surface, 
     img8_fpia: Surface,
-    tick: i32,
 }
 
 impl ImageDemo {
     pub fn new() -> Self {
         Self {
             tek: SurfaceView::new(800, 600, Surface::new(800, 600).into()),
-            // slider: slider::Slider::new(300, 500, 50),
             img8_png: Platform::parse_image(include_bytes!("../../src/img/8.png")).unwrap(),
             img8_fpia: Platform::parse_image(include_bytes!("../../src/img/8.fpia")).unwrap(),
-            tick: 0,
         }
     }
 }
 
 impl super::Demo for ImageDemo {
-    fn draw(&mut self, window: &mut tekenen::platform::Platform) {
+    fn draw(&mut self, window: &mut Platform, tick: i32) {
         let tekenen = &mut self.tek;
 
         tekenen.background(colors::FRITZ_GRAY);
+        tekenen.reset_transformation();
 
         tekenen.fill_color(colors::BLACK);
         tekenen.rect(50, 100, 100, 150);
@@ -43,12 +40,10 @@ impl super::Demo for ImageDemo {
         tekenen.line(100, 400, 100, 350);
         tekenen.line(150, 400, 150, 550);
 
-        tekenen.text(&format!("Hello there, tick: {}", self.tick), 200, 200, 16);
+        tekenen.text(&format!("Hello there, tick: {}", tick), 200, 200, 16);
 
         tekenen.draw_image(600, 200, &self.img8_png);
-        tekenen.draw_image(600, 25, &self.img8_fpia);
-
-        self.tick += 1;
+        tekenen.draw_image_scaled(600, 25, 4.0, &self.img8_fpia);
 
         window.display_surface(tekenen.get_surface());
     }
