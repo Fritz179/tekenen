@@ -22,6 +22,7 @@ pub use tekenen::{SurfaceView, Surface, colors, Pixel, DrawableSurface, Overflow
 
 /// UI, Describe layout in a 'css' manner
 // pub mod html;
+pub mod fui;
 
 pub mod shapes;
 

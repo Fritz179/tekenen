@@ -65,7 +65,7 @@ use std::{cell::{Cell, Ref, RefCell}, rc::Rc};
 use enum_dispatch::enum_dispatch;
 use font::*;
 
-use crate::{math::{Transform, Vec2, Zero}, platform::Event, shapes::{circle::Circle, line::Line, point::Point, rect::Rect, Intersect, Shape}};
+use crate::{fui::{Element, FUI}, math::{Transform, Vec2, Zero}, platform::Event, shapes::{circle::Circle, line::Line, point::Point, rect::Rect, Intersect, Shape}};
 
 
 pub mod colors;
@@ -139,7 +139,7 @@ pub struct SurfaceDrawer {
     fill_color: Cell<Pixel>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct SurfaceView {
     /// The memory buffer holding the pixels
     surface: Rc<SurfaceDestination>,
@@ -155,7 +155,7 @@ pub struct SurfaceView {
     overflow_behavior: OverflowBehavior,
 
     /// used for panning and scaleing
-    moving: Cell<bool>,    
+    moving: Cell<bool>,
 }
 
 #[enum_dispatch(DrawableSurface)]
@@ -408,6 +408,7 @@ impl DrawableSurface for SurfaceDrawer {
 }
 
 impl SurfaceView {
+    // TODO: better inits
     pub fn new(width: i32, height: i32, surface: SurfaceSource) -> Self {
         let surface: SurfaceDestination = match surface {
             SurfaceSource::Surface(surface) => SurfaceDrawer::from_surface(surface).into(),
@@ -420,7 +421,18 @@ impl SurfaceView {
             translation: Cell::new(Vec2::zero()),
             scale: Cell::new(1.0),
             overflow_behavior: OverflowBehavior::Overflow,
-            moving: Cell::new(false)
+            moving: Cell::new(false),
+        }
+    }
+
+    pub fn tee(&self) -> Self {
+        Self {
+            surface: self.surface.clone(),
+            screen: Cell::new(Rect::new(0, 0, 800, 600)),
+            translation: Cell::new(Vec2::zero()),
+            scale: Cell::new(1.0),
+            overflow_behavior: OverflowBehavior::Overflow,
+            moving: Cell::new(false),
         }
     }
 
@@ -446,15 +458,7 @@ impl SurfaceDestination {
     }
 }
 
-impl SurfaceView {
-    pub fn clip(&self, clip: Rect) {
-        self.screen.set(clip)
-    }
-
-    pub fn reset_clip(&self) {
-        self.screen.set(Rect::new(0, 0, self.width(), self.height()))
-    }
-    
+impl SurfaceView {    
     pub fn handle_pan_and_zoom(&self, event: &Event) -> bool {
         match event {
             Event::MouseDown{ x, y } => {
@@ -486,6 +490,15 @@ impl SurfaceView {
 }
 
 impl SurfaceView {
+    // Set clip
+    pub fn clip(&self, clip: Rect) {
+        self.screen.set(clip)
+    }
+
+    pub fn reset_clip(&self) {
+        self.screen.set(Rect::new(0, 0, self.width(), self.height()))
+    }
+
     // Set transformation
     pub fn set_translation(&self, translation: Vec2) {
         self.translation.set(translation);
@@ -623,33 +636,4 @@ impl DrawableSurface for SurfaceView {
         //     }
         // }
     }
-}
-
-impl SurfaceView {
-    // pub fn pixel_index(&self, x: i32, y: i32) -> Option<usize> {
-    //     if x < 0 || y < 0 || x >= self.width as i32 || y >= self.height as i32 {
-    //         None
-    //     } else {
-    //         Some((y * self.width as i32 + x) as usize)
-    //     }
-    // }
-
-    // pub fn set_pixel(&self, x: i32, y: i32) {
-    //     if let Some(index) = self.pixel_index(x, y) {
-    //         // self.pixels.borrow_mut()[index] = color;
-    //         self.pixels[index * 4] = color[0];
-    //         self.pixels[index * 4 + 1] = color[1];
-    //         self.pixels[index * 4 + 2] = color[2];
-    //         self.pixels[index * 4 + 3] = color[3];
-    //     }
-    // }
-
-    // pub fn get_pixel(&self, x: i32, y: i32) -> Option<Pixel> {
-    //     self.pixel_index(x, y).map(|index| [
-    //             self.pixels[index * 4],
-    //             self.pixels[index * 4 + 1],
-    //             self.pixels[index * 4 + 2],
-    //             self.pixels[index * 4 + 3],
-    //         ])
-    // }
 }

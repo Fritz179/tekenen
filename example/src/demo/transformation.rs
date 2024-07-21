@@ -22,7 +22,7 @@ impl Demo for TransformationDemo {
 
         ctx.reset_transformation();
         ctx.reset_clip();
-        ctx.background(tekenen::colors::FRITZ_GRAY);
+        ctx.background(colors::FRITZ_GRAY);
         ctx.fill_color(colors::WHITE);
 
         // Draw the grid

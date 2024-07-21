@@ -11,7 +11,7 @@ pub struct GraphDemo {
 impl GraphDemo {
     pub fn new() -> Self {
         let original = SurfaceView::new(800, 600, Surface::new(800, 600).into());
-        let graph = original.clone();
+        let graph = original.tee();
         graph.clip(Rect::new(100, 0, 700, 500));
 
         Self {

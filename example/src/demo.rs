@@ -4,6 +4,7 @@ mod image;
 mod canvas;
 mod graph;
 mod transformation;
+mod interactions;
 
 pub trait Demo {
     fn update(&mut self, _event: &Event) -> IntervalDecision {
@@ -16,6 +17,7 @@ pub fn main() {
     let mut window = Box::new(Platform::new(800, 600).unwrap());
 
     let mut demos: Vec<Box<dyn Demo>> = vec![
+        Box::new(interactions::InteractionsDemo::new()),
         Box::new(transformation::TransformationDemo::new()),
         Box::new(graph::GraphDemo::new()),
         Box::new(image::ImageDemo::new()),
