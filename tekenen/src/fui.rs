@@ -2,12 +2,12 @@ use std::{cell::Cell, fmt::{Debug, Display}, rc::Rc};
 
 use div::{Div, InnerElement};
 
-use crate::{platform::Event, shapes::rect::Rect, SurfaceView};
+use crate::{platform::Event, printer::Print, shapes::rect::Rect, SurfaceView};
 
 pub mod div;
 pub mod text;
 
-pub trait Element: Debug {
+pub trait Element: Debug + Print {
     fn event(&self, event: &Event);
 
     fn get_invalidation(&self) -> Invalidation;
@@ -109,5 +109,12 @@ impl FUI {
 
     pub fn event(&self, event: &Event) {
         
+    }
+}
+
+impl Print for FUI {
+    fn fmt(&self, printer: &mut crate::printer::Printer) -> std::fmt::Result {
+        printer.println("<FUI ROOT>")?;
+        printer.value(&self.element)
     }
 }

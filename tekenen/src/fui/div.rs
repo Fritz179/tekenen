@@ -1,6 +1,6 @@
 use std::{cell::{Cell, RefCell}, rc::Rc};
 
-use crate::{platform::Event, shapes::rect::Rect, SurfaceView};
+use crate::{platform::Event, printer::{Print, Printer}, shapes::rect::Rect, SurfaceView};
 
 use super::{Element, Invalidation};
 
@@ -73,6 +73,13 @@ impl InnerElement {
     }
 }
 
+impl Print for InnerElement {
+    fn fmt(&self, printer: &mut Printer) -> std::fmt::Result {
+        printer.set_previous(format!("{}", Printer::new(&self.clip.get().expect("No Bounding box"))));
+        printer.value(&*self.element)
+    }
+}
+
 #[derive(Debug)]
 pub struct Div {
     children: RefCell<Vec<InnerElement>>,
@@ -90,6 +97,22 @@ impl Div {
     pub fn add_child(self: Rc<Self>, child: Rc<dyn Element>) -> Rc<Self> {
         self.children.borrow_mut().push(InnerElement::new(child));
         self
+    }
+}
+
+impl Print for Div {
+    fn fmt(&self, printer: &mut crate::printer::Printer) -> std::fmt::Result {
+        printer.println("<Div>")?;
+        printer.indent(2);
+        printer.print_previous()?;
+        printer.println("children:")?;
+        printer.indent(6);
+
+        for child in self.children.borrow_mut().iter() {
+            printer.value(child)?;
+        }
+
+        Ok(())
     }
 }
 

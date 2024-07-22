@@ -1,6 +1,6 @@
 use std::{cell::{Cell, RefCell}, rc::Rc};
 
-use crate::{platform::Event, DrawableSurface, SurfaceView};
+use crate::{platform::Event, printer::Print, DrawableSurface, SurfaceView};
 
 use super::{Element, Invalidation};
 
@@ -33,6 +33,15 @@ impl Text {
             *old_text = text;
             self.dirty.set(Invalidation::Draw);
         }
+    }
+}
+
+impl Print for Text {
+    fn fmt(&self, printer: &mut crate::printer::Printer) -> std::fmt::Result {
+        printer.println("<Text>")?;
+        printer.indent(2);
+        printer.print_previous()?;
+        printer.property("text", &self.text.borrow())
     }
 }
 

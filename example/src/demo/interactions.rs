@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use tekenen::{colors, fui::{div::Div, text::Text, FUI}, platform::{Event, IntervalDecision, KeyDownEvent, Platform, PlatformTrait}, DrawableSurface, Surface, SurfaceView};
+use tekenen::{colors, fui::{div::Div, text::Text, FUI}, platform::{Event, IntervalDecision, KeyDownEvent, Platform, PlatformTrait}, printer::Printer, DrawableSurface, Surface, SurfaceView};
 
 use super::Demo;
 
@@ -28,7 +28,7 @@ impl Demo for InteractionsDemo {
 
         if let Event::KeyDown(KeyDownEvent { char: Some(key), .. }) = event {
             match key {
-                'd' => println!("FUI: {:#?}", self.fui),
+                'd' => println!("{}", Printer::new(&self.fui)),
                 // 's' => println!("FUI: {}", self.fui), 
                 _ => { }
             }

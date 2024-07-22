@@ -2,6 +2,7 @@
 #![allow(unused_variables)]
 #![feature(slice_flatten)]
 #![feature(array_chunks)]
+#![feature(trait_upcasting)]
 
 #[cfg(feature = "preloader")]
 pub mod preloader;
@@ -27,6 +28,8 @@ pub mod fui;
 pub mod shapes;
 
 pub mod math;
+
+pub mod printer;
 
 #[cfg(all(feature = "server", not(target_family = "wasm")))]
 pub fn server() {
