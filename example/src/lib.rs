@@ -11,6 +11,6 @@ pub fn wasm_start() {
 pub fn main() {
     demo::main();
 
-    // #[cfg(not(target_family = "wasm"))]
-    // tekenen::server();
+    #[cfg(not(target_family = "wasm"))]
+    tekenen::server();
 }

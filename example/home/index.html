@@ -18,7 +18,7 @@
             const ctx = canvas.getContext('2d')
 
 
-            import init, { wasm_start, wasm_run_callback, wasm_key_down } from "./wasm/example.js";
+            import init, { wasm_start, wasm_run_callback, wasm_key_down, wasm_mouse_down, wasm_mouse_move, wasm_mouse_up } from "./wasm/example.js";
             
             window.js_set_size = (width, height) => {
                 console.log(width, height)
@@ -52,6 +52,19 @@
                     wasm_key_down('\n')
                     return
                 }
+            })
+
+            canvas.addEventListener('mousedown', e => {
+                wasm_mouse_down(e.offsetX, e.offsetY)
+            })
+
+            canvas.addEventListener('mousemove', e => {
+                console.log(e)
+                wasm_mouse_move(e.offsetX, e.offsetY, e.movementX, e.movementY)
+            })
+
+            canvas.addEventListener('mouseup', e => {
+                wasm_mouse_up(e.offsetX, e.offsetY)
             })
 
             init().then(() => {

@@ -13,6 +13,9 @@ documentation = "https://docs.rs/tekenen"
 image = { version = "0.24.6", optional = true }
 enum_dispatch = "0.3.0"
 
+# Enable wasm for debugging
+# wasm-bindgen = { version = "0.2.73" }
+
 # WASM target
 [target.'cfg(target_family = "wasm")'.dependencies]
 wasm-bindgen = { version = "0.2.73" }

@@ -8,6 +8,7 @@ mod mock;
 #[cfg(all(not(feature = "native"), not(target_family = "wasm")))]
 pub use mock::MockPlatform as Platform;
 
+// Disable for wasm debugging
 #[cfg(target_family = "wasm")]
 mod wasm;
 #[cfg(target_family = "wasm")]

@@ -13,7 +13,7 @@ type Callback = Box<dyn FnMut() -> IntervalDecision>;
 
 thread_local! {
     static ACTIVE_CALLBACK: RefCell<Option<Callback>> = RefCell::new(None);
-    static KEY_QUEUE: RefCell<VecDeque<char>> = RefCell::new(VecDeque::new());
+    static KEY_QUEUE: RefCell<VecDeque<Event>> = RefCell::new(VecDeque::new());
 }
 
 impl PlatformTrait for WASMPlatform {
@@ -33,18 +33,7 @@ impl PlatformTrait for WASMPlatform {
     fn read_events(&mut self) -> Option<Event> {
         KEY_QUEUE.with(|queue| {
             let mut queue = queue.borrow_mut();
-            let key = queue.pop_front();
-
-            key.map(|key| Event::KeyDown(KeyDownEvent {
-                repeat: false,
-                char: Some(key),
-                keycode: None,
-                keymod: Keymod {
-                    shift: false,
-                    ctrl: false,
-                    caps: false,
-                },
-            }))
+            queue.pop_front()
         })
     }
 
@@ -77,7 +66,62 @@ pub fn wasm_key_down(key: char) {
     KEY_QUEUE.with(|queue| {
         let mut queue = queue.borrow_mut();
 
-        queue.push_back(key)
+        let event = Event::KeyDown(KeyDownEvent {
+            repeat: false,
+            char: Some(key),
+            keycode: None,
+            keymod: Keymod {
+                shift: false,
+                ctrl: false,
+                caps: false,
+            },
+        });
+
+        queue.push_back(event)
+    })
+}
+
+#[wasm_bindgen]
+pub fn wasm_mouse_down(x: i32, y: i32) {
+    KEY_QUEUE.with(|queue| {
+        let mut queue = queue.borrow_mut();
+
+        let event = Event::MouseDown {
+            x,
+            y,
+        };
+
+        queue.push_back(event)
+    })
+}
+
+#[wasm_bindgen]
+pub fn wasm_mouse_move(x: i32, y: i32, xd: i32, yd: i32) {
+    KEY_QUEUE.with(|queue| {
+        let mut queue = queue.borrow_mut();
+
+        let event = Event::MouseMove {
+            x,
+            y,
+            xd,
+            yd,
+        };
+
+        queue.push_back(event)
+    })
+}
+
+#[wasm_bindgen]
+pub fn wasm_mouse_up(x: i32, y: i32) {
+    KEY_QUEUE.with(|queue| {
+        let mut queue = queue.borrow_mut();
+
+        let event = Event::MouseUp {
+            x,
+            y,
+        };
+
+        queue.push_back(event)
     })
 }
 
