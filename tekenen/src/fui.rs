@@ -8,6 +8,7 @@ use crate::{platform::Event, printer::Print, shapes::rect::Rect, SurfaceView};
 pub mod div;
 pub mod text;
 pub mod button;
+pub mod slider;
 
 pub trait Element: Print {
     fn event(&self, event: Event);

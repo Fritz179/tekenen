@@ -4,11 +4,19 @@ pub trait Print {
     fn print(&self, printer: &mut Printer) -> std::fmt::Result;
 }
 
-impl Print for bool {
-    fn print(&self, printer: &mut Printer) -> std::fmt::Result {
-        printer.print_string(if *self { "true" } else { "false" })
-    }
+macro_rules! impl_print_through_display {
+    ($t:ty) => {
+        impl Print for $t {
+            fn print(&self, printer: &mut Printer) -> std::fmt::Result {
+                printer.print_string(&format!("{}", self))
+            }
+        }
+    };
 }
+
+impl_print_through_display!(bool);
+impl_print_through_display!(f32);
+impl_print_through_display!(i32);
 
 impl Print for String {
     fn print(&self, printer: &mut Printer) -> std::fmt::Result {
