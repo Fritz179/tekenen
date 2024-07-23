@@ -7,7 +7,7 @@ mod transformation;
 mod interactions;
 
 pub trait Demo {
-    fn update(&mut self, _event: &Event) -> IntervalDecision {
+    fn update(&mut self, _event: Event) -> IntervalDecision {
         IntervalDecision::Repeat
     }
     fn draw(&mut self, window: &mut Platform, tick: i32);
@@ -45,7 +45,7 @@ pub fn main() {
             }
 
             // Send the event forward to the current demo
-            match demos[current_demo].update(&event) {
+            match demos[current_demo].update(event) {
                 IntervalDecision::Repeat => { },
                 IntervalDecision::Stop => return IntervalDecision::Stop
             }

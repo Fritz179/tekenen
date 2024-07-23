@@ -459,10 +459,10 @@ impl SurfaceDestination {
 }
 
 impl SurfaceView {    
-    pub fn handle_pan_and_zoom(&self, event: &Event) -> bool {
+    pub fn handle_pan_and_zoom(&self, event: Event) -> bool {
         match event {
             Event::MouseDown{ x, y } => {
-                if self.screen.get().encloses_point(&Point::new(*x, *y)) {
+                if self.screen.get().encloses_point(&Point::new(x, y)) {
                     self.moving.set(true);
                 }
                 true
@@ -473,15 +473,15 @@ impl SurfaceView {
             },
             Event::MouseMove{ xd, yd, .. } => {
                 if self.moving.get() {
-                    self.translate_screen(Vec2::new(*xd, *yd));
+                    self.translate_screen(Vec2::new(xd, yd));
                     true
                 } else {
                     false
                 }
             }
             Event::MouseWheel{ direction, position } => {
-                let value = if *direction { 1.2 } else { 1.0 / 1.2 };
-                self.scale_screen(value, *position);
+                let value = if direction { 1.2 } else { 1.0 / 1.2 };
+                self.scale_screen(value, position);
                 true
             },
             _ => { false }
@@ -579,7 +579,8 @@ impl DrawableSurface for SurfaceView {
     }
 
     fn background(&self, color: Pixel) {
-        self.surface.background(color)
+        self.fill_color(color);
+        self.shape(Rect::new(0, 0, self.width(), self.height()));
     }
 
     fn line(&self, x1: i32, y1: i32, x2: i32, y2: i32) {

@@ -26,7 +26,7 @@ fn function(x: i32) -> i32 {
 }
 
 impl super::Demo for GraphDemo {
-    fn update(&mut self, event: &Event) -> IntervalDecision {
+    fn update(&mut self, event: Event) -> IntervalDecision {
         if self.graph.handle_pan_and_zoom(event) {
             return IntervalDecision::Repeat
         }

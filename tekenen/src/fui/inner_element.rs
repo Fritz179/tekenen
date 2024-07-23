@@ -1,10 +1,9 @@
 use std::{cell::Cell, rc::Rc};
 
-use crate::{platform::Event, printer::{Print, Printer}, shapes::rect::Rect, SurfaceView};
+use crate::{platform::Event, printer::{Print, Printer}, shapes::{point::Point, rect::Rect, Intersect}, SurfaceView};
 
 use super::{Element, Invalidation};
 
-#[derive(Debug)]
 pub struct InnerElement {
     element: Rc<dyn Element>,
     clip: Cell<Option<Rect>>,
@@ -24,7 +23,28 @@ impl InnerElement {
 }
 
 impl Element for InnerElement {
-    fn event(&self, event: &Event) {
+    fn event(&self, mut event: Event) {
+        let clip = if let Some(clip) = self.clip.get() {
+            clip
+        } else {
+            println!("Element has no bounding box!");
+            return
+        };
+
+        if let Event::MouseDown { x, y } = event {
+            if !clip.encloses_point(&Point::new(x, y)) {
+                return
+            }
+        }
+
+        if let Event::MouseMove { x, y, .. } = event {
+            if !clip.encloses_point(&Point::new(x, y)) {
+                return
+            }
+        }
+
+        event.translate(-clip.position);
+
         self.element.event(event);
     }
 

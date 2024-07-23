@@ -7,9 +7,10 @@ use crate::{platform::Event, printer::Print, shapes::rect::Rect, SurfaceView};
 
 pub mod div;
 pub mod text;
+pub mod button;
 
-pub trait Element: Debug + Print {
-    fn event(&self, event: &Event);
+pub trait Element: Print {
+    fn event(&self, event: Event);
 
     fn get_invalidation(&self) -> Invalidation;
 
@@ -77,7 +78,6 @@ impl Invalidation {
     }
 }
 
-#[derive(Debug)]
 pub struct FUI {
     element: InnerElement
 }
@@ -114,8 +114,8 @@ impl FUI {
         // }
     }
 
-    pub fn event(&self, event: &Event) {
-        
+    pub fn event(&self, event: Event) {
+        self.element.event(event)
     }
 }
 

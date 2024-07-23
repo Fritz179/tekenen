@@ -18,7 +18,7 @@ use image::GenericImageView;
 
 use crate::{math::Vec2, tekenen};
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Keycode {
     ArrowUp,
     ArrowLeft,
@@ -28,14 +28,14 @@ pub enum Keycode {
     Escape,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Keymod {
     pub shift: bool,
     pub ctrl: bool,
     pub caps: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct KeyDownEvent {
     pub repeat: bool,
     pub char: Option<char>,
@@ -54,7 +54,7 @@ impl KeyDownEvent {
     } 
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Event {
     KeyDown (KeyDownEvent),
     MouseDown {
@@ -80,6 +80,35 @@ pub enum Event {
         h: i32
     },
     Quit,
+}
+
+impl Event {
+    pub fn position(&self) -> Option<Vec2> {
+        match self {
+            Event::MouseDown { x, y } => Some(Vec2::new(*x, *y)),
+            Event::MouseUp { x, y } => Some(Vec2::new(*x, *y)),
+            Event::MouseMove { x, y, .. } => Some(Vec2::new(*x, *y)),
+            _ => None
+        }
+    }
+
+    pub fn translate(&mut self, offset: Vec2) {
+        match self {
+            Event::MouseDown { x, y } => {
+                *x += offset.x;
+                *y += offset.y;
+            },
+            Event::MouseUp { x, y } => {
+                *x += offset.x;
+                *y += offset.y;
+            },
+            Event::MouseMove { x, y, .. } => {
+                *x += offset.x;
+                *y += offset.y;
+            },
+            _ => {}
+        }
+    } 
 }
 
 pub enum IntervalDecision {

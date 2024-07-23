@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use tekenen::{colors, fui::{div::Div, text::Text, FUI}, platform::{Event, IntervalDecision, KeyDownEvent, Platform, PlatformTrait}, printer::Printer, DrawableSurface, Surface, SurfaceView};
+use tekenen::{colors, fui::{button::Button, div::Div, text::Text, FUI}, platform::{Event, IntervalDecision, KeyDownEvent, Platform, PlatformTrait}, printer::Printer, DrawableSurface, Surface, SurfaceView};
 
 use super::Demo;
 
@@ -14,16 +14,30 @@ impl InteractionsDemo {
     pub fn new() -> Self {
         let text = Text::new("Hello, world!");
 
+        let mut clicks: i32 = 0;
+        let button_text = Text::new("Clicks: 0");
+
+        let button_text_clone = button_text.clone();
+        let button = Button::new(move || {
+            clicks += 1;
+            button_text_clone.set_text(format!("Clicks: {}", clicks));
+        });
+
         Self {
             tekenen: SurfaceView::new(800, 600, Surface::new(800, 600).into()),
-            fui: FUI::new(Div::new(vec![text.clone(), Text::new("Second line?")])),
+            fui: FUI::new(Div::new(vec![
+                text.clone(), 
+                Text::new("Second line?"),
+                button,
+                button_text
+            ])),
             text
         }
     }
 }
 
 impl Demo for InteractionsDemo {
-    fn update(&mut self, event: &Event) -> IntervalDecision {
+    fn update(&mut self, event: Event) -> IntervalDecision {
         self.fui.event(event);
 
         if let Event::KeyDown(KeyDownEvent { char: Some(key), .. }) = event {

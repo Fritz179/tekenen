@@ -4,17 +4,16 @@ use crate::{platform::Event, printer::{Print, Printer}, shapes::rect::Rect, Surf
 
 use super::{inner_element::InnerElement, Element, Invalidation};
 
-#[derive(Debug)]
 pub struct Div {
     children: RefCell<Vec<InnerElement>>,
-    invalidation: Cell<Invalidation>,
+    dirty: Cell<Invalidation>,
 }
 
 impl Div {
     pub fn new(children: Vec<Rc<dyn Element>>) -> Rc<Self> {
         Rc::new(Self {
             children: RefCell::new(children.into_iter().map(|child| InnerElement::new(child)).collect()),
-            invalidation: Cell::new(Invalidation::Layout),
+            dirty: Cell::new(Invalidation::Layout),
         })
     }
 
@@ -29,6 +28,7 @@ impl Print for Div {
         printer.println(&"<Div>")?;
         printer.indent(2);
         printer.print_previous()?;
+        printer.debug().property("dirty", &self.dirty)?;
         printer.println(&"children:")?;
         printer.indent(6);
 
@@ -41,14 +41,14 @@ impl Print for Div {
 }
 
 impl Element for Div {
-    fn event(&self, event: &Event) {
+    fn event(&self, event: Event) {
         for child in self.children.borrow_mut().iter() {
             child.event(event);
         }
     }
 
     fn get_invalidation(&self) -> Invalidation {
-        let mut validation = self.invalidation.replace(Invalidation::None);
+        let mut validation = self.dirty.replace(Invalidation::None);
 
         for child in self.children.borrow_mut().iter() {
             let child_validation = child.get_invalidation();
@@ -68,12 +68,13 @@ impl Element for Div {
         width
     }
 
-    fn get_height(&self, width: i32) -> i32 {
+    fn get_height(&self, max_width: i32) -> i32 {
         let mut height = 0;
 
         for child in self.children.borrow_mut().iter() {
-            let child_height = child.get_height(width);
-            child.clip(Rect::new(0, height, width, child_height));
+            let child_width = child.get_width().min(max_width);
+            let child_height = child.get_height(max_width);
+            child.clip(Rect::new(0, height, child_width, child_height));
             height += child_height;
         }
 

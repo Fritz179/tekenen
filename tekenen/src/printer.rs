@@ -4,6 +4,12 @@ pub trait Print {
     fn print(&self, printer: &mut Printer) -> std::fmt::Result;
 }
 
+impl Print for bool {
+    fn print(&self, printer: &mut Printer) -> std::fmt::Result {
+        printer.print_string(if *self { "true" } else { "false" })
+    }
+}
+
 impl Print for String {
     fn print(&self, printer: &mut Printer) -> std::fmt::Result {
         printer.print_string(self)

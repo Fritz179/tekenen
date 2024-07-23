@@ -1,10 +1,9 @@
 use std::{cell::{Cell, RefCell}, rc::Rc};
 
-use crate::{platform::Event, printer::Print, DrawableSurface, SurfaceView};
+use crate::{colors, platform::Event, printer::Print, DrawableSurface, SurfaceView};
 
 use super::{Element, Invalidation};
 
-#[derive(Debug)]
 pub struct Text {
     text: RefCell<String>,
     dirty: Cell<Invalidation>,
@@ -47,7 +46,7 @@ impl Print for Text {
 }
 
 impl Element for Text {
-    fn event(&self, _event: &Event) {
+    fn event(&self, _event: Event) {
         
     }
 
@@ -64,6 +63,7 @@ impl Element for Text {
     }
 
     fn draw(&self, tekenen: &SurfaceView) {
+        tekenen.fill_color(colors::WHITE);
         tekenen.text(&self.text.borrow(), 0, 0, 16);
     }
 }
