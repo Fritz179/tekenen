@@ -1,6 +1,7 @@
-use std::{cell::Cell, fmt::{Debug, Display}, rc::Rc};
+use std::{cell::Cell, fmt::Debug, rc::Rc};
 
-use div::{Div, InnerElement};
+mod inner_element;
+use inner_element::InnerElement;
 
 use crate::{platform::Event, printer::Print, shapes::rect::Rect, SurfaceView};
 
@@ -23,6 +24,12 @@ pub enum Invalidation {
     Layout,
     Draw,
     None
+}
+
+impl Print for Invalidation {
+    fn print(&self, printer: &mut crate::printer::Printer) -> std::fmt::Result {
+        printer.print_debug(self)
+    }
 }
 
 impl Invalidation {
@@ -113,8 +120,8 @@ impl FUI {
 }
 
 impl Print for FUI {
-    fn fmt(&self, printer: &mut crate::printer::Printer) -> std::fmt::Result {
-        printer.println("<FUI ROOT>")?;
-        printer.value(&self.element)
+    fn print(&self, printer: &mut crate::printer::Printer) -> std::fmt::Result {
+        printer.println(&"<FUI ROOT>")?;
+        printer.println(&self.element)
     }
 }

@@ -16,7 +16,7 @@ impl InteractionsDemo {
 
         Self {
             tekenen: SurfaceView::new(800, 600, Surface::new(800, 600).into()),
-            fui: FUI::new(Div::new().add_child(text.clone()).add_child(Text::new("Second line?"))),
+            fui: FUI::new(Div::new(vec![text.clone(), Text::new("Second line?")])),
             text
         }
     }
@@ -28,8 +28,8 @@ impl Demo for InteractionsDemo {
 
         if let Event::KeyDown(KeyDownEvent { char: Some(key), .. }) = event {
             match key {
-                'd' => println!("{}", Printer::new(&self.fui)),
-                // 's' => println!("FUI: {}", self.fui), 
+                'd' => println!("{:?}", Printer::new(&self.fui)),
+                's' => println!("{}", Printer::new(&self.fui)),
                 _ => { }
             }
         }
@@ -43,7 +43,6 @@ impl Demo for InteractionsDemo {
         self.text.set_text(format!("Hello, world! {}", tick));
 
         ctx.background(colors::FRITZ_GRAY);
-        
         self.fui.render(ctx);
 
         window.display_surface(ctx.get_surface());

@@ -37,11 +37,12 @@ impl Text {
 }
 
 impl Print for Text {
-    fn fmt(&self, printer: &mut crate::printer::Printer) -> std::fmt::Result {
-        printer.println("<Text>")?;
+    fn print(&self, printer: &mut crate::printer::Printer) -> std::fmt::Result {
+        printer.println(&"<Text>")?;
         printer.indent(2);
         printer.print_previous()?;
-        printer.property("text", &self.text.borrow())
+        printer.property("text", &self.text)?;
+        printer.debug().property("dirty", &self.dirty)
     }
 }
 

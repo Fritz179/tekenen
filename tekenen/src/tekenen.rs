@@ -65,7 +65,7 @@ use std::{cell::{Cell, Ref, RefCell}, rc::Rc};
 use enum_dispatch::enum_dispatch;
 use font::*;
 
-use crate::{fui::{Element, FUI}, math::{Transform, Vec2, Zero}, platform::Event, shapes::{circle::Circle, line::Line, point::Point, rect::Rect, Intersect, Shape}};
+use crate::{math::{Transform, Vec2, Zero}, platform::Event, shapes::{circle::Circle, line::Line, point::Point, rect::Rect, Intersect, Shape}};
 
 
 pub mod colors;

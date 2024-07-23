@@ -2,83 +2,7 @@ use std::{cell::{Cell, RefCell}, rc::Rc};
 
 use crate::{platform::Event, printer::{Print, Printer}, shapes::rect::Rect, SurfaceView};
 
-use super::{Element, Invalidation};
-
-#[derive(Debug)]
-pub struct InnerElement {
-    element: Rc<dyn Element>,
-    clip: Cell<Option<Rect>>,
-    width: Cell<Option<i32>>,
-    height: Cell<Option<(i32, i32)>>,
-}
-
-impl InnerElement {
-    pub fn new(element: Rc<dyn Element>) -> Self {
-        Self {
-            element,
-            clip: Cell::new(None),
-            width: Cell::new(None),
-            height: Cell::new(None),
-        }
-    }
-}
-
-impl Element for InnerElement {
-    fn event(&self, event: &Event) {
-        self.element.event(event);
-    }
-
-    fn get_invalidation(&self) -> Invalidation {
-        let validation = self.element.get_invalidation();
-
-        if validation.needs_relayout() {
-            self.width.set(None);
-            self.height.set(None);
-        }
-
-        validation
-    }
-
-    fn get_width(&self) -> i32 {
-        if let Some(width) = self.width.get() {
-            return width;
-        }
-
-        let width = self.element.get_width();
-        self.width.set(Some(width));
-        width
-    }
-
-    fn get_height(&self, width: i32) -> i32 {
-        if let Some((previous_width, height)) = self.height.get() {
-            if previous_width == width {
-                return height;
-            }
-        }
-
-        let height = self.element.get_height(width);
-        self.height.set(Some((width, height)));
-        height
-    }
-
-    fn draw(&self, tekenen: &SurfaceView) {
-        tekenen.clip(self.clip.get().expect("Element has no bounding box!"));
-        self.element.draw(tekenen);
-    }
-}
-
-impl InnerElement {
-    pub fn clip(&self, clip: Rect) {
-        self.clip.set(Some(clip));
-    }
-}
-
-impl Print for InnerElement {
-    fn fmt(&self, printer: &mut Printer) -> std::fmt::Result {
-        printer.set_previous(format!("{}", Printer::new(&self.clip.get().expect("No Bounding box"))));
-        printer.value(&*self.element)
-    }
-}
+use super::{inner_element::InnerElement, Element, Invalidation};
 
 #[derive(Debug)]
 pub struct Div {
@@ -87,9 +11,9 @@ pub struct Div {
 }
 
 impl Div {
-    pub fn new() -> Rc<Self> {
+    pub fn new(children: Vec<Rc<dyn Element>>) -> Rc<Self> {
         Rc::new(Self {
-            children: RefCell::new(Vec::new()),
+            children: RefCell::new(children.into_iter().map(|child| InnerElement::new(child)).collect()),
             invalidation: Cell::new(Invalidation::Layout),
         })
     }
@@ -101,15 +25,15 @@ impl Div {
 }
 
 impl Print for Div {
-    fn fmt(&self, printer: &mut crate::printer::Printer) -> std::fmt::Result {
-        printer.println("<Div>")?;
+    fn print(&self, printer: &mut Printer) -> std::fmt::Result {
+        printer.println(&"<Div>")?;
         printer.indent(2);
         printer.print_previous()?;
-        printer.println("children:")?;
+        printer.println(&"children:")?;
         printer.indent(6);
 
         for child in self.children.borrow_mut().iter() {
-            printer.value(child)?;
+            printer.println(child)?;
         }
 
         Ok(())
