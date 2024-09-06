@@ -3,7 +3,7 @@ use std::{cell::{Ref, RefCell}, collections::VecDeque};
 
 use crate::Surface;
 
-use super::{PlatformTrait, PlatformError, Event, KeyDownEvent, Keycode, Keymod, IntervalDecision, time_manager::{TimeAction, TimeManager}};
+use super::{PlatformTrait, PlatformError, Event, KeyDownEvent, MouseKey, Keymod, IntervalDecision};
 
 use wasm_bindgen::prelude::*;
 
@@ -56,7 +56,7 @@ impl PlatformTrait for WASMPlatform {
         todo!()
     }
 
-    fn log(value: u32) {
+    fn log(value: String) {
         js_log(value)
     }
 }
@@ -81,14 +81,26 @@ pub fn wasm_key_down(key: char) {
     })
 }
 
+pub fn mouse_key_to_keycode(key: i32) -> MouseKey {
+    match key {
+        0 => MouseKey::Left,
+        1 => MouseKey::Middle,
+        2 => MouseKey::Right,
+        3 => MouseKey::Back,
+        4 => MouseKey::Forward,
+        _ => unreachable!(),
+    }
+}
+
 #[wasm_bindgen]
-pub fn wasm_mouse_down(x: i32, y: i32) {
+pub fn wasm_mouse_down(x: i32, y: i32, button: i32) {
     KEY_QUEUE.with(|queue| {
         let mut queue = queue.borrow_mut();
 
         let event = Event::MouseDown {
             x,
             y,
+            key: mouse_key_to_keycode(button),
         };
 
         queue.push_back(event)
@@ -112,13 +124,14 @@ pub fn wasm_mouse_move(x: i32, y: i32, xd: i32, yd: i32) {
 }
 
 #[wasm_bindgen]
-pub fn wasm_mouse_up(x: i32, y: i32) {
+pub fn wasm_mouse_up(x: i32, y: i32, button: i32) {
     KEY_QUEUE.with(|queue| {
         let mut queue = queue.borrow_mut();
 
         let event = Event::MouseUp {
             x,
             y,
+            key: mouse_key_to_keycode(button),
         };
 
         queue.push_back(event)
@@ -143,7 +156,7 @@ pub fn wasm_run_callback() {
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen]
-    fn js_log(value: u32);
+    fn js_log(value: String);
 
     #[wasm_bindgen]
     fn js_set_size(width: u32, height: u32);

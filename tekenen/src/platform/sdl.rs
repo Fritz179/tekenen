@@ -53,8 +53,8 @@ impl PlatformTrait for SDLPlatform {
         Ok(io_manager)
     }
 
-    fn log(value: u32) {
-        println!("{}", value);
+    fn log(value: String) {
+        println!("{value}");
     }
 
     fn display_surface(&mut self, pixels: Ref<Surface>) {
@@ -204,7 +204,7 @@ impl From<MouseButton> for MouseKey {
             MouseButton::Left => MouseKey::Left,
             MouseButton::Right => MouseKey::Right,
             MouseButton::Middle => MouseKey::Middle,
-            _ => MouseKey::Unknown,
+            _ => unimplemented!(),
         }
     }
 }

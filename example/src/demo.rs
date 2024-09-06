@@ -29,6 +29,7 @@ pub fn main() {
 
     Platform::set_interval(move || {
         while let Some(event) = window.read_events() {
+            Platform::log(format!("{:?}", event));
 
             // Check if we have to react to an event
             match event {

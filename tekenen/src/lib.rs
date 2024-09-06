@@ -61,21 +61,47 @@ macro_rules! BUILD_WASM {
             println!("cargo:warning=Skipping wasm because target is not unix");
         } else {
             println!("cargo:warning=Building wasm");
+            let path = "./home/wasm";
+
+            // remove the old wasm files
+            let _ = std::fs::remove_dir_all(path);
+            fs::create_dir(path).unwrap();
     
-            let status = std::process::Command::new("wasm-pack")
+            use std::process::Command;
+            let status = Command::new("wasm-pack")
                 .args([
                     "build",
                     "./",
                     "--target",
                     "web",
                     "--out-dir",
-                    "./home/wasm",
+                    path,
                 ])
-                .output();
+                .output()
+                .unwrap();
 
-            // if !status.as_ref().unwrap().stderr.is_empty() {
-            //     panic!("{}", std::str::from_utf8(&status.unwrap().stderr).unwrap());
-            // } 
+            let stdout = std::str::from_utf8(&status.stdout).unwrap().to_owned();
+            let stderr = std::str::from_utf8(&status.stderr).unwrap().to_owned();
+
+            let data = format!("wasm-pack STDOUT:\n{}\nwasm-pack STDERR:\n{}", stdout, stderr);
+
+            // Display error message in terminal
+            for line in data.lines() {
+                println!("cargo:warning={}", line);
+            }
+
+            // Test output dir is empty
+            let directory = std::fs::read_dir(path).unwrap();
+
+            if directory.count() == 0 || data.lines().count() > 15 {
+                // Display error message in the browser
+                fs::write(path.to_owned() + "/example.js", format!("
+                    export default function init() {{ 
+                        window.js_log(`{}`);
+                        return {{ then: _ => {{}} }};
+                    }}
+                ", data.to_owned().replace("`", "\\`"))).unwrap();
+            }
         }
     };
 }

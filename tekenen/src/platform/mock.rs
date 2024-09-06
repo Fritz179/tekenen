@@ -15,7 +15,7 @@ impl PlatformTrait for MockPlatform {
         unreachable!()
     }
 
-    fn log(value: u32) {
+    fn log(value: String) {
         unreachable!()
     }
 

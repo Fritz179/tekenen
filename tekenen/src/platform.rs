@@ -289,7 +289,8 @@ pub enum MouseKey {
     Left,
     Right,
     Middle,
-    Unknown,
+    Back,
+    Forward,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -395,7 +396,7 @@ const FPIA_MAGIC: [u8; 4] = [b'F', b'P', b'I', b'A'];
 pub trait PlatformTrait {
     fn new(width: u32, height: u32) -> Result<Self, PlatformError> where Self: Sized;
 
-    fn log(value: u32);
+    fn log(value: String);
     
     fn display_surface(&mut self, surface: Ref<tekenen::Surface>);
     fn read_events(&mut self) -> Option<Event>;

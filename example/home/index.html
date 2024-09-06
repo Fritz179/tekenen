@@ -8,69 +8,93 @@
 
         <style>
             html {
-                background-color: #515151;
+                background-color: #000;
+                color: white;
             }
         </style>
 
         <canvas id="canvas"></canvas>
+
+        <pre>Console Output:</pre>
+        <pre id="log" style="height: 500px; overflow: auto;"></pre>
+
         <script type="module">
-            const canvas = document.querySelector('#canvas')
-            const ctx = canvas.getContext('2d')
+            import init, * as wasm from "./wasm/example.js";
 
+            const pre_log = document.querySelector('#log')
 
-            import init, { wasm_start, wasm_run_callback, wasm_key_down, wasm_mouse_down, wasm_mouse_move, wasm_mouse_up } from "./wasm/example.js";
-            
-            window.js_set_size = (width, height) => {
-                console.log(width, height)
-                canvas.width = width
-                canvas.height = height
-            }
-
-            window.js_display_pixels = pixels => {
-                const clamped = new Uint8ClampedArray(pixels)
-                const data = new ImageData(clamped, canvas.width)
-                ctx.putImageData(data, 0, 0)
-            }
-
-            window.js_set_interval = fps => {
-                window.setInterval(() => {
-                    wasm_run_callback()
-                }, 1000 / fps)
-            }
-
+            // Available if init outputs compilation error
             window.js_log = (msg) => {
                 console.log(msg);
+
+                let previous = pre_log.scrollTop;
+                pre_log.scrollTop = Number.MAX_SAFE_INTEGER;
+                pre_log.textContent += msg + '\n';
+
+                // If the user has scrolled up, don't scroll down
+                if (previous == pre_log.scrollTop) {
+                    pre_log.scrollTop = Number.MAX_SAFE_INTEGER;
+                } else {
+                    pre_log.scrollTop = previous;
+                }
+
             }
 
-            window.addEventListener('keydown', e => {
-                if (e.key.length == 1) {
-                    wasm_key_down(e.key)
-                    return
-                }
-
-                if (e.key == 'Enter') {
-                    wasm_key_down('\n')
-                    return
-                }
-            })
-
-            canvas.addEventListener('mousedown', e => {
-                wasm_mouse_down(e.offsetX, e.offsetY)
-            })
-
-            canvas.addEventListener('mousemove', e => {
-                console.log(e)
-                wasm_mouse_move(e.offsetX, e.offsetY, e.movementX, e.movementY)
-            })
-
-            canvas.addEventListener('mouseup', e => {
-                wasm_mouse_up(e.offsetX, e.offsetY)
-            })
-
             init().then(() => {
-                console.log("wasm_start");
-                wasm_start();
-                console.log("wasm_start done");
+                console.log("Adding event listener");
+
+                window.js_set_interval = fps => {
+                    window.setInterval(() => {
+                        wasm.wasm_run_callback()
+                    }, 1000 / fps)
+                }
+
+                const canvas = document.querySelector('#canvas')
+                const ctx = canvas.getContext('2d')
+                
+                window.js_set_size = (width, height) => {
+                    console.log(width, height)
+                    canvas.width = width
+                    canvas.height = height
+                }
+
+                window.js_display_pixels = pixels => {
+                    const clamped = new Uint8ClampedArray(pixels)
+                    const data = new ImageData(clamped, canvas.width)
+                    ctx.putImageData(data, 0, 0)
+                }
+
+                window.addEventListener('keydown', e => {
+                    console.log(e)
+
+                    if (e.key.length == 1) {
+                        wasm.wasm_key_down(e.key)
+                        return
+                    }
+
+                    if (e.key == 'Enter') {
+                        wasm.wasm_key_down('\n')
+                        return
+                    }
+                })
+
+                canvas.addEventListener('mousedown', e => {
+                    wasm.wasm_mouse_down(e.offsetX, e.offsetY, e.button)
+                })
+
+                canvas.addEventListener('mousemove', e => {
+                    wasm.wasm_mouse_move(e.offsetX, e.offsetY, e.movementX, e.movementY)
+                })
+
+                canvas.addEventListener('mouseup', e => {
+                    wasm.wasm_mouse_up(e.offsetX, e.offsetY, e.button)
+                })
+
+                console.log("Starting wasm");
+
+                wasm.wasm_start();
+
+                console.log("Wasm started!");
             });
         </script>
     </body>
