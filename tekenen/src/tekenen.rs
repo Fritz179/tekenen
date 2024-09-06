@@ -65,7 +65,7 @@ use std::{cell::{Cell, Ref, RefCell}, rc::Rc};
 use enum_dispatch::enum_dispatch;
 use font::*;
 
-use crate::{math::{Transform, Vec2, Zero}, platform::Event, shapes::{circle::Circle, line::Line, point::Point, rect::Rect, Intersect, Shape}};
+use crate::{math::{Transform, Vec2, Zero}, platform::{Event, MouseKey}, shapes::{circle::Circle, line::Line, point::Point, rect::Rect, Intersect, Shape}};
 
 
 pub mod colors;
@@ -93,6 +93,8 @@ pub trait DrawableSurface {
 
     /// Draw any general shape
     fn shape(&self, shape: impl Shape);
+
+    fn dyn_shape(&self, shape: &mut dyn Shape);
 
     /// Blanket implementation for specific shapes
     /// Point
@@ -224,6 +226,10 @@ impl DrawableSurface for SurfaceDrawer {
 
     fn shape(&self, shape: impl Shape) {
         shape.draw_yourself(self);
+    }
+
+    fn dyn_shape(&self, shape: &mut dyn Shape) {
+        shape.draw_yourself(self)
     }
 
     fn background(&self, color: Pixel) {
@@ -461,11 +467,13 @@ impl SurfaceDestination {
 impl SurfaceView {    
     pub fn handle_pan_and_zoom(&self, event: Event) -> bool {
         match event {
-            Event::MouseDown{ x, y } => {
+            Event::MouseDown{ x, y, key: MouseKey::Right } => {
                 if self.screen.get().encloses_point(&Point::new(x, y)) {
                     self.moving.set(true);
+                    true
+                } else {
+                    false
                 }
-                true
             },
             Event::MouseUp{ .. } => {
                 self.moving.set(false);
@@ -538,13 +546,13 @@ impl SurfaceView {
     }
 
     // Apply transformation
-    pub fn world_to_screen(&self, target: &mut impl Transform) {
+    pub fn world_to_screen(&self, target: &mut dyn Transform) {
         target.scale(self.scale.get());
         target.translate(self.translation.get() + self.screen.get().position);
     }
 
-    pub fn screen_to_world(&self, target: &mut impl Transform) {
-        target.translate(-self.screen.get().position - self.translation.get());
+    pub fn screen_to_world(&self, target: &mut dyn Transform) {
+        target.translate(-(self.translation.get() + self.screen.get().position));
         target.scale(1.0 / self.scale.get());
     }
 
@@ -580,7 +588,7 @@ impl DrawableSurface for SurfaceView {
 
     fn background(&self, color: Pixel) {
         self.fill_color(color);
-        self.shape(Rect::new(0, 0, self.width(), self.height()));
+        self.surface.shape(self.screen.get());
     }
 
     fn line(&self, x1: i32, y1: i32, x2: i32, y2: i32) {
@@ -609,6 +617,12 @@ impl DrawableSurface for SurfaceView {
         let size = self.world_length_to_screen(Vec2::new(w, h));
 
         self.surface.draw_image_at(pos.x, pos.y, size.x, size.y, image)
+    }
+
+    fn dyn_shape(&self, shape: &mut dyn Shape) {
+        self.world_to_screen( shape);
+
+        self.surface.dyn_shape(shape);
     }
 
     fn shape(&self, mut shape: impl Shape) {

@@ -4,11 +4,13 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-tekenen = { path = "../tekenen", features = ["image", "native", "server"] }
+# tekenen = { path = "../tekenen", features = ["image", "native", "server"] }
+tekenen = { path = "../tekenen", features = ["image", "native"] }
 wasm-bindgen = "0.2.73"
 
 [build-dependencies]
-tekenen = { path = "../tekenen", features = ["preloader", "wasm"] }
+# tekenen = { path = "../tekenen", features = ["preloader", "wasm"] }
+tekenen = { path = "../tekenen", features = ["preloader"] }
 
 [lib]
 crate-type = ["cdylib", "rlib"]

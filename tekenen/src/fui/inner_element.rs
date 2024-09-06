@@ -1,6 +1,6 @@
 use std::{cell::Cell, rc::Rc};
 
-use crate::{platform::Event, printer::{Print, Printer}, shapes::{point::Point, rect::Rect, Intersect}, SurfaceView};
+use crate::{math::Transform, platform::Event, printer::{Print, Printer}, shapes::{point::Point, rect::Rect, Intersect}, SurfaceView};
 
 use super::{Element, Invalidation};
 
@@ -31,7 +31,7 @@ impl Element for InnerElement {
             return
         };
 
-        if let Event::MouseDown { x, y } = event {
+        if let Event::MouseDown { x, y, .. } = event {
             if !clip.encloses_point(&Point::new(x, y)) {
                 return
             }

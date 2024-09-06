@@ -17,16 +17,245 @@ pub use wasm::WASMPlatform as Platform;
 #[cfg(feature = "image")]
 use image::GenericImageView;
 
-use crate::{math::Vec2, tekenen};
+use crate::{math::{Transform, Vec2}, tekenen};
 
 #[derive(Debug, Clone, Copy)]
 pub enum Keycode {
-    ArrowUp,
-    ArrowLeft,
-    ArrowRight,
-    ArrowDown,
+    Backspace,
+    Tab,
     Enter,
     Escape,
+    Space,
+    Exclaim,
+    Quotedbl,
+    Hash,
+    Dollar,
+    Percent,
+    Ampersand,
+    Quote,
+    LeftParen,
+    RightParen,
+    Asterisk,
+    Plus,
+    Comma,
+    Minus,
+    Period,
+    Slash,
+    Num0,
+    Num1,
+    Num2,
+    Num3,
+    Num4,
+    Num5,
+    Num6,
+    Num7,
+    Num8,
+    Num9,
+    Colon,
+    Semicolon,
+    Less,
+    Equals,
+    Greater,
+    Question,
+    At,
+    LeftBracket,
+    Backslash,
+    RightBracket,
+    Caret,
+    Underscore,
+    Backquote,
+    A,
+    B,
+    C,
+    D,
+    E,
+    F,
+    G,
+    H,
+    I,
+    J,
+    K,
+    L,
+    M,
+    N,
+    O,
+    P,
+    Q,
+    R,
+    S,
+    T,
+    U,
+    V,
+    W,
+    X,
+    Y,
+    Z,
+    Delete,
+    CapsLock,
+    F1,
+    F2,
+    F3,
+    F4,
+    F5,
+    F6,
+    F7,
+    F8,
+    F9,
+    F10,
+    F11,
+    F12,
+    PrintScreen,
+    ScrollLock,
+    Pause,
+    Insert,
+    Home,
+    PageUp,
+    End,
+    PageDown,
+    ArrowRight,
+    ArrowLeft,
+    ArrowDown,
+    ArrowUp,
+    NumLockClear,
+    KpDivide,
+    KpMultiply,
+    KpMinus,
+    KpPlus,
+    KpEnter,
+    Kp1,
+    Kp2,
+    Kp3,
+    Kp4,
+    Kp5,
+    Kp6,
+    Kp7,
+    Kp8,
+    Kp9,
+    Kp0,
+    KpPeriod,
+    Application,
+    Power,
+    KpEquals,
+    F13,
+    F14,
+    F15,
+    F16,
+    F17,
+    F18,
+    F19,
+    F20,
+    F21,
+    F22,
+    F23,
+    F24,
+    Execute,
+    Help,
+    Menu,
+    Select,
+    Stop,
+    Again,
+    Undo,
+    Cut,
+    Copy,
+    Paste,
+    Find,
+    Mute,
+    VolumeUp,
+    VolumeDown,
+    KpComma,
+    KpEqualsAS400,
+    AltErase,
+    Sysreq,
+    Cancel,
+    Clear,
+    Prior,
+    Return2,
+    Separator,
+    Out,
+    Oper,
+    ClearAgain,
+    CrSel,
+    ExSel,
+    Kp00,
+    Kp000,
+    ThousandsSeparator,
+    DecimalSeparator,
+    CurrencyUnit,
+    CurrencySubUnit,
+    KpLeftParen,
+    KpRightParen,
+    KpLeftBrace,
+    KpRightBrace,
+    KpTab,
+    KpBackspace,
+    KpA,
+    KpB,
+    KpC,
+    KpD,
+    KpE,
+    KpF,
+    KpXor,
+    KpPower,
+    KpPercent,
+    KpLess,
+    KpGreater,
+    KpAmpersand,
+    KpDblAmpersand,
+    KpVerticalBar,
+    KpDblVerticalBar,
+    KpColon,
+    KpHash,
+    KpSpace,
+    KpAt,
+    KpExclam,
+    KpMemStore,
+    KpMemRecall,
+    KpMemClear,
+    KpMemAdd,
+    KpMemSubtract,
+    KpMemMultiply,
+    KpMemDivide,
+    KpPlusMinus,
+    KpClear,
+    KpClearEntry,
+    KpBinary,
+    KpOctal,
+    KpDecimal,
+    KpHexadecimal,
+    LCtrl,
+    LShift,
+    LAlt,
+    LGui,
+    RCtrl,
+    RShift,
+    RAlt,
+    RGui,
+    Mode,
+    AudioNext,
+    AudioPrev,
+    AudioStop,
+    AudioPlay,
+    AudioMute,
+    MediaSelect,
+    Www,
+    Mail,
+    Calculator,
+    Computer,
+    AcSearch,
+    AcHome,
+    AcBack,
+    AcForward,
+    AcStop,
+    AcRefresh,
+    AcBookmarks,
+    BrightnessDown,
+    BrightnessUp,
+    DisplaySwitch,
+    KbdIllumToggle,
+    KbdIllumDown,
+    KbdIllumUp,
+    Eject,
+    Sleep,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -56,15 +285,25 @@ impl KeyDownEvent {
 }
 
 #[derive(Debug, Clone, Copy)]
+pub enum MouseKey {
+    Left,
+    Right,
+    Middle,
+    Unknown,
+}
+
+#[derive(Debug, Clone, Copy)]
 pub enum Event {
     KeyDown (KeyDownEvent),
     MouseDown {
         x: i32,
         y: i32,
+        key: MouseKey,
     },
     MouseUp {
         x: i32,
         y: i32,
+        key: MouseKey,
     },
     MouseMove {
         x: i32,
@@ -86,20 +325,22 @@ pub enum Event {
 impl Event {
     pub fn position(&self) -> Option<Vec2> {
         match self {
-            Event::MouseDown { x, y } => Some(Vec2::new(*x, *y)),
-            Event::MouseUp { x, y } => Some(Vec2::new(*x, *y)),
+            Event::MouseDown { x, y, .. } => Some(Vec2::new(*x, *y)),
+            Event::MouseUp { x, y, .. } => Some(Vec2::new(*x, *y)),
             Event::MouseMove { x, y, .. } => Some(Vec2::new(*x, *y)),
             _ => None
         }
     }
+}
 
-    pub fn translate(&mut self, offset: Vec2) {
+impl Transform for Event {
+    fn translate(&mut self, offset: Vec2) {
         match self {
-            Event::MouseDown { x, y } => {
+            Event::MouseDown { x, y, .. } => {
                 *x += offset.x;
                 *y += offset.y;
             },
-            Event::MouseUp { x, y } => {
+            Event::MouseUp { x, y, .. } => {
                 *x += offset.x;
                 *y += offset.y;
             },
@@ -110,6 +351,27 @@ impl Event {
             _ => {}
         }
     } 
+
+    fn scale(&mut self, scale: f32) {
+        match self {
+            Event::MouseDown { x, y, .. } => {
+                *x = (*x as f32 * scale) as i32;
+                *y = (*y as f32 * scale) as i32;
+            },
+            Event::MouseUp { x, y, .. } => {
+                *x = (*x as f32 * scale) as i32;
+                *y = (*y as f32 * scale) as i32;
+            },
+            Event::MouseMove { x, y, xd, yd, .. } => {
+                *x = (*x as f32 * scale) as i32;
+                *y = (*y as f32 * scale) as i32;
+                *xd = (*xd as f32 * scale) as i32;
+                *yd = (*yd as f32 * scale) as i32;
+            },
+            _ => {}
+        }
+    
+    }
 }
 
 pub enum IntervalDecision {
