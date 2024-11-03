@@ -259,7 +259,7 @@ pub enum Keycode {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct Keymod {
+pub struct KeyModifiers {
     pub shift: bool,
     pub ctrl: bool,
     pub caps: bool,
@@ -269,23 +269,23 @@ pub struct Keymod {
 pub struct KeyDownEvent {
     pub repeat: bool,
     pub char: Option<char>,
-    pub keycode: Option<Keycode>,
-    pub keymod: Keymod,
+    pub keycode: Keycode,
+    pub modifiers: KeyModifiers,
 }
 
 impl KeyDownEvent {
     pub fn is_arrow(&self) -> bool {
         matches!(self.keycode, 
-            Some(Keycode::ArrowUp) | 
-            Some(Keycode::ArrowLeft) | 
-            Some(Keycode::ArrowDown) | 
-            Some(Keycode::ArrowRight)
+            Keycode::ArrowUp | 
+            Keycode::ArrowLeft | 
+            Keycode::ArrowDown | 
+            Keycode::ArrowRight
         )
     } 
 }
 
 #[derive(Debug, Clone, Copy)]
-pub enum MouseKey {
+pub enum MouseButton {
     Left,
     Right,
     Middle,
@@ -299,12 +299,12 @@ pub enum Event {
     MouseDown {
         x: i32,
         y: i32,
-        key: MouseKey,
+        key: MouseButton,
     },
     MouseUp {
         x: i32,
         y: i32,
-        key: MouseKey,
+        key: MouseButton,
     },
     MouseMove {
         x: i32,

@@ -35,7 +35,7 @@ pub mod printer;
 pub fn server() {
     use rouille;
 
-    println!("\nNow listening on `https://localhost:8000`");
+    println!("\nNow listening on `https://localhost:8000/index.html`");
 
     rouille::start_server("localhost:8000", move |request| {
         let response = rouille::match_assets(request, "./example/home");

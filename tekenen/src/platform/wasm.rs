@@ -3,7 +3,7 @@ use std::{cell::{Ref, RefCell}, collections::VecDeque};
 
 use crate::Surface;
 
-use super::{PlatformTrait, PlatformError, Event, KeyDownEvent, MouseKey, Keymod, IntervalDecision};
+use super::{PlatformTrait, PlatformError, Event, KeyDownEvent, MouseButton, KeyModifiers, IntervalDecision, Keycode};
 
 use wasm_bindgen::prelude::*;
 
@@ -62,15 +62,24 @@ impl PlatformTrait for WASMPlatform {
 }
 
 #[wasm_bindgen]
-pub fn wasm_key_down(key: char) {
+pub fn wasm_key_down(key: String) {
+    let keycode = match key.as_str() {
+        "a" => Keycode::A,
+        "b" => Keycode::B,
+        key => {
+            js_log(format!("Unknown key: {}", key));
+            return
+        },
+    };
+
     KEY_QUEUE.with(|queue| {
         let mut queue = queue.borrow_mut();
 
         let event = Event::KeyDown(KeyDownEvent {
             repeat: false,
-            char: Some(key),
-            keycode: None,
-            keymod: Keymod {
+            char: None,
+            keycode,
+            modifiers: KeyModifiers {
                 shift: false,
                 ctrl: false,
                 caps: false,
@@ -81,13 +90,13 @@ pub fn wasm_key_down(key: char) {
     })
 }
 
-pub fn mouse_key_to_keycode(key: i32) -> MouseKey {
+pub fn mouse_key_to_keycode(key: i32) -> MouseButton {
     match key {
-        0 => MouseKey::Left,
-        1 => MouseKey::Middle,
-        2 => MouseKey::Right,
-        3 => MouseKey::Back,
-        4 => MouseKey::Forward,
+        0 => MouseButton::Left,
+        1 => MouseButton::Middle,
+        2 => MouseButton::Right,
+        3 => MouseButton::Back,
+        4 => MouseButton::Forward,
         _ => unreachable!(),
     }
 }

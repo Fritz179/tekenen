@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use tekenen::{colors, fui::{button::Button, div::Div, slider::Slider, text::Text, FUI}, platform::{Event, IntervalDecision, KeyDownEvent, MouseKey, Platform, PlatformTrait}, printer::Printer, shapes::{rect::Rect, Shape}, DrawableSurface, Surface, SurfaceView};
+use tekenen::{colors, fui::{button::Button, div::Div, slider::Slider, text::Text, FUI}, platform::{Event, IntervalDecision, KeyDownEvent, MouseButton, Platform, PlatformTrait}, printer::Printer, shapes::{rect::Rect, Shape}, DrawableSurface, Surface, SurfaceView};
 
 use super::Demo;
 
@@ -75,7 +75,7 @@ impl Demo for InteractionsDemo {
         self.canvas.screen_to_world(&mut event);
 
         match event {
-            Event::MouseDown{ x, y, key: MouseKey::Left } => {
+            Event::MouseDown{ x, y, key: MouseButton::Left } => {
                 let shape = Rc::new(RefCell::new(Rect::new(x, y, 1, 1)));
                 self.creator = Some(shape.clone());
                 self.shapes.push(shape);

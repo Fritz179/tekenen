@@ -1,6 +1,6 @@
 use std::{cell::{Cell, RefCell}, rc::Rc};
 
-use crate::{colors, math::Vec2, platform::{Event, MouseKey}, printer::Print, DrawableSurface};
+use crate::{colors, math::Vec2, platform::{Event, MouseButton}, printer::Print, DrawableSurface};
 
 use super::{Element, Invalidation};
 
@@ -51,7 +51,7 @@ impl Slider {
 impl Element for Slider {
     fn event(&self, event: Event) {
         match event {
-            Event::MouseDown { x, y, key: MouseKey::Left } => {
+            Event::MouseDown { x, y, key: MouseButton::Left } => {
                 let pos = self.slider_position();
 
                 if (x - pos.x) * (x - pos.x) + (y - pos.y) * (y - pos.y) < RADIUS * RADIUS {
@@ -69,7 +69,7 @@ impl Element for Slider {
                     (self.callback.borrow_mut())(value);
                 }
             },
-            Event::MouseUp { key: MouseKey::Left, .. } => {
+            Event::MouseUp { key: MouseButton::Left, .. } => {
                 self.moving.set(false);
             },
             _ => {}

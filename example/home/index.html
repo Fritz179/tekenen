@@ -65,17 +65,7 @@
                 }
 
                 window.addEventListener('keydown', e => {
-                    console.log(e)
-
-                    if (e.key.length == 1) {
-                        wasm.wasm_key_down(e.key)
-                        return
-                    }
-
-                    if (e.key == 'Enter') {
-                        wasm.wasm_key_down('\n')
-                        return
-                    }
+                    wasm.wasm_key_down(e.key)
                 })
 
                 canvas.addEventListener('mousedown', e => {

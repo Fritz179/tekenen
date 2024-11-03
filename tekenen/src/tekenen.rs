@@ -65,7 +65,7 @@ use std::{cell::{Cell, Ref, RefCell}, rc::Rc};
 use enum_dispatch::enum_dispatch;
 use font::*;
 
-use crate::{math::{Transform, Vec2, Zero}, platform::{Event, MouseKey}, shapes::{circle::Circle, line::Line, point::Point, rect::Rect, Intersect, Shape}};
+use crate::{math::{Transform, Vec2, Zero}, platform::{Event, MouseButton}, shapes::{circle::Circle, line::Line, point::Point, rect::Rect, Intersect, Shape}};
 
 
 pub mod colors;
@@ -467,7 +467,7 @@ impl SurfaceDestination {
 impl SurfaceView {    
     pub fn handle_pan_and_zoom(&self, event: Event) -> bool {
         match event {
-            Event::MouseDown{ x, y, key: MouseKey::Right } => {
+            Event::MouseDown{ x, y, key: MouseButton::Right } => {
                 if self.screen.get().encloses_point(&Point::new(x, y)) {
                     self.moving.set(true);
                     true

@@ -1,5 +1,4 @@
 use sdl2;
-use sdl2::mouse::MouseButton;
 
 use std::cell::Ref;
 use std::time::{Duration, Instant};
@@ -14,8 +13,8 @@ use sdl2::keyboard;
 use crate::math::Vec2;
 use crate::Surface;
 
-use super::MouseKey;
-use super::{PlatformTrait, PlatformError, Event, KeyDownEvent, Keycode, Keymod, IntervalDecision, time_manager::{TimeAction, TimeManager}};
+use super::MouseButton;
+use super::{PlatformTrait, PlatformError, Event, KeyDownEvent, Keycode, KeyModifiers, IntervalDecision, time_manager::{TimeAction, TimeManager}};
 
 pub struct SDLPlatform {
     canvas: Canvas<Window>,
@@ -130,25 +129,11 @@ impl PlatformTrait for SDLPlatform {
                         }
                     }
 
-                    let keycode = match keycode {
-                        keyboard::Keycode::Up => Some(Keycode::ArrowUp),
-                        keyboard::Keycode::Left => Some(Keycode::ArrowLeft),
-                        keyboard::Keycode::Right => Some(Keycode::ArrowRight),
-                        keyboard::Keycode::Down => Some(Keycode::ArrowDown),
-                        keyboard::Keycode::Return => Some(Keycode::Enter),
-                        keyboard::Keycode::Escape => Some(Keycode::Escape),
-                        // code => {
-                        //     println!("{:?}", code);
-                        //     None
-                        // },
-                        _ => None
-                    };
-
                     return Some(Event::KeyDown(KeyDownEvent{
                         repeat,
                         char,
-                        keycode,
-                        keymod: Keymod {
+                        keycode: keycode.into(),
+                        modifiers: KeyModifiers {
                             shift: shift_mod,
                             ctrl: ctrl_mod,
                             caps: caps_mod,
@@ -198,12 +183,12 @@ impl PlatformTrait for SDLPlatform {
     }
 }
 
-impl From<MouseButton> for MouseKey {
-    fn from(button: MouseButton) -> Self {
+impl From<sdl2::mouse::MouseButton> for MouseButton {
+    fn from(button: sdl2::mouse::MouseButton) -> Self {
         match button {
-            MouseButton::Left => MouseKey::Left,
-            MouseButton::Right => MouseKey::Right,
-            MouseButton::Middle => MouseKey::Middle,
+            sdl2::mouse::MouseButton::Left => MouseButton::Left,
+            sdl2::mouse::MouseButton::Right => MouseButton::Right,
+            sdl2::mouse::MouseButton::Middle => MouseButton::Middle,
             _ => unimplemented!(),
         }
     }
